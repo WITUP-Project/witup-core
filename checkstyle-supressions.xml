@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Suppress certain checks for test files -->
+    <suppress files=".*Test\.java" checks="MagicNumber"/>
+    <suppress files=".*Test\.java" checks="MethodLength"/>
+
+    <!-- Suppress magic number check for constants in enum -->
+    <suppress files=".*Edge\.java" checks="MagicNumber"/>
+
+    <!-- Suppress design for extension for simple data classes -->
+    <suppress files=".*Node\.java" checks="DesignForExtension"/>
+    <suppress files=".*Edge\.java" checks="DesignForExtension"/>
+
+    <!-- Allow utility classes without private constructor in certain packages -->
+    <suppress files=".*Driver\.java" checks="HideUtilityClassConstructor"/>
+</suppressions>
