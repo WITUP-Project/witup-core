@@ -16,7 +16,7 @@ import  sootup.codepropertygraph.propertygraph.util.PropertyGraphsMerger;
  * construct them separately than to split them out later on.
  */
 public final class SootUpGraphBuilder {
-    public SootUpPropertyGraphs buildSootUpGraphBundle(final JavaSootMethod m) {
+    public SootUpPropertyGraphs buildPropertyGraphs(final JavaSootMethod m) {
         CfgCreator cfgCreator = new CfgCreator();
         CdgCreator cdgCreator = new CdgCreator();
         DdgCreator ddgCreator = new DdgCreator();

@@ -36,9 +36,7 @@ public final class SootUpAnalyser {
         JavaSootClass sootClass = view.getClass(classType)
                 .orElseThrow(() -> new RuntimeException("Soot class not found: " + classType));
 
-        HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs = buildSootUpPropertyGraphs(sootClass);
-
-        return sootUpPropertyGraphs;
+        return buildSootUpPropertyGraphs(sootClass);
     }
 
     private HashMap<String, SootUpPropertyGraphs> buildSootUpPropertyGraphs(JavaSootClass sootClass) {
@@ -53,7 +51,7 @@ public final class SootUpAnalyser {
                 if (s instanceof JThrowStmt) {
                     sootUpPropertyGraphs.put(
                             m.getSignature().toString(),
-                            sootUpGraphBuilder.buildSootUpGraphBundle(m));
+                            sootUpGraphBuilder.buildPropertyGraphs(m));
                     break;
                 }
             }

@@ -13,7 +13,7 @@ public class Math {
         this.radius = radius;
     }
 
-    public double invalidClassField() {
+    public double circleArea() {
         if (this.radius < 0) {
             throw new RuntimeException("Radius cannot be negative");
         }
