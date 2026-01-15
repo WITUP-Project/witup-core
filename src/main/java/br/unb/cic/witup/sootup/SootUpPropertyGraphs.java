@@ -27,4 +27,7 @@ public class SootUpPropertyGraphs {
         return cpg;
     }
 
+    public PropertyGraph getDDG() {
+        return ddg;
+    }
 }

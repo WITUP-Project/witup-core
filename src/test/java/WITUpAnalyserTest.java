@@ -1,4 +1,7 @@
+import br.unb.cic.witup.analysis.Resolver;
 import br.unb.cic.witup.graph.WITUpGraph;
+import br.unb.cic.witup.graph.node.ThrowStatementNode;
+import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.sootup.SootUpAnalyser;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
 import guru.nidi.graphviz.engine.Format;
@@ -13,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -51,17 +55,30 @@ public class WITUpAnalyserTest {
 
         System.out.println(sootUpCPG);
 
-        String dotGraph = sootUpCPG.toDotGraph();
+        WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
+
+        List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+        assertEquals(1, throwNodes.size());
+
+        List<WITUpNode> conditionNodes = WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        assertEquals(1, conditionNodes.size());
+
+        PropertyGraph sootUpDDG = circleAreaGraphs.getDDG();
+        WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+
+        WITUpNode entryNode = WITUpGraph.findEntryNode(witUpDDG);
+
+        Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
+
+        String dotGraph = sootUpDDG.toDotGraph();
 
         try {
             Graphviz.fromString(dotGraph)
                     .render(Format.SVG)
-                    .toFile(new File("circleAreaGraph.svg"));
+                    .toFile(new File("circleAreaGraph-ddg.svg"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
     }
 
 }

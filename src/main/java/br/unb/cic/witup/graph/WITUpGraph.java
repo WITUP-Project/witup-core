@@ -6,12 +6,17 @@ import br.unb.cic.witup.graph.node.SimpleNode;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
 import org.jgrapht.graph.DirectedPseudograph;
+import org.jgrapht.graph.EdgeReversedGraph;
+import org.jgrapht.traverse.DepthFirstIterator;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.*;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
+import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
+
+import java.util.*;
 
 /**
  * A graph representation for control property graphs extending JGraphT's DirectedPseudograph.
@@ -42,8 +47,8 @@ public class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
     public static WITUpGraph fromPropertyGraph(final PropertyGraph pg) {
         WITUpGraph graph = new WITUpGraph();
 
-        // TODO: remove me once confirm sootup graphs are building properly
         for (PropertyGraphEdge edge : pg.getEdges()) {
+            // TODO: remove once confirmed witup graphs are building properly without AST
             if (edge instanceof AbstAstEdge) {
                 continue;
             }
@@ -78,5 +83,57 @@ public class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
             return new IfStatementNode(node, ifStmt.getCondition());
         }
         return new SimpleNode(node);
+    }
+
+    public static List<WITUpNode> findThrowNodes(final WITUpGraph g) {
+        List<WITUpNode> result = new ArrayList<>();
+        for (WITUpNode n : g.vertexSet()) {
+            if (n instanceof ThrowStatementNode) {
+                result.add(n);
+            }
+        }
+        return result;
+    }
+
+    public static List<WITUpNode> findConditionNodes(final WITUpGraph g, final ThrowStatementNode t) {
+        List<WITUpNode> throwConditionNodes = new ArrayList<>();
+        // Not sure how costly this reversal can be at scale. Doc says there is a penalty
+        // We can build the reversed graph if we need
+        EdgeReversedGraph<WITUpNode, WITUpEdge> reversedGraph = new EdgeReversedGraph<>(g);
+        Iterator<WITUpNode> iterator = new DepthFirstIterator<>(reversedGraph, t);
+        while (iterator.hasNext()) {
+            WITUpNode n = iterator.next();
+            if (n instanceof IfStatementNode) {
+                throwConditionNodes.add(n);
+            }
+        }
+
+        return throwConditionNodes;
+    }
+
+
+    public static WITUpNode findEntryNode(final WITUpGraph g) {
+        // Track incoming edges by *PropertyGraphNode identity*
+        Set<PropertyGraphNode> hasIncoming =
+                new HashSet<>(g.vertexSet().size());
+
+        for (WITUpEdge e : g.edgeSet()) {
+            hasIncoming.add(e.getEdge().getDestination());
+        }
+
+        for (WITUpNode witNode : g.vertexSet()) {
+            PropertyGraphNode pgNode = witNode.getNode();
+
+            if (hasIncoming.contains(pgNode)) {
+                continue;
+            }
+
+            if (pgNode instanceof StmtGraphNode stmtNode
+                    && stmtNode.getStmt() instanceof JIdentityStmt) {
+                return witNode;
+            }
+        }
+
+        throw new IllegalStateException("No entry JIdentityStmt node in graph");
     }
 }
