@@ -1,4 +1,5 @@
 import br.unb.cic.witup.analysis.Resolver;
+import br.unb.cic.witup.analysis.SymExpr;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
@@ -68,7 +69,7 @@ public class WITUpAnalyserTest {
 
         WITUpNode entryNode = WITUpGraph.findEntryNode(witUpDDG);
 
-        Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
+        SymExpr resolved = Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
 
         String dotGraph = sootUpDDG.toDotGraph();
 

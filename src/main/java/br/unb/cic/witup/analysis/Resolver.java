@@ -29,10 +29,10 @@ public class Resolver {
      * the DDG and build a symbolic expression by substituting the locals.
      *
      * @param ifNode ifNode The if statement node that guards the throw
-     * @param graph graph The DDG graph
+     * @param ddg The data dependency graph
      * @return Symbolic expression representing the condition
      */
-    public static SymExpr resolveThrowCondition(WITUpNode ifNode, WITUpGraph graph) {
+    public static SymExpr resolveThrowCondition(WITUpNode ifNode, WITUpGraph ddg) {
         // extract the condition from the if statement
         StmtGraphNode n = (StmtGraphNode) ifNode.getNode();
         JIfStmt ifStmt = (JIfStmt) n.getStmt();
@@ -42,21 +42,23 @@ public class Resolver {
         Set<String> varsToResolve = findVariables(condition);
 
         // traverse backward and substitute
-        SymExpr resolved = resolveVariables(condition, varsToResolve, ifNode, graph, new HashSet<>());
+        SymExpr resolved = resolveVariables(condition, varsToResolve, ifNode, ddg, new HashSet<>());
+
+        resolved = simplifyCmpPatterns(resolved);
 
         // throw depends on condition
         return resolved; // need to negate this based on BooleanCFGEdge
     }
 
+    // TODO: make me work and test me
     /**
      * Simplify patterns like (x cmpg y) >= 0 to x >= y
      */
     private static SymExpr simplifyCmpPatterns(SymExpr expr) {
-        if (!(expr instanceof SymBinOp)) {
+        if (!(expr instanceof SymBinOp binOp)) {
             return expr;
         }
 
-        SymBinOp binOp = (SymBinOp) expr;
         SymExpr left = simplifyCmpPatterns(binOp.getLeft());
         SymExpr right = simplifyCmpPatterns(binOp.getRight());
 
@@ -65,7 +67,8 @@ public class Resolver {
             SymBinOp leftBinOp = (SymBinOp) left;
             SymConst rightConst = (SymConst) right;
 
-            // Check if it's a cmp operation compared to 0
+            // Check if it's a cmp operation compared to 0. Not sure if we need
+            // to handle comparisons with numbers other than 0
             if ((leftBinOp.getOp() == BinOp.CMPG || leftBinOp.getOp() == BinOp.CMPL || leftBinOp.getOp() == BinOp.CMP)
                     && rightConst.getValue().equals(0)) {
 

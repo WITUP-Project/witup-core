@@ -1,7 +1,6 @@
 package br.unb.cic.witup.analysis;
 
 public enum BinOp {
-    // Comparison
     EQ("=="),
     NE("!="),
     LT("<"),
@@ -9,7 +8,6 @@ public enum BinOp {
     GT(">"),
     GE(">="),
 
-    // Arithmetic
     ADD("+"),
     SUB("-"),
     MUL("*"),
