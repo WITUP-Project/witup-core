@@ -1,5 +1,6 @@
 package br.unb.cic.witup.graph.edge;
 
+import br.unb.cic.witup.graph.node.WITUpNode;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 
 /**
@@ -12,8 +13,8 @@ public class DataDependencyEdge extends WITUpEdge {
      *
      * @param edge the property graph edge
      */
-    public DataDependencyEdge(final PropertyGraphEdge edge) {
-        super(edge);
+    public DataDependencyEdge(final PropertyGraphEdge edge, WITUpNode source, WITUpNode target) {
+        super(edge, source, target);
     }
 
 }

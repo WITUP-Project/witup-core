@@ -2,6 +2,7 @@ package br.unb.cic.witup.graph.edge;
 
 import java.util.Objects;
 
+import br.unb.cic.witup.graph.node.WITUpNode;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 
 /**
@@ -9,14 +10,26 @@ import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
  */
 public abstract class WITUpEdge {
     private final PropertyGraphEdge edge;
+    private final WITUpNode source;
+    private final WITUpNode target;
 
     /**
      * Constructor for WITUpEdge.
      *
      * @param edge the property graph edge
      */
-    public WITUpEdge(final PropertyGraphEdge edge) {
+    public WITUpEdge(final PropertyGraphEdge edge, WITUpNode source, WITUpNode target) {
         this.edge = edge;
+        this.source = source;
+        this.target = target;
+    }
+
+    public WITUpNode getSource() {
+        return source;
+    }
+
+    public WITUpNode getTarget() {
+        return target;
     }
 
     /**

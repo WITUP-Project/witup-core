@@ -2,6 +2,7 @@ package br.unb.cic.witup.graph.edge;
 
 import java.util.Objects;
 
+import br.unb.cic.witup.graph.node.WITUpNode;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 
 /**
@@ -16,8 +17,8 @@ public class BooleanCFGEdge extends CFGEdge {
      * @param edge the property graph edge
      * @param condition the boolean condition
      */
-    public BooleanCFGEdge(final PropertyGraphEdge edge, final boolean condition) {
-        super(edge);
+    public BooleanCFGEdge(final PropertyGraphEdge edge, WITUpNode source, WITUpNode target, final boolean condition) {
+        super(edge, source, target);
         this.condition = condition;
     }
 

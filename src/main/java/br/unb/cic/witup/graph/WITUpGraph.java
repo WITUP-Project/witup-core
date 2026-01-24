@@ -62,15 +62,15 @@ public class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
             graph.addVertex(target);
 
             if (edge instanceof DdgEdge) {
-                graph.addEdge(source, target, new DataDependencyEdge(edge));
+                graph.addEdge(source, target, new DataDependencyEdge(edge, source, target));
             } else if (edge instanceof CdgEdge) {
-                graph.addEdge(source, target, new ControlDependencyEdge(edge));
+                graph.addEdge(source, target, new ControlDependencyEdge(edge, source, target));
             } else if (edge instanceof IfTrueCfgEdge) {
-                graph.addEdge(source, target, new BooleanCFGEdge(edge, true));
+                graph.addEdge(source, target, new BooleanCFGEdge(edge, source, target, true));
             } else if (edge instanceof IfFalseCfgEdge) {
-                graph.addEdge(source, target, new BooleanCFGEdge(edge, false));
+                graph.addEdge(source, target, new BooleanCFGEdge(edge, source, target, false));
             } else if (edge instanceof NormalCfgEdge) {
-                graph.addEdge(source, target, new CFGEdge(edge));
+                graph.addEdge(source, target, new CFGEdge(edge, source, target));
             } else {
                 throw new IllegalArgumentException("Unknown edge type: " + edge.getClass().getName());
             }
@@ -173,9 +173,8 @@ public class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
         for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
             List<ThrowCondition> pathConditions = new ArrayList<>();
             for (BooleanCFGEdge edge : throwConditionsPath) {
-                StmtGraphNode stmt = (StmtGraphNode) edge.getEdge().getSource();
-                JIfStmt ifStmt = (JIfStmt) stmt.getStmt();
-                pathConditions.add(new ThrowCondition(edge.getEdge().getSource(), edge.getCondition()));
+                WITUpNode sourceNode = edge.getSource();
+                pathConditions.add(new ThrowCondition(sourceNode, edge.getCondition()));
             }
             throwConditions.add(pathConditions);
         }

@@ -67,12 +67,12 @@ public class WITUpAnalyserTest {
 
         PropertyGraph sootUpCFG = circleAreaGraphs.getCFG();
         WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-        List<List<ThrowCondition>> rato = WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+        List<List<ThrowCondition>> throwConditions = WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
 
         PropertyGraph sootUpDDG = circleAreaGraphs.getDDG();
         WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
-        WITUpNode entryNode = WITUpGraph.findEntryNode(witUpDDG);
+//        WITUpNode entryNode = WITUpGraph.findEntryNode(witUpDDG);
 
 //        SymExpr resolved = Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
 
