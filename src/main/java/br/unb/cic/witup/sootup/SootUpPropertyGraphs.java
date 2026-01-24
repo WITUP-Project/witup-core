@@ -30,4 +30,8 @@ public class SootUpPropertyGraphs {
     public PropertyGraph getDDG() {
         return ddg;
     }
+
+    public PropertyGraph getCFG() {
+        return cfg;
+    }
 }

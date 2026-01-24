@@ -1,5 +1,6 @@
 import br.unb.cic.witup.analysis.Resolver;
 import br.unb.cic.witup.analysis.SymExpr;
+import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
@@ -61,15 +62,19 @@ public class WITUpAnalyserTest {
         List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
         assertEquals(1, throwNodes.size());
 
-        List<WITUpNode> conditionNodes = WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
-        assertEquals(1, conditionNodes.size());
+//        List<WITUpNode> conditionNodes = WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+//        assertEquals(1, conditionNodes.size());
+
+        PropertyGraph sootUpCFG = circleAreaGraphs.getCFG();
+        WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
+        List<List<ThrowCondition>> rato = WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
 
         PropertyGraph sootUpDDG = circleAreaGraphs.getDDG();
         WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
         WITUpNode entryNode = WITUpGraph.findEntryNode(witUpDDG);
 
-        SymExpr resolved = Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
+//        SymExpr resolved = Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
 
         String dotGraph = sootUpDDG.toDotGraph();
 

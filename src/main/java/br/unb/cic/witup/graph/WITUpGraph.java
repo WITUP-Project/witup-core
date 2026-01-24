@@ -1,10 +1,13 @@
 package br.unb.cic.witup.graph;
 
+import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.edge.*;
 import br.unb.cic.witup.graph.node.IfStatementNode;
 import br.unb.cic.witup.graph.node.SimpleNode;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
@@ -135,5 +138,48 @@ public class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
         }
 
         throw new IllegalStateException("No entry JIdentityStmt node in graph");
+    }
+
+    public static List<List<ThrowCondition>> findConditionPaths(WITUpGraph cfg, WITUpNode throwNode) {
+        WITUpNode entry =  findEntryNode(cfg);
+
+        AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
+        List<GraphPath<WITUpNode, WITUpEdge>> throwPaths = allPaths
+                .getAllPaths(entry, throwNode, true, null);
+
+        List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
+        for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
+            for (WITUpNode node : path.getVertexList()) {
+                if (node instanceof IfStatementNode) {
+                    pathsWithIfStatements.add(path);
+                    break;
+                }
+            }
+        }
+
+        List<List<BooleanCFGEdge>> throwConditionsPaths = new ArrayList<>();
+        for (GraphPath<WITUpNode, WITUpEdge> path : pathsWithIfStatements) {
+            List<BooleanCFGEdge> booleanEdges = new ArrayList<>();
+            for (WITUpEdge edge : path.getEdgeList()) {
+                if (edge instanceof BooleanCFGEdge) {
+                    booleanEdges.add((BooleanCFGEdge) edge);
+                    System.out.println(((BooleanCFGEdge) edge).getCondition());
+                }
+            }
+            throwConditionsPaths.add(booleanEdges);
+        }
+
+        List<List<ThrowCondition>> throwConditions = new ArrayList<>();
+        for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
+            List<ThrowCondition> pathConditions = new ArrayList<>();
+            for (BooleanCFGEdge edge : throwConditionsPath) {
+                StmtGraphNode stmt = (StmtGraphNode) edge.getEdge().getSource();
+                JIfStmt ifStmt = (JIfStmt) stmt.getStmt();
+                pathConditions.add(new ThrowCondition(edge.getEdge().getSource(), edge.getCondition()));
+            }
+            throwConditions.add(pathConditions);
+        }
+
+        return throwConditions;
     }
 }
