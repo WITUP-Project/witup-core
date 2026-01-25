@@ -208,13 +208,13 @@ public class Resolver {
   }
 
   /** Resolve variables by traversing backward through DDG */
+  // it's ok to reassign current in a recursive function
   private static SymExpr resolveVariables(
-      SymExpr current,
+      SymExpr current, // SUPPRESS CHECKSTYLE FinalParameters
       final Set<String> varsToResolve,
       final WITUpNode currentNode,
       final WITUpGraph graph,
       final Set<WITUpNode> visited) {
-
     if (varsToResolve.isEmpty()) {
       return current; // All resolved!
     }

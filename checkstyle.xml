@@ -33,6 +33,18 @@
     </module>
 
     <module name="TreeWalker">
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
+            <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
+            <property name="checkFormat" value="$1"/>
+        </module>
+
+        <module name="SuppressWithNearbyCommentFilter">
+            <property name="commentFormat" value="SUPPRESS CHECKSTYLE (\w+)"/>
+            <property name="checkFormat" value="$1"/>
+            <property name="influenceFormat" value="0"/>
+        </module>
+
         <!-- Checks for Naming Conventions -->
         <!-- See http://checkstyle.org/config_naming.html -->
         <module name="ConstantName"/>
