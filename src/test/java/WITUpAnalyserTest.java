@@ -1,3 +1,4 @@
+import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.Resolver;
 import br.unb.cic.witup.analysis.SymExpr;
 import br.unb.cic.witup.analysis.ThrowCondition;
@@ -62,18 +63,21 @@ public class WITUpAnalyserTest {
         List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
         assertEquals(1, throwNodes.size());
 
-//        List<WITUpNode> conditionNodes = WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
-//        assertEquals(1, conditionNodes.size());
+        List<WITUpNode> conditionNodes = WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        assertEquals(1, conditionNodes.size());
 
         PropertyGraph sootUpCFG = circleAreaGraphs.getCFG();
         WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-        List<List<ThrowCondition>> throwConditions = WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+
+        List<List<ThrowCondition>> throwConditionsPaths = WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
 
         PropertyGraph sootUpDDG = circleAreaGraphs.getDDG();
         WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
-//        WITUpNode entryNode = WITUpGraph.findEntryNode(witUpDDG);
+        List<List<ResolvedThrowCondition>> resolvedConditionPaths = Resolver.resolveConditionPaths(throwConditionsPaths, witUpDDG);
 
+//        for each path (List<ThrowCondition>) need to resolve the nodes and
+//        return a (List<ResolvedThrowCondition>)
 //        SymExpr resolved = Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
 
         String dotGraph = sootUpDDG.toDotGraph();

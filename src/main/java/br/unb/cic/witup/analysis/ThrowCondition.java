@@ -10,4 +10,12 @@ public class ThrowCondition {
         this.node = node;
         this.truthValue = truthValue;
     }
+
+    public WITUpNode getNode() {
+        return node;
+    }
+
+    public boolean getTruthValue() {
+        return truthValue;
+    }
 }

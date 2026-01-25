@@ -56,6 +56,8 @@ public class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
                 continue;
             }
 
+            // FIXME: we are creating the same node multiple times here and it
+            // may hurt comparisons down the line.
             WITUpNode source = createNode(edge.getSource());
             WITUpNode target = createNode(edge.getDestination());
             graph.addVertex(source);

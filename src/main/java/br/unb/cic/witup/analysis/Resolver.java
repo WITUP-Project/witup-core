@@ -24,6 +24,24 @@ import java.util.List;
 import java.util.Set;
 
 public class Resolver {
+    public static List<ResolvedThrowCondition> resolveConditionPath(List<ThrowCondition> throwConditionsPath, WITUpGraph ddg) {
+        List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
+        for  (ThrowCondition throwCondition : throwConditionsPath) {
+            SymExpr resolved = resolveThrowCondition(throwCondition.getNode(), ddg);
+            resolvedThrowConditions.add(new ResolvedThrowCondition(resolved, throwCondition.getTruthValue()));
+        }
+        return resolvedThrowConditions;
+    }
+
+    // Just relaying the ddg is bad. Need to refactor this
+    public static List<List<ResolvedThrowCondition>> resolveConditionPaths(List<List<ThrowCondition>> throwConditionsPaths, WITUpGraph ddg) {
+        List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
+        for (List<ThrowCondition> throwConditionsPath : throwConditionsPaths) {
+            resolvedThrowConditions.add(resolveConditionPath(throwConditionsPath, ddg));
+        }
+        return resolvedThrowConditions;
+    }
+
     /**
      * Starting from a condition node (e.g. $stack2 >= 0), walk backward through
      * the DDG and build a symbolic expression by substituting the locals.
@@ -50,7 +68,6 @@ public class Resolver {
         return resolved; // need to negate this based on BooleanCFGEdge
     }
 
-    // TODO: make me work and test me
     /**
      * Simplify patterns like (x cmpg y) >= 0 to x >= y
      */
