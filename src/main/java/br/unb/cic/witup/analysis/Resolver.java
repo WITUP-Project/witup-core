@@ -42,10 +42,10 @@ import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
 public class Resolver {
-  final private WITUpGraph ddg;
+  private final WITUpGraph ddg;
 
   public Resolver(WITUpGraph ddg) {
-      this.ddg = ddg;
+    this.ddg = ddg;
   }
 
   public List<ResolvedThrowCondition> resolveConditionPath(
