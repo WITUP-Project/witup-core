@@ -42,11 +42,17 @@ import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
 public class Resolver {
-  public static List<ResolvedThrowCondition> resolveConditionPath(
-      final List<ThrowCondition> throwConditionsPath, final WITUpGraph ddg) {
+  final private WITUpGraph ddg;
+
+  public Resolver(WITUpGraph ddg) {
+      this.ddg = ddg;
+  }
+
+  public List<ResolvedThrowCondition> resolveConditionPath(
+      final List<ThrowCondition> throwConditionsPath) {
     List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
     for (ThrowCondition throwCondition : throwConditionsPath) {
-      SymExpr resolved = resolveThrowCondition(throwCondition.getNode(), ddg);
+      SymExpr resolved = resolveThrowCondition(throwCondition.getNode());
       resolvedThrowConditions.add(
           new ResolvedThrowCondition(resolved, throwCondition.getTruthValue()));
     }
@@ -54,11 +60,11 @@ public class Resolver {
   }
 
   // Just relaying the ddg is bad. Need to refactor this
-  public static List<List<ResolvedThrowCondition>> resolveConditionPaths(
+  public List<List<ResolvedThrowCondition>> resolveConditionPaths(
       final List<List<ThrowCondition>> throwConditionsPaths, final WITUpGraph ddg) {
     List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
     for (List<ThrowCondition> throwConditionsPath : throwConditionsPaths) {
-      resolvedThrowConditions.add(resolveConditionPath(throwConditionsPath, ddg));
+      resolvedThrowConditions.add(resolveConditionPath(throwConditionsPath));
     }
     return resolvedThrowConditions;
   }
@@ -68,10 +74,9 @@ public class Resolver {
    * symbolic expression by substituting the locals.
    *
    * @param ifNode ifNode The if statement node that guards the throw
-   * @param ddg The data dependency graph
    * @return Symbolic expression representing the condition
    */
-  public static SymExpr resolveThrowCondition(final WITUpNode ifNode, final WITUpGraph ddg) {
+  public SymExpr resolveThrowCondition(final WITUpNode ifNode) {
     // extract the condition from the if statement
     StmtGraphNode n = (StmtGraphNode) ifNode.getNode();
     JIfStmt ifStmt = (JIfStmt) n.getStmt();

@@ -74,8 +74,10 @@ public class WITUpAnalyserTest {
     PropertyGraph sootUpDDG = circleAreaGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
+    Resolver resolver = new Resolver(witUpDDG);
+
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        Resolver.resolveConditionPaths(throwConditionsPaths, witUpDDG);
+            resolver.resolveConditionPaths(throwConditionsPaths, witUpDDG);
 
     //        for each path (List<ThrowCondition>) need to resolve the nodes and
     //        return a (List<ResolvedThrowCondition>)
