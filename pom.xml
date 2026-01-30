@@ -15,7 +15,7 @@
 
         <!-- Linter plugin versions -->
         <spotbugs.maven.plugin.version>4.8.2.0</spotbugs.maven.plugin.version>
-        <checkstyle.maven.plugin.version>3.3.1</checkstyle.maven.plugin.version>
+        <checkstyle.maven.plugin.version>3.6.0</checkstyle.maven.plugin.version>
         <pmd.maven.plugin.version>3.21.2</pmd.maven.plugin.version>
         <maven.surefire.plugin.version>3.2.3</maven.surefire.plugin.version>
     </properties>
@@ -125,6 +125,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
+            </plugin>
+
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>1.19.2</version>
+                        </googleJavaFormat>
+                    </java>
+                </configuration>
             </plugin>
 
             <!-- SpotBugs Static Analysis -->

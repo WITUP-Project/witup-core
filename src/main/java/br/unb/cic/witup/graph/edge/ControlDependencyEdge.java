@@ -1,19 +1,18 @@
 package br.unb.cic.witup.graph.edge;
 
+import br.unb.cic.witup.graph.node.WITUpNode;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 
-/**
- * Control dependency edge.
- */
+/** Control dependency edge. */
 public class ControlDependencyEdge extends WITUpEdge {
 
-    /**
-     * Constructor for ControlDependencyEdge.
-     *
-     * @param edge the property graph edge
-     */
-    public ControlDependencyEdge(final PropertyGraphEdge edge) {
-        super(edge);
-    }
-
+  /**
+   * Constructor for ControlDependencyEdge.
+   *
+   * @param edge the property graph edge
+   */
+  public ControlDependencyEdge(
+      final PropertyGraphEdge edge, final WITUpNode source, final WITUpNode target) {
+    super(edge, source, target);
+  }
 }
