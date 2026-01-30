@@ -59,9 +59,8 @@ public class Resolver {
     return resolvedThrowConditions;
   }
 
-  // Just relaying the ddg is bad. Need to refactor this
   public List<List<ResolvedThrowCondition>> resolveConditionPaths(
-      final List<List<ThrowCondition>> throwConditionsPaths, final WITUpGraph ddg) {
+      final List<List<ThrowCondition>> throwConditionsPaths) {
     List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
     for (List<ThrowCondition> throwConditionsPath : throwConditionsPaths) {
       resolvedThrowConditions.add(resolveConditionPath(throwConditionsPath));
@@ -77,12 +76,10 @@ public class Resolver {
    * @return Symbolic expression representing the condition
    */
   public SymExpr resolveThrowCondition(final WITUpNode ifNode) {
-    // extract the condition from the if statement
     StmtGraphNode n = (StmtGraphNode) ifNode.getNode();
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
     SymExpr condition = valueToSymExpr(ifStmt.getCondition());
 
-    // find all stack variables in the condition
     Set<String> varsToResolve = findVariables(condition);
 
     // traverse backward and substitute
@@ -90,8 +87,7 @@ public class Resolver {
 
     resolved = simplifyCmpPatterns(resolved);
 
-    // throw depends on condition
-    return resolved; // need to negate this based on BooleanCFGEdge
+    return resolved;
   }
 
   /** Simplify patterns like (x cmpg y) >= 0 to x >= y */

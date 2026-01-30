@@ -163,7 +163,6 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       for (WITUpEdge edge : path.getEdgeList()) {
         if (edge instanceof BooleanCFGEdge) {
           booleanEdges.add((BooleanCFGEdge) edge);
-          System.out.println(((BooleanCFGEdge) edge).getCondition());
         }
       }
       throwConditionsPaths.add(booleanEdges);
