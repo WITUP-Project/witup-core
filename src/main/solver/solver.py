@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import sys, json
-from sympy import S, And, Or, Not, simplify_logic, sympify
+from sympy import S, And, Or, Not, simplify_logic, sympify, Symbol, Eq
 import z3
 from z3 import Solver, sat, unsat
 import re
 import logging
 from typing import List, TypedDict, Union, Literal
+from sympy.parsing.sympy_parser import parse_expr
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,6 +40,10 @@ class SolverResponse(TypedDict):
 # on the shoulders of giants
 # https://github.com/mmaaz-git/sym2z/blob/main/sym2z.py
 def _sympy_to_z3(expr):
+    if isinstance(expr, Eq):
+        lhs, rhs = expr.lhs, expr.rhs
+        return _sympy_to_z3(lhs) == _sympy_to_z3(rhs)
+
     variables = set(expr.free_symbols)
 
     expr_str = str(expr)
@@ -50,7 +55,6 @@ def _sympy_to_z3(expr):
         else:
             expr_str = re.sub(var_str, f"z3.Real('{var}')", expr_str)
 
-    # Boolean operators
     expr_str = expr_str.replace("And", "z3.And")
     expr_str = expr_str.replace("Or", "z3.Or")
     expr_str = expr_str.replace("Not", "z3.Not")
@@ -115,16 +119,26 @@ def denormalize_solutions(solutions, mapping):
             sol["variable"] = mapping[name]
     return solutions
 
+def extract_symbols(expr: str) -> set[str]:
+    """
+    Extract variable identifiers from an expression string.
+    Assumes Java-like identifiers after normalization.
+    """
+    return set(re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", expr))
+
 def main():
     try:
         raw = sys.stdin.read()
         request: SolverRequest = json.loads(raw)  # type: ignore
+        # request = {'paths': [{'pathId': '<br.unb.cic.witup.samples.Math: int invalidParameter(int,int)>#0', 'conditions': [{'condition': '(y != 0)', 'truthValue': False}]}]}
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON request: {e}")
         sys.exit(1)
 
     paths: List[SolverPath] = request.get("paths", [])
     logger.info(f"Received {len(paths)} paths for solving")
+
+    symbols = {}
 
     response: SolverResponse = {"paths": []}
 
@@ -141,11 +155,23 @@ def main():
             for c in conditions:
                 normalized, mapping = normalize_java_expr(c["condition"])
                 var_mapping.update(mapping)
-                expr = sympify(normalized) if c["truthValue"] else Not(sympify(normalized))
+
+                for name in extract_symbols(normalized):
+                    if name not in symbols:
+                        symbols[name] = Symbol(name)
+
+                parsed = parse_expr(
+                    normalized,
+                    local_dict=symbols,
+                    evaluate=False
+                )
+
+                expr = parsed if c["truthValue"] else Not(parsed)
                 sympy_exprs.append(expr)
 
             combined_expr = And(*sympy_exprs)
             simplified_expr = simplify_logic(combined_expr, form="dnf")
+            logger.info(f"[{path_id}] Parsed expr: {simplified_expr}")
 
             logger.info(f"[{path_id}] Starting Z3 model checking")
             result = check_feasibility(simplified_expr)
