@@ -1,6 +1,8 @@
 package br.unb.cic.witup.graph;
 
 import br.unb.cic.witup.analysis.ThrowCondition;
+import br.unb.cic.witup.analysis.expath.ConditionPathFinder;
+import br.unb.cic.witup.analysis.expath.ExpathOptions;
 import br.unb.cic.witup.graph.edge.BooleanCFGEdge;
 import br.unb.cic.witup.graph.edge.CFGEdge;
 import br.unb.cic.witup.graph.edge.ControlDependencyEdge;
@@ -180,5 +182,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
 
     return throwConditions;
+  }
+
+  public static List<List<ThrowCondition>> findConditionPaths(final WITUpGraph cfg, final WITUpNode targetNode, final ExpathOptions options) {
+    return ConditionPathFinder.findConditionPathsToNode(cfg, targetNode, options);
   }
 }
