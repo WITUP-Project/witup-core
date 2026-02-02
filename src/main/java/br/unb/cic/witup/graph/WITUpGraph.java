@@ -147,16 +147,33 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
         allPaths.getAllPaths(entry, throwNode, true, null);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
-      for (WITUpNode node : path.getVertexList()) {
-        if (node instanceof IfStatementNode) {
-          pathsWithIfStatements.add(path);
-          break;
-        }
-      }
-    }
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
+        getPathsWithIfStatements(throwPaths);
 
+    List<List<BooleanCFGEdge>> throwConditionsPaths =
+        getThrowConditionsPaths(pathsWithIfStatements);
+
+    List<List<ThrowCondition>> throwConditions = getThrowConditions(throwConditionsPaths);
+
+    return throwConditions;
+  }
+
+  private static List<List<ThrowCondition>> getThrowConditions(
+      final List<List<BooleanCFGEdge>> throwConditionsPaths) {
+    List<List<ThrowCondition>> throwConditions = new ArrayList<>();
+    for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
+      List<ThrowCondition> pathConditions = new ArrayList<>();
+      for (BooleanCFGEdge edge : throwConditionsPath) {
+        WITUpNode sourceNode = edge.getSource();
+        pathConditions.add(new ThrowCondition(sourceNode, edge.getCondition()));
+      }
+      throwConditions.add(pathConditions);
+    }
+    return throwConditions;
+  }
+
+  private static List<List<BooleanCFGEdge>> getThrowConditionsPaths(
+      final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
     List<List<BooleanCFGEdge>> throwConditionsPaths = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : pathsWithIfStatements) {
       List<BooleanCFGEdge> booleanEdges = new ArrayList<>();
@@ -167,17 +184,20 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
       throwConditionsPaths.add(booleanEdges);
     }
+    return throwConditionsPaths;
+  }
 
-    List<List<ThrowCondition>> throwConditions = new ArrayList<>();
-    for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
-      List<ThrowCondition> pathConditions = new ArrayList<>();
-      for (BooleanCFGEdge edge : throwConditionsPath) {
-        WITUpNode sourceNode = edge.getSource();
-        pathConditions.add(new ThrowCondition(sourceNode, edge.getCondition()));
+  private static List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(
+      final List<GraphPath<WITUpNode, WITUpEdge>> throwPaths) {
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
+    for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
+      for (WITUpNode node : path.getVertexList()) {
+        if (node instanceof IfStatementNode) {
+          pathsWithIfStatements.add(path);
+          break;
+        }
       }
-      throwConditions.add(pathConditions);
     }
-
-    return throwConditions;
+    return pathsWithIfStatements;
   }
 }
