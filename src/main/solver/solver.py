@@ -50,6 +50,7 @@ def _sympy_to_z3(expr):
     for var in variables:
         # Add word boundaries to only replace whole variable names
         var_str = r'\b' + str(var) + r'\b'
+        # might need to consider more types here
         if var.is_integer:
             expr_str = re.sub(var_str, f"z3.Int('{var}')", expr_str)
         else:
@@ -98,7 +99,7 @@ def check_feasibility(system):
 
 def normalize_java_expr(expr: str):
     """
-    Replace 'this.var' -> 'this_var' so sympy/Z3 can handle it.
+    Replace 'this.var' with 'this_var' so sympy/Z3 can handle it.
     Returns normalized expr and a mapping for de-normalization.
     """
     mapping = {}
