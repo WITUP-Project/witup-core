@@ -9,7 +9,7 @@ public final class SolverResponse {
     private final boolean isSat;
     private final List<Solution> solutions;
 
-    public PathResult(String pathId, boolean isSat, List<Solution> solutions) {
+    public PathResult(final String pathId, final boolean isSat, final List<Solution> solutions) {
       this.pathId = pathId;
       this.isSat = isSat;
       this.solutions = solutions;
@@ -32,7 +32,7 @@ public final class SolverResponse {
     private final String variable;
     private final String value;
 
-    public Solution(String variable, String value) {
+    public Solution(final String variable, final String value) {
       this.variable = variable;
       this.value = value;
     }
@@ -48,7 +48,7 @@ public final class SolverResponse {
 
   private final List<PathResult> results;
 
-  public SolverResponse(List<PathResult> results) {
+  public SolverResponse(final List<PathResult> results) {
     this.results = results;
   }
 

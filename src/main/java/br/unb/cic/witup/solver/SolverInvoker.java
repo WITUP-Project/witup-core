@@ -1,13 +1,16 @@
 package br.unb.cic.witup.solver;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import org.json.JSONObject;
 
 public final class SolverInvoker {
   private final String pythonScriptPath;
 
-  public SolverInvoker(String pythonScriptPath) {
+  public SolverInvoker(final String pythonScriptPath) {
     this.pythonScriptPath = pythonScriptPath;
   }
 
@@ -15,7 +18,7 @@ public final class SolverInvoker {
    * Calls a Python solver script with the given JSON request. Python logs go to JVM stderr; the
    * JSON response is returned as a string.
    */
-  public String callSolver(JSONObject request) throws IOException, InterruptedException {
+  public String callSolver(final JSONObject request) throws IOException, InterruptedException {
     ProcessBuilder pb = new ProcessBuilder("python3", pythonScriptPath);
     // redirect stderr
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);

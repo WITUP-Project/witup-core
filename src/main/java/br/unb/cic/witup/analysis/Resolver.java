@@ -41,10 +41,10 @@ import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
-public class Resolver {
+public final class Resolver {
   private final WITUpGraph ddg;
 
-  public Resolver(WITUpGraph ddg) {
+  public Resolver(final WITUpGraph ddg) {
     this.ddg = ddg;
   }
 

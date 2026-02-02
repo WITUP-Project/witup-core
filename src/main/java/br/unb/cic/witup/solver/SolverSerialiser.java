@@ -8,11 +8,11 @@ import org.json.JSONObject;
 public final class SolverSerialiser {
   private final String methodId;
 
-  public SolverSerialiser(String methodId) {
+  public SolverSerialiser(final String methodId) {
     this.methodId = methodId;
   }
 
-  public JSONObject serializeResolvedPaths(List<List<ResolvedThrowCondition>> resolvedPaths) {
+  public JSONObject serializeResolvedPaths(final List<List<ResolvedThrowCondition>> resolvedPaths) {
     JSONArray pathsArray = new JSONArray();
 
     for (int i = 0; i < resolvedPaths.size(); i++) {

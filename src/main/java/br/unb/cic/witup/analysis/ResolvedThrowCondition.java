@@ -21,7 +21,7 @@ public final class ResolvedThrowCondition {
     return truthValue;
   }
 
-  public static JSONArray serializeResolvedPaths(List<List<ResolvedThrowCondition>> paths) {
+  public static JSONArray serializeResolvedPaths(final List<List<ResolvedThrowCondition>> paths) {
 
     JSONArray allPaths = new JSONArray();
 
