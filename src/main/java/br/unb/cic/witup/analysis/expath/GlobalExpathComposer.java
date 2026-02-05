@@ -1,5 +1,7 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.expath;
 
+import br.unb.cic.witup.analysis.ResolvedThrowCondition;
+import br.unb.cic.witup.analysis.Resolver;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
@@ -20,7 +22,6 @@ import sootup.core.jimple.common.stmt.Stmt;
  * Minimal global expath composer with N-depth inlining.
  * global = prefix(entry->callsite) + calleeGlobal(depth-1)
  *
- * Still: no parameter binding, no cache/dedup.
  */
 public final class GlobalExpathComposer {
 
@@ -103,7 +104,7 @@ public final class GlobalExpathComposer {
     }
 
     /**
-     * Callsite detection without regex:
+     * Callsite:
      * - scans statement nodes in CFG
      * - extracts invoke expr from known statement types
      * - maps invoke expr -> method signature string
@@ -125,13 +126,27 @@ public final class GlobalExpathComposer {
     }
 
     /**
-     * Functional extraction of invoke expr from concrete stmt types.
+     * Extracts an invoke expression from a generic statement, if present.
+     *
+     * Pseudocode examples of callsites this method can detect:
+     * - invoke-only statement:
+     *     foo(a, b);
+     * - assignment with invocation:
+     *     x = foo(a, b);
      */
     private static Optional<AbstractInvokeExpr> invokeExprOf(Stmt stmt) {
         return invokeExprFromInvokeStmt(stmt)
                 .or(() -> invokeExprFromAssignStmt(stmt));
     }
 
+    /**
+     * Handles callsites represented as invoke-only statements (JInvokeStmt).
+     *
+     * Pseudocode:
+     *   foo(a, b);
+     *
+     * In Jimple-like IR this is typically a standalone invoke statement.
+     */
     private static Optional<AbstractInvokeExpr> invokeExprFromInvokeStmt(Stmt stmt) {
         if (stmt instanceof JInvokeStmt invStmt) {
             return toOptionalInvokeExpr(invStmt.getInvokeExpr());
@@ -139,6 +154,15 @@ public final class GlobalExpathComposer {
         return Optional.empty();
     }
 
+    /**
+     * Handles callsites represented as assignment statements (JAssignStmt)
+     * where the right-hand side is an invocation.
+     *
+     * Pseudocode:
+     *   x = foo(a, b);
+     *
+     * If the assignment is not an invocation assignment, returns empty.
+     */
     private static Optional<AbstractInvokeExpr> invokeExprFromAssignStmt(Stmt stmt) {
         if (stmt instanceof JAssignStmt assignStmt) {
             return toOptionalInvokeExpr(assignStmt.getInvokeExpr());
@@ -164,5 +188,4 @@ public final class GlobalExpathComposer {
         return Optional.empty();
     }
 
-    private record CallSite(String calleeSignature, WITUpNode callNode) {}
 }

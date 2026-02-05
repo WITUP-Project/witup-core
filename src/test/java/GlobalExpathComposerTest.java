@@ -1,6 +1,6 @@
 import static org.junit.jupiter.api.Assertions.*;
 
-import br.unb.cic.witup.analysis.GlobalExpathComposer;
+import br.unb.cic.witup.analysis.expath.GlobalExpathComposer;
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.sootup.SootUpAnalyser;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
