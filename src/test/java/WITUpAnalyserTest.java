@@ -76,7 +76,7 @@ public class WITUpAnalyserTest {
 
     Resolver resolver = new Resolver(witUpDDG);
 
-    List<List<ResolvedThrowCondition>> x =
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
         resolver.resolveConditionPaths(throwConditionsPaths, witUpDDG);
 
     //        for each path (List<ThrowCondition>) need to resolve the nodes and

@@ -8,7 +8,6 @@ package br.unb.cic.witup.samples;
 public class Math {
   private final double radius;
   public static final double pi = 3.14;
-  private static final double MAX_ALLOWED_LN_INPUT = 1.0e308;
 
   public Math(double radius) {
     this.radius = radius;
@@ -34,29 +33,4 @@ public class Math {
     }
     return p;
   }
-
-    // Cenário para global expath: 2 call sites para o mesmo callee, callee com 2 throws
-    public double calculateLogInBase(double value, double base) {
-        // throw local do caller
-        if (base == 1.0) {
-            throw new RuntimeException("Log base 1 is undefined");
-        }
-
-        double numerator = validatedNaturalLog(value);   // call site #1
-        double denominator = validatedNaturalLog(base);  // call site #2
-        return numerator / denominator;
-    }
-
-    private double validatedNaturalLog(double value) {
-        // local expath #1
-        if (Double.isInfinite(value)) {
-            throw new RuntimeException("Infinite is not allowed");
-        }
-        // local expath #2
-        if (value <= 0.0) {
-            throw new RuntimeException("Log of non-positive number");
-        }
-        return java.lang.Math.log(value);
-  }
-
 }
