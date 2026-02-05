@@ -1,7 +1,8 @@
 package br.unb.cic.witup.analysis;
 
 public final class SymConst extends SymExpr {
-  private final Object value; // Can be Integer, Double, String, etc.
+  // Can be Integer, Double, String, etc. We may need to keep track of types somewhere
+  private final Object value;
 
   public SymConst(final Object value) {
     this.value = value;

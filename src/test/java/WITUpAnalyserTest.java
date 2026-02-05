@@ -7,16 +7,16 @@ import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
+import br.unb.cic.witup.solver.SolverInvoker;
+import br.unb.cic.witup.solver.SolverSerialiser;
 import br.unb.cic.witup.sootup.SootUpAnalyser;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
@@ -50,8 +50,8 @@ public class WITUpAnalyserTest {
         sootUpAnalyser.analyseThrowingMethods(
             testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
 
-    SootUpPropertyGraphs circleAreaGraphs =
-        sootUpPropertyGraphs.get("<br.unb.cic.witup.samples.Math: double circleArea()>");
+    String methodSignature = "<br.unb.cic.witup.samples.Math: double circleArea()>";
+    SootUpPropertyGraphs circleAreaGraphs = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = circleAreaGraphs.getCPG();
 
     System.out.println(sootUpCPG);
@@ -77,17 +77,133 @@ public class WITUpAnalyserTest {
     Resolver resolver = new Resolver(witUpDDG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(throwConditionsPaths, witUpDDG);
+        resolver.resolveConditionPaths(throwConditionsPaths);
 
-    //        for each path (List<ThrowCondition>) need to resolve the nodes and
-    //        return a (List<ResolvedThrowCondition>)
-    //        SymExpr resolved = Resolver.resolveThrowCondition(conditionNodes.get(0), witUpDDG);
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    System.out.println(request);
 
-    String dotGraph = sootUpDDG.toDotGraph();
-
+    String pythonScript =
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
     try {
-      Graphviz.fromString(dotGraph).render(Format.SVG).toFile(new File("circleAreaGraph-ddg.svg"));
-    } catch (IOException e) {
+      String resp = si.callSolver(request);
+      System.out.println(resp);
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void invalidParameter() {
+    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
+
+    System.out.println(sootUpPropertyGraphs);
+
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int invalidParameter(int,int)>";
+    SootUpPropertyGraphs invalidParameterGraphs = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = invalidParameterGraphs.getCPG();
+
+    System.out.println(sootUpCPG);
+
+    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
+
+    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+
+    PropertyGraph sootUpCFG = invalidParameterGraphs.getCFG();
+    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
+
+    List<List<ThrowCondition>> throwConditionsPaths =
+        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+
+    PropertyGraph sootUpDDG = invalidParameterGraphs.getDDG();
+    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+
+    Resolver resolver = new Resolver(witUpDDG);
+
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
+        resolver.resolveConditionPaths(throwConditionsPaths);
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    System.out.println(request);
+
+    String pythonScript =
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String resp = si.callSolver(request);
+      System.out.println(resp);
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void invalidParameterConjunction() {
+    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
+
+    System.out.println(sootUpPropertyGraphs);
+
+    String methodSignature =
+        "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
+    SootUpPropertyGraphs invalidParameterConjunction = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = invalidParameterConjunction.getCPG();
+
+    System.out.println(sootUpCPG);
+
+    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
+
+    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+    assertEquals(2, conditionNodes.size());
+
+    PropertyGraph sootUpCFG = invalidParameterConjunction.getCFG();
+    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
+
+    List<List<ThrowCondition>> throwConditionsPaths =
+        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+
+    PropertyGraph sootUpDDG = invalidParameterConjunction.getDDG();
+    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+
+    Resolver resolver = new Resolver(witUpDDG);
+
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
+        resolver.resolveConditionPaths(throwConditionsPaths);
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    System.out.println(request);
+
+    String pythonScript =
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String resp = si.callSolver(request);
+      System.out.println(resp);
+    } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }

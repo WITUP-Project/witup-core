@@ -20,14 +20,14 @@ public class Math {
     return pi * this.radius * this.radius;
   }
 
-  public int invalidMethodParameter(int x, int y) {
+  public int invalidParameter(int x, int y) {
     if (y == 0) {
       throw new RuntimeException("Invalid arguments");
     }
     return x / y;
   }
 
-  public int invalidMethodParameterInConjunctionExpression(int p) {
+  public int invalidParameterConjunction(int p) {
     if (p < 0 || p > 1) {
       throw new RuntimeException("probability is out of bounds");
     }
