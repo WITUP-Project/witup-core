@@ -33,4 +33,11 @@ public class Math {
     }
     return p;
   }
+
+  public boolean invalidString(String s) {
+    if (s == "abc") {
+      throw new RuntimeException("Invalid string value");
+    }
+    return true;
+  }
 }
