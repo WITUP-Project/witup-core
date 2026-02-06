@@ -2,7 +2,7 @@
 import sys, json
 from sympy import S, And, Or, Not, simplify_logic, sympify, Symbol, Eq
 import z3
-from z3 import Solver, sat, unsat
+from z3 import Solver, sat, unsat, String, StringVal
 import re
 import logging
 from typing import List, TypedDict, Union, Literal
@@ -39,13 +39,13 @@ class SolverResponse(TypedDict):
 
 # on the shoulders of giants
 # https://github.com/mmaaz-git/sym2z/blob/main/sym2z.py
-def _sympy_to_z3(expr):
+# this is proving a bit painful. We may want to ditch sympy before z3
+def sympy_to_z3(expr):
     if isinstance(expr, Eq):
         lhs, rhs = expr.lhs, expr.rhs
-        return _sympy_to_z3(lhs) == _sympy_to_z3(rhs)
+        return sympy_to_z3(lhs) == sympy_to_z3(rhs)
 
     variables = set(expr.free_symbols)
-
     expr_str = str(expr)
     for var in variables:
         # Add word boundaries to only replace whole variable names
@@ -62,76 +62,117 @@ def _sympy_to_z3(expr):
 
     return eval(expr_str)
 
-def check_feasibility(system):
-    if not isinstance(system, list):
-        system = [system]
 
-    variables = set()
-    for expr in system:
-        variables.update(expr.free_symbols)
+def check_feasibility(z3_constraints):
+    if not z3_constraints:
+        return {"isSat": "unknown", "solutions": []}
 
-    s = Solver()
-    for expr in system:
-        s.add(_sympy_to_z3(expr))
+    solver = Solver()
+    for c in z3_constraints:
+        solver.add(c)
 
-    if s.check() == sat:
-        model = s.model()
-        result = {}
+    status = solver.check()
+    if status == sat:
+        model = solver.model()
         solutions = []
-        for var in variables:
-            z3_var = z3.Int(str(var)) if var.is_integer else z3.Real(str(var))
-            value = model.get_interp(z3_var)
-            result[var] = S(str(value))
-            solution = {
-                "variable": str(var),
-                "value": str(value)
-            }
-            solutions.append(solution)
+        for d in model.decls():
+            var_name = d.name()
+            value = model[d]
+
+            if isinstance(value, z3.SeqRef):
+                value_str = value.as_string()
+            else:
+                value_str = str(value)
+
+            solutions.append({"variable": var_name, "value": value_str})
+
         return {
             "isSat": True,
             "solutions": solutions,
         }
-    elif s.check() == unsat:
+    elif status == unsat:
         return {"isSat": False, "solutions": []}
     else:
         return {"isSat": "unknown", "solutions": []}
 
 
-def normalize_java_expr(expr: str):
+
+def normalise_java_expr(expr: str, var_mapping):
     """
     Replace 'this.var' with 'this_var' so sympy/Z3 can handle it.
-    Returns normalized expr and a mapping for de-normalization.
+    Creates a local mapping of all normalised variables and updates the global
+    mapping
     """
-    mapping = {}
-
+    local_mapping = {}
     def replacer(match):
         original = match.group(0)
-        normalized = f"this_{match.group(1)}"
-        mapping[normalized] = original
-        return normalized
+        normalised = f"this_{match.group(1)}"
+        local_mapping[normalised] = original
+        return normalised
 
-    normalized_expr = re.sub(r"\bthis\.([a-zA-Z_][a-zA-Z0-9_]*)\b", replacer, expr)
-    return normalized_expr, mapping
+    normalised_expr = re.sub(r"\bthis\.([a-zA-Z_][a-zA-Z0-9_]*)\b", replacer, expr)
+    var_mapping.update(local_mapping)
+    return normalised_expr
 
-def denormalize_solutions(solutions, mapping):
+
+def denormalise_solutions(solutions, mapping):
     for sol in solutions:
         name = sol["variable"]
         if name in mapping:
             sol["variable"] = mapping[name]
     return solutions
 
+
 def extract_symbols(expr: str) -> set[str]:
     """
     Extract variable identifiers from an expression string.
-    Assumes Java-like identifiers after normalization.
+    Assumes Java-like identifiers after normalisation.
     """
     return set(re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", expr))
+
+
+def build_numeric_constraint(expr_str: str, truth_value: bool):
+    parsed = parse_expr(expr_str, evaluate=False)
+    expr = parsed if truth_value else Not(parsed)
+    return expr
+
+
+def build_string_constraint(expr_str: str, truth_value: bool):
+    # "(s != 'abc')" or "(var == 'abc')"
+    expr_str = expr_str.strip()[1:-1]  # remove outer parentheses
+    if "!=" in expr_str:
+        var, lit = map(str.strip, expr_str.split("!="))
+        constraint = String(var) != StringVal(lit.strip("'").strip('"'))
+    elif "==" in expr_str:
+        var, lit = map(str.strip, expr_str.split("=="))
+        constraint = String(var) == StringVal(lit.strip("'").strip('"'))
+    else:
+        raise ValueError(f"Unsupported string constraint: {expr_str}")
+
+    if not truth_value:
+        constraint = z3.Not(constraint)
+
+    return constraint
+
+
+def contains_string_literal(expr_str: str) -> bool:
+    # potentially very bad. Assumes we are passing things like
+    # {"condition":"(s != 'abc')","truthValue":False}. let's see how it goes
+    return "'" in expr_str or '"' in expr_str
+
+
+def build_constraint(expr_str: str, truth_value: bool):
+    if contains_string_literal(expr_str):
+        return build_string_constraint(expr_str, truth_value)
+    else:
+        return build_numeric_constraint(expr_str, truth_value)
+
 
 def main():
     try:
         raw = sys.stdin.read()
-        request: SolverRequest = json.loads(raw)  # type: ignore
-        # request = {'paths': [{'pathId': '<br.unb.cic.witup.samples.Math: int invalidParameter(int,int)>#0', 'conditions': [{'condition': '(y != 0)', 'truthValue': False}]}]}
+        request: SolverRequest = json.loads(raw)
+        # request = {"paths":[{"pathId":"<br.unb.cic.witup.samples.Math: double circleArea()>#0","conditions":[{"condition":"(this.radius >= 0.0)","truthValue":False}]}]}
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON request: {e}")
         sys.exit(1)
@@ -139,46 +180,50 @@ def main():
     paths: List[SolverPath] = request.get("paths", [])
     logger.info(f"Received {len(paths)} paths for solving")
 
-    symbols = {}
-
+    symbol_table = {}
     response: SolverResponse = {"paths": []}
 
     for path in paths:
         path_id = path.get("pathId", "<unknown>")
         conditions = path.get("conditions", [])
         logger.info(f"[{path_id}] Starting symbol resolution ({len(conditions)} conditions)")
-
         # track normalised names
         var_mapping = {}
-
+        sympy_exprs = []
+        z3_exprs = []
         try:
-            sympy_exprs = []
             for c in conditions:
-                normalized, mapping = normalize_java_expr(c["condition"])
-                var_mapping.update(mapping)
+                normalised = normalise_java_expr(c["condition"], var_mapping)
 
-                for name in extract_symbols(normalized):
-                    if name not in symbols:
-                        symbols[name] = Symbol(name)
+                if contains_string_literal(normalised):
+                    expr = build_string_constraint(normalised, c["truthValue"])
+                else:
+                    expr = build_numeric_constraint(normalised, c["truthValue"])
+                    # track symbols
+                    for name in extract_symbols(normalised):
+                        if name not in symbol_table:
+                            symbol_table[name] = Symbol(name)
 
-                parsed = parse_expr(
-                    normalized,
-                    local_dict=symbols,
-                    evaluate=False
-                )
+                # Need to separate flows out here as sympy can't handle strings
+                if isinstance(expr, z3.ExprRef):
+                    z3_exprs.append(expr)
+                else:
+                    for name in extract_symbols(normalised):
+                        if name not in symbol_table:
+                            symbol_table[name] = Symbol(name)
+                    sympy_exprs.append(expr)
 
-                expr = parsed if c["truthValue"] else Not(parsed)
-                sympy_exprs.append(expr)
-
-            combined_expr = And(*sympy_exprs)
-            simplified_expr = simplify_logic(combined_expr, form="dnf")
-            logger.info(f"[{path_id}] Parsed expr: {simplified_expr}")
+            if sympy_exprs:
+                combined_numeric_expr = And(*sympy_exprs)
+                simplified = simplify_logic(combined_numeric_expr, form="dnf")
+                z3_constraints = [sympy_to_z3(simplified)] + z3_exprs
+            else:
+                z3_constraints = z3_exprs
 
             logger.info(f"[{path_id}] Starting Z3 model checking")
-            result = check_feasibility(simplified_expr)
+            result = check_feasibility(z3_constraints)
 
-            result["solutions"] = denormalize_solutions(result["solutions"], var_mapping)
-
+            result["solutions"] = denormalise_solutions(result["solutions"], var_mapping)
             logger.info(f"[{path_id}] Z3 result: {result['isSat']}")
 
         except Exception as e:

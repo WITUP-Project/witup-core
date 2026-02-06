@@ -294,7 +294,7 @@ public final class Resolver {
       return new SymConst(((LongConstant) value).getValue());
     }
     if (value instanceof StringConstant) {
-      return new SymConst(((StringConstant) value).getValue());
+      return new SymStringConst(((StringConstant) value).getValue());
     }
     if (value instanceof NullConstant) {
       return new SymConst(null);

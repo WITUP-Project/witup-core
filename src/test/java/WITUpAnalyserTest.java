@@ -11,13 +11,19 @@ import br.unb.cic.witup.solver.SolverInvoker;
 import br.unb.cic.witup.solver.SolverSerialiser;
 import br.unb.cic.witup.sootup.SootUpAnalyser;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 
@@ -34,6 +40,7 @@ public class WITUpAnalyserTest {
     sootUpAnalyser = new SootUpAnalyser();
   }
 
+//  @Disabled
   @Test
   public void buildSootUpPropertyGraphs() {
     HashMap<String, SootUpPropertyGraphs> sootupGraphs =
@@ -41,9 +48,10 @@ public class WITUpAnalyserTest {
             testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
 
     assertNotNull(sootupGraphs);
-    assertEquals(3, sootupGraphs.size());
+    assertEquals(4, sootupGraphs.size());
   }
 
+//  @Disabled
   @Test
   public void invalidField() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -97,6 +105,7 @@ public class WITUpAnalyserTest {
     }
   }
 
+//  @Disabled
   @Test
   public void invalidParameter() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -152,6 +161,7 @@ public class WITUpAnalyserTest {
     }
   }
 
+//  @Disabled
   @Test
   public void invalidParameterConjunction() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -199,6 +209,66 @@ public class WITUpAnalyserTest {
             .resolve("src/main/solver/solver.py")
             .toAbsolutePath()
             .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String resp = si.callSolver(request);
+      System.out.println(resp);
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void invalidString() {
+    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
+            sootUpAnalyser.analyseThrowingMethods(
+                    testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
+
+    System.out.println(sootUpPropertyGraphs);
+
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Math: boolean invalidString(java.lang.String)>";
+    SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = invalidString.getCPG();
+
+    System.out.println(sootUpCPG);
+    String dot = sootUpCPG.toDotGraph();
+
+    try {
+      Graphviz.fromString(dot)
+              .render(Format.SVG)
+              .toFile(new File("invalid-string-cpg.svg"));
+    } catch (IOException e) {
+        throw new RuntimeException(e);
+    }
+
+    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
+
+    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+
+    PropertyGraph sootUpCFG = invalidString.getCFG();
+    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
+
+    List<List<ThrowCondition>> throwConditionsPaths =
+            WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+
+    PropertyGraph sootUpDDG = invalidString.getDDG();
+    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+
+    Resolver resolver = new Resolver(witUpDDG);
+
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
+            resolver.resolveConditionPaths(throwConditionsPaths);
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    System.out.println(request);
+
+    String pythonScript =
+            Paths.get(System.getProperty("user.dir"))
+                    .resolve("src/main/solver/solver.py")
+                    .toAbsolutePath()
+                    .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String resp = si.callSolver(request);
