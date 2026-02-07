@@ -5,10 +5,9 @@ import br.unb.cic.witup.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.SimpleNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.Local;
@@ -30,9 +29,14 @@ import sootup.core.types.PrimitiveType.BooleanType;
 
 public final class Resolver {
   private final WITUpGraph ddg;
+  private final Map<String, SymKind> symbolTable = new HashMap<>();
 
   public Resolver(final WITUpGraph ddg) {
     this.ddg = ddg;
+  }
+
+  public Map<String, SymKind> getSymbolTable() {
+    return symbolTable;
   }
 
   public List<ResolvedThrowCondition> resolveConditionPath(
@@ -90,6 +94,7 @@ public final class Resolver {
 
     resolved = simplifyCmpPatterns(resolved);
     resolved = stripBooleanEncoding(resolved);
+    collectSymbolKinds(resolved, this.symbolTable);
 
     return resolved;
   }
@@ -148,6 +153,26 @@ public final class Resolver {
       collectVariables(((SymBinOp) expr).getRight(), vars);
     } else if (expr instanceof SymField) {
       collectVariables(((SymField) expr).getBase(), vars);
+    }
+  }
+
+  private static Map<String, SymKind> findSymbolKinds(final SymExpr expr) {
+    Map<String, SymKind> symbolTypes = new HashMap<>();
+    collectSymbolKinds(expr, symbolTypes);
+    return symbolTypes;
+  }
+
+  private static void collectSymbolKinds(SymExpr expr, Map<String, SymKind> symbolTypes) {
+    if (expr instanceof SymVar v) {
+      symbolTypes.put(v.getName(), v.kind());
+    } else if (expr instanceof SymBinOp bin) {
+      collectSymbolKinds(bin.getLeft(), symbolTypes);
+      collectSymbolKinds(bin.getRight(), symbolTypes);
+    } else if (expr instanceof SymField f) {
+      collectSymbolKinds(f.getBase(), symbolTypes);
+    } else if (expr instanceof SymVirtualInvoke inv) {
+      collectSymbolKinds(inv.getBase(), symbolTypes);
+      symbolTypes.put(inv.toString(), inv.kind());
     }
   }
 

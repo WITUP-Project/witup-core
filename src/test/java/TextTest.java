@@ -1,5 +1,6 @@
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.Resolver;
+import br.unb.cic.witup.analysis.SymKind;
 import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.WITUpNode;
@@ -21,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -210,6 +212,8 @@ public class TextTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
             resolver.resolveConditionPaths(throwConditionsPaths);
+
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
