@@ -99,14 +99,14 @@ def check_feasibility(z3_constraints):
 
 def normalise_java_expr(expr: str, var_mapping):
     """
-    Replace 'this.var' with 'this_var' so sympy/Z3 can handle it.
+    Replace 's.abc' with 's_abcr' so sympy/Z3 can handle it.
     Creates a local mapping of all normalised variables and updates the global
     mapping
     """
     local_mapping = {}
     def replacer(match):
         original = match.group(0)
-        normalised = f"this_{match.group(1)}"
+        normalised = f"varmap_{match.group(1)}"
         local_mapping[normalised] = original
         return normalised
 
