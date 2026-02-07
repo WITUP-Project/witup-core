@@ -226,10 +226,9 @@ def main():
                     expr = build_string_constraint(normalised, c["truthValue"])
                     z3_exprs.append(expr)
 
-                elif kind == "BOOLEAN":
-                    # booleans too
+                elif kind == "BOOLEAN_METHOD":
                     expr = z3.Bool(normalised)
-                    if c["truthValue"]: # need to check if Jimple will always produce flipped checks
+                    if not c["truthValue"]:
                         expr = z3.Not(expr)
                     z3_exprs.append(expr)
 

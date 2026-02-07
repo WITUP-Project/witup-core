@@ -36,6 +36,6 @@ public final class SymVirtualInvoke extends SymExpr {
 
   @Override
   public SymKind kind() {
-    return returnsBoolean ? SymKind.BOOLEAN : SymKind.OTHER;
+    return returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER;
   }
 }

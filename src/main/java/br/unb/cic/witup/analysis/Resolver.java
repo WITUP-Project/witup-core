@@ -44,8 +44,14 @@ public final class Resolver {
     List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
     for (ThrowCondition throwCondition : throwConditionsPath) {
       SymExpr resolved = resolveThrowCondition(throwCondition.getNode());
+      boolean truthValue = throwCondition.getTruthValue();
+
+      if (resolved.kind() == SymKind.BOOLEAN_METHOD) {
+        truthValue = !truthValue;
+      }
+
       resolvedThrowConditions.add(
-          new ResolvedThrowCondition(resolved, throwCondition.getTruthValue()));
+          new ResolvedThrowCondition(resolved, truthValue));
     }
     return resolvedThrowConditions;
   }
@@ -67,7 +73,7 @@ public final class Resolver {
 
     if (right instanceof SymConst c &&
         Integer.valueOf(0).equals(c.getValue()) &&
-            left.kind() == SymKind.BOOLEAN) {
+            left.kind() == SymKind.BOOLEAN_METHOD) {
 
       return left;
     }
