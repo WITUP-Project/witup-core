@@ -19,22 +19,7 @@ import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
 import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
-import sootup.core.jimple.common.expr.AbstractBinopExpr;
-import sootup.core.jimple.common.expr.AbstractConditionExpr;
-import sootup.core.jimple.common.expr.JAddExpr;
-import sootup.core.jimple.common.expr.JCmpExpr;
-import sootup.core.jimple.common.expr.JCmpgExpr;
-import sootup.core.jimple.common.expr.JCmplExpr;
-import sootup.core.jimple.common.expr.JDivExpr;
-import sootup.core.jimple.common.expr.JEqExpr;
-import sootup.core.jimple.common.expr.JGeExpr;
-import sootup.core.jimple.common.expr.JGtExpr;
-import sootup.core.jimple.common.expr.JLeExpr;
-import sootup.core.jimple.common.expr.JLtExpr;
-import sootup.core.jimple.common.expr.JMulExpr;
-import sootup.core.jimple.common.expr.JNeExpr;
-import sootup.core.jimple.common.expr.JRemExpr;
-import sootup.core.jimple.common.expr.JSubExpr;
+import sootup.core.jimple.common.expr.*;
 import sootup.core.jimple.common.ref.JFieldRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
@@ -327,6 +312,13 @@ public final class Resolver {
       SymExpr right = valueToSymExpr(binExpr.getOp2());
       BinOp op = jimpleBinopToBinOp(binExpr);
       return new SymBinOp(op, left, right);
+    }
+
+    if (value instanceof JVirtualInvokeExpr) {
+      JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) value;
+      SymExpr base = valueToSymExpr(invokeExpr.getBase());
+      String invokedMethodName = invokeExpr.getMethodSignature().getSubSignature().getName();
+      return new SymVirtualInvoke(base, invokedMethodName);
     }
 
     // Fallback: treat as symbolic variable

@@ -110,7 +110,7 @@ def normalise_java_expr(expr: str, var_mapping):
         local_mapping[normalised] = original
         return normalised
 
-    normalised_expr = re.sub(r"\bthis\.([a-zA-Z_][a-zA-Z0-9_]*)\b", replacer, expr)
+    normalised_expr = re.sub(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\b", replacer, expr)
     var_mapping.update(local_mapping)
     return normalised_expr
 

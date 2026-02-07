@@ -7,4 +7,11 @@ public class Text {
     }
     return true;
   }
+
+  public boolean invalidStringLength(String s) {
+    if (s.length() == 0) {
+      throw new RuntimeException("Invalid string length");
+    }
+    return true;
+  }
 }

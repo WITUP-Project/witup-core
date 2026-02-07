@@ -42,7 +42,7 @@ public class TextTest {
                     testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
     assertNotNull(sootupGraphs);
-    assertEquals(1, sootupGraphs.size());
+    assertEquals(2, sootupGraphs.size());
   }
 
   @Test
@@ -65,6 +65,66 @@ public class TextTest {
       Graphviz.fromString(dot)
               .render(Format.SVG)
               .toFile(new File("invalid-string-cpg.svg"));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
+
+    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+
+    PropertyGraph sootUpCFG = invalidString.getCFG();
+    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
+
+    List<List<ThrowCondition>> throwConditionsPaths =
+            WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+
+    PropertyGraph sootUpDDG = invalidString.getDDG();
+    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+
+    Resolver resolver = new Resolver(witUpDDG);
+
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
+            resolver.resolveConditionPaths(throwConditionsPaths);
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    System.out.println(request);
+
+    String pythonScript =
+            Paths.get(System.getProperty("user.dir"))
+                    .resolve("src/main/solver/solver.py")
+                    .toAbsolutePath()
+                    .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String resp = si.callSolver(request);
+      System.out.println(resp);
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void invalidStringLength() {
+    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
+            sootUpAnalyser.analyseThrowingMethods(
+                    testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
+
+    System.out.println(sootUpPropertyGraphs);
+
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
+    SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = invalidString.getCPG();
+
+    System.out.println(sootUpCPG);
+    String dot = sootUpCPG.toDotGraph();
+
+    try {
+      Graphviz.fromString(dot)
+              .render(Format.SVG)
+              .toFile(new File("invalid-string-length-cpg.svg"));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
