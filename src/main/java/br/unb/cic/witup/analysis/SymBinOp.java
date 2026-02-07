@@ -28,6 +28,10 @@ public final class SymBinOp extends SymExpr {
     SymExpr newLeft = left.substitute(varName, replacement);
     SymExpr newRight = right.substitute(varName, replacement);
 
+    // when the SymExpr is SymVirtualInvoke that returns boolean, we need to do differently
+    // $stack2 == 0 because the virtual invoke is s.isEmpty(), instead of is.Empty() == 0
+    // I want isEmpty() true or false
+    // newLeft would be isEmpty(), but what about the condition?
     if (newLeft != left || newRight != right) {
       return new SymBinOp(op, newLeft, newRight);
     }
@@ -60,5 +64,10 @@ public final class SymBinOp extends SymExpr {
   public int hashCode() {
     final int prime = 31;
     return prime * (prime * op.hashCode() + left.hashCode()) + right.hashCode();
+  }
+
+  @Override
+  public SymKind kind() {
+    return SymKind.OTHER;
   }
 }

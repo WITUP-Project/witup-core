@@ -25,4 +25,9 @@ public final class SymStringConst extends SymExpr {
   public String toString() {
     return "'" + value + "'";
   }
+
+  @Override
+  public SymKind kind() {
+    return SymKind.OTHER;
+  }
 }

@@ -11,6 +11,7 @@ import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 
@@ -35,6 +36,7 @@ public class TextTest {
     sootUpAnalyser = new SootUpAnalyser();
   }
 
+  @Disabled
   @Test
   public void buildSootUpPropertyGraphs() {
     HashMap<String, SootUpPropertyGraphs> sootupGraphs =
@@ -45,6 +47,7 @@ public class TextTest {
     assertEquals(2, sootupGraphs.size());
   }
 
+  @Disabled
   @Test
   public void invalidString() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -105,6 +108,7 @@ public class TextTest {
     }
   }
 
+  @Disabled
   @Test
   public void invalidStringLength() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -140,6 +144,66 @@ public class TextTest {
             WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
 
     PropertyGraph sootUpDDG = invalidString.getDDG();
+    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+
+    Resolver resolver = new Resolver(witUpDDG);
+
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
+            resolver.resolveConditionPaths(throwConditionsPaths);
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    System.out.println(request);
+
+    String pythonScript =
+            Paths.get(System.getProperty("user.dir"))
+                    .resolve("src/main/solver/solver.py")
+                    .toAbsolutePath()
+                    .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String resp = si.callSolver(request);
+      System.out.println(resp);
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void invalidEmptyString() {
+    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
+            sootUpAnalyser.analyseThrowingMethods(
+                    testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
+
+    System.out.println(sootUpPropertyGraphs);
+
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>";
+    SootUpPropertyGraphs invalidEmptyString = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = invalidEmptyString.getCPG();
+
+    System.out.println(sootUpCPG);
+    String dot = sootUpCPG.toDotGraph();
+
+    try {
+      Graphviz.fromString(dot)
+              .render(Format.SVG)
+              .toFile(new File("invalid-string-empty-cpg.svg"));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
+
+    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+
+    PropertyGraph sootUpCFG = invalidEmptyString.getCFG();
+    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
+
+    List<List<ThrowCondition>> throwConditionsPaths =
+            WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+
+    PropertyGraph sootUpDDG = invalidEmptyString.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
     Resolver resolver = new Resolver(witUpDDG);

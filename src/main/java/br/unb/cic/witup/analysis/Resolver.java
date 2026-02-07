@@ -25,6 +25,8 @@ import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
+import sootup.core.types.PrimitiveType.BooleanType;
+
 
 public final class Resolver {
   private final WITUpGraph ddg;
@@ -53,6 +55,22 @@ public final class Resolver {
     return resolvedThrowConditions;
   }
 
+  private static SymExpr stripBooleanEncoding(SymExpr expr) {
+    if (!(expr instanceof SymBinOp bin)) return expr;
+
+    SymExpr left = bin.getLeft();
+    SymExpr right = bin.getRight();
+
+    if (right instanceof SymConst c &&
+        Integer.valueOf(0).equals(c.getValue()) &&
+            left.kind() == SymKind.BOOLEAN) {
+
+      return left;
+    }
+
+    return expr;
+  }
+
   /**
    * Starting from a condition node (e.g. $stack2 >= 0), walk backward through the DDG and build a
    * symbolic expression by substituting the locals.
@@ -71,6 +89,7 @@ public final class Resolver {
     SymExpr resolved = resolveVariables(condition, varsToResolve, ifNode, ddg, new HashSet<>());
 
     resolved = simplifyCmpPatterns(resolved);
+    resolved = stripBooleanEncoding(resolved);
 
     return resolved;
   }
@@ -115,7 +134,6 @@ public final class Resolver {
     return expr;
   }
 
-  /** Find all variable names in an expression */
   private static Set<String> findVariables(final SymExpr expr) {
     Set<String> vars = new HashSet<>();
     collectVariables(expr, vars);
@@ -135,10 +153,7 @@ public final class Resolver {
 
   /** Get variable name from a Value (for assignment LHS) */
   private static String getVariableName(final Value value) {
-    if (value instanceof Local) {
-      return value.toString();
-    }
-    return value.toString(); // Fallback
+    return value.toString();
   }
 
   /** Map Jimple comparison operators to BinOp */
@@ -193,32 +208,30 @@ public final class Resolver {
     throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
   }
 
-  /** Resolve variables by traversing backward through DDG */
+  /** Resolve variables by traversing backward through DDG
+   * recursely substitue until there are no more variables to resolve
+   *  */
   // it's ok to reassign current in a recursive function
   private static SymExpr resolveVariables(
-      SymExpr current, // SUPPRESS CHECKSTYLE FinalParameters
+      SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
       final Set<String> varsToResolve,
       final WITUpNode currentNode,
       final WITUpGraph graph,
       final Set<WITUpNode> visited) {
     if (varsToResolve.isEmpty()) {
-      return current; // All resolved!
+      return symExpr;
     }
 
     if (visited.contains(currentNode)) {
-      return current; // Avoid cycles
+      return symExpr;
     }
     visited.add(currentNode);
 
-    // Find incoming data dependency edges
     List<DataDependencyEdge> incomingDDG = getIncomingDDGEdges(currentNode, graph);
-
     for (DataDependencyEdge edge : incomingDDG) {
       WITUpNode sourceNode = graph.getEdgeSource(edge);
 
-      // Check if this node defines any variable we need
-      if (sourceNode instanceof SimpleNode) {
-        SimpleNode simpleNode = (SimpleNode) sourceNode;
+      if (sourceNode instanceof SimpleNode simpleNode) {
         PropertyGraphNode propNode = simpleNode.getNode();
 
         if (!(propNode instanceof StmtGraphNode)) {
@@ -231,32 +244,25 @@ public final class Resolver {
         if (stmt instanceof JAssignStmt) {
           JAssignStmt assign = (JAssignStmt) stmt;
           Value leftOp = assign.getLeftOp();
-
-          // Get the variable name being defined
+          // local variable on the lhs e.g. $stack1 == 0
           String definedVar = getVariableName(leftOp);
 
-          // If this is a variable we need to resolve
           if (varsToResolve.contains(definedVar)) {
-            // Translate the RHS to symbolic expression
-            SymExpr rhsExpr = valueToSymExpr(assign.getRightOp());
+            // translate the RHS to symbolic expression
+            SymExpr rhsSymExpr = valueToSymExpr(assign.getRightOp());
 
-            // Substitute this variable in our current expression
-            current = current.substitute(definedVar, rhsExpr);
+            // substitute this variable in our current expression
+            symExpr = symExpr.substitute(definedVar, rhsSymExpr);
 
-            // Remove from vars to resolve
             varsToResolve.remove(definedVar);
-
-            // Add any new variables introduced by RHS
-            varsToResolve.addAll(findVariables(rhsExpr));
-
-            // Continue resolving from this node
-            current = resolveVariables(current, varsToResolve, sourceNode, graph, visited);
+            varsToResolve.addAll(findVariables(rhsSymExpr));
+            symExpr = resolveVariables(symExpr, varsToResolve, sourceNode, graph, visited);
           }
         }
       }
     }
 
-    return current;
+    return symExpr;
   }
 
   /** Convert a Jimple Value to SymExpr */
@@ -318,7 +324,11 @@ public final class Resolver {
       JVirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) value;
       SymExpr base = valueToSymExpr(invokeExpr.getBase());
       String invokedMethodName = invokeExpr.getMethodSignature().getSubSignature().getName();
-      return new SymVirtualInvoke(base, invokedMethodName);
+      boolean returnsBoolean =
+              invokeExpr.getMethodSignature().getSubSignature().getType()
+                      instanceof BooleanType;
+
+      return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
     }
 
     // Fallback: treat as symbolic variable

@@ -7,4 +7,7 @@ public abstract class SymExpr {
   public abstract String toString();
 
   public abstract boolean contains(String varName);
+
+  // not sure if this is good practice
+  public abstract SymKind kind();
 }

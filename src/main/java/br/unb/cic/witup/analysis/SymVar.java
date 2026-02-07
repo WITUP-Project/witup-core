@@ -45,4 +45,9 @@ public final class SymVar extends SymExpr {
   public int hashCode() {
     return name.hashCode();
   }
+
+  @Override
+  public SymKind kind() {
+    return SymKind.OTHER;
+  }
 }

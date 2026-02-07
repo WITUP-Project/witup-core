@@ -14,4 +14,11 @@ public class Text {
     }
     return true;
   }
+
+  public boolean invalidEmptyString(String s) {
+    if (s.isEmpty()) {
+      throw new RuntimeException("Invalid string length");
+    }
+    return true;
+  }
 }

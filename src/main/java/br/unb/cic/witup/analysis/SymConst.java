@@ -44,4 +44,9 @@ public final class SymConst extends SymExpr {
   public int hashCode() {
     return value.hashCode();
   }
+
+  @Override
+  public SymKind kind() {
+    return SymKind.OTHER;
+  }
 }
