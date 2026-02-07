@@ -3,6 +3,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.Resolver;
+import br.unb.cic.witup.analysis.SymKind;
 import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
@@ -18,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
@@ -50,7 +52,6 @@ public class MathTest {
     assertEquals(3, sootupGraphs.size());
   }
 
-//  @Disabled
   @Test
   public void invalidField() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -85,9 +86,10 @@ public class MathTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
         resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -104,7 +106,6 @@ public class MathTest {
     }
   }
 
-//  @Disabled
   @Test
   public void invalidParameter() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -141,9 +142,11 @@ public class MathTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
         resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
+
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -160,7 +163,6 @@ public class MathTest {
     }
   }
 
-//  @Disabled
   @Test
   public void invalidParameterConjunction() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -198,9 +200,10 @@ public class MathTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
         resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =

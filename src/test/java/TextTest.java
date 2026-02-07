@@ -38,7 +38,6 @@ public class TextTest {
     sootUpAnalyser = new SootUpAnalyser();
   }
 
-  @Disabled
   @Test
   public void buildSootUpPropertyGraphs() {
     HashMap<String, SootUpPropertyGraphs> sootupGraphs =
@@ -46,10 +45,9 @@ public class TextTest {
                     testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
     assertNotNull(sootupGraphs);
-    assertEquals(2, sootupGraphs.size());
+    assertEquals(3, sootupGraphs.size());
   }
 
-  @Disabled
   @Test
   public void invalidString() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -91,9 +89,10 @@ public class TextTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
             resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -110,7 +109,6 @@ public class TextTest {
     }
   }
 
-  @Disabled
   @Test
   public void invalidStringLength() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -152,9 +150,11 @@ public class TextTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
             resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
+
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -216,7 +216,7 @@ public class TextTest {
     Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
