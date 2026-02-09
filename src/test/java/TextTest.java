@@ -5,9 +5,12 @@ import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.solver.SolverInvoker;
+import br.unb.cic.witup.solver.SolverResponse;
+import br.unb.cic.witup.solver.SolverResponseAssertions;
 import br.unb.cic.witup.solver.SolverSerialiser;
 import br.unb.cic.witup.sootup.SootUpAnalyser;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import org.json.JSONObject;
@@ -24,8 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TextTest {
   private Path testClassesDir;
@@ -226,8 +228,22 @@ public class TextTest {
                     .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
-      String resp = si.callSolver(request);
-      System.out.println(resp);
+      String jsonString = si.callSolver(request);
+      System.out.println("+==================");
+      System.out.println(jsonString);
+      System.out.println("+==================");
+      ObjectMapper mapper = new ObjectMapper();
+
+      SolverResponse response =
+              mapper.readValue(jsonString, SolverResponse.class);
+
+      SolverResponse.SolverPathResult p0 =
+              SolverResponseAssertions.path(response, methodSignature + "#0");
+
+      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+
+      boolean truthValue = SolverResponseAssertions.booleanValue(p0, "s.isEmpty");
+      assertTrue(truthValue, "Expected s.isEmpty to be true");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }

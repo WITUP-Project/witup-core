@@ -2,57 +2,75 @@ package br.unb.cic.witup.solver;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public final class SolverResponse {
+  private final List<SolverPathResult> paths;
 
-  public static final class PathResult {
+  public enum Status {
+    SAT, UNSAT, UNKNOWN, ERROR
+  }
+
+  @JsonCreator
+  public SolverResponse(@JsonProperty("paths") List<SolverPathResult> paths) {
+    this.paths = paths;
+  }
+
+  public List<SolverPathResult> getPaths() {
+    return paths;
+  }
+
+  public static final class SolverPathResult {
     private final String pathId;
-    private final boolean isSat;
-    private final List<Solution> solutions;
+    private final Status status;
+    private final List<SolverPathSolution> solverPathSolutions;
 
-    public PathResult(final String pathId, final boolean isSat, final List<Solution> solutions) {
+    @JsonCreator
+    public SolverPathResult(
+            @JsonProperty("pathId") String pathId,
+            @JsonProperty("status") Status status,
+            @JsonProperty("solutions") List<SolverPathSolution> solverPathSolutions) {
       this.pathId = pathId;
-      this.isSat = isSat;
-      this.solutions = solutions;
+      this.status = status;
+      this.solverPathSolutions = solverPathSolutions;
     }
 
     public String getPathId() {
       return pathId;
     }
 
-    public boolean isSat() {
-      return isSat;
+    public Status getStatus() {
+      return status;
     }
 
-    public List<Solution> getSolutions() {
-      return solutions;
+    public boolean isSat() {
+      return status == Status.SAT;
+    }
+
+    public List<SolverPathSolution> getSolutions() {
+      return solverPathSolutions;
     }
   }
 
-  public static final class Solution {
-    private final String variable;
+  public static final class SolverPathSolution {
+    private final String symbol;
     private final String value;
 
-    public Solution(final String variable, final String value) {
-      this.variable = variable;
+    @JsonCreator
+    public SolverPathSolution(
+            @JsonProperty("symbol") String symbol,
+            @JsonProperty("value") String value) {
+      this.symbol = symbol;
       this.value = value;
     }
 
-    public String getVariable() {
-      return variable;
+    public String getSymbol() {
+      return symbol;
     }
 
     public String getValue() {
       return value;
     }
-  }
-
-  private final List<PathResult> results;
-
-  public SolverResponse(final List<PathResult> results) {
-    this.results = results;
-  }
-
-  public List<PathResult> getResults() {
-    return results;
   }
 }
