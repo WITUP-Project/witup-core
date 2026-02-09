@@ -54,4 +54,9 @@ public final class SymField extends SymExpr {
     final int prime = 31;
     return prime * base.hashCode() + fieldName.hashCode();
   }
+
+  @Override
+  public SymKind kind() {
+    return SymKind.OTHER;
+  }
 }

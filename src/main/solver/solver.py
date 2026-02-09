@@ -26,6 +26,7 @@ class SolverPath(TypedDict):
 
 class SolverRequest(TypedDict):
     paths: List[SolverPath]
+    symbolKinds: dict
 
 class SolverPathResult(TypedDict):
     pathId: str
@@ -95,22 +96,31 @@ def check_feasibility(z3_constraints):
     else:
         return {"isSat": "unknown", "solutions": []}
 
-
+def normalise_java_name(expr: str) -> str:
+    return re.sub(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\b",
+                  lambda m: f"{m.group(1)}_{m.group(2)}", expr)
 
 def normalise_java_expr(expr: str, var_mapping):
     """
-    Replace 'this.var' with 'this_var' so sympy/Z3 can handle it.
+    Replace 's.abc' with 's_abcr' so sympy/Z3 can handle it.
     Creates a local mapping of all normalised variables and updates the global
     mapping
     """
     local_mapping = {}
     def replacer(match):
         original = match.group(0)
-        normalised = f"this_{match.group(1)}"
+        obj = match.group(1)
+        attr = match.group(2)
+        normalised = f"{obj}_{attr}"
         local_mapping[normalised] = original
         return normalised
 
-    normalised_expr = re.sub(r"\bthis\.([a-zA-Z_][a-zA-Z0-9_]*)\b", replacer, expr)
+    normalised_expr = re.sub(
+        r"\b([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\b",
+        replacer,
+        expr
+    )
+
     var_mapping.update(local_mapping)
     return normalised_expr
 
@@ -131,7 +141,16 @@ def extract_symbols(expr: str) -> set[str]:
     return set(re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", expr))
 
 
-def build_numeric_constraint(expr_str: str, truth_value: bool):
+def build_numeric_constraint(expr_str: str, truth_value: bool, symbol_kinds):
+    match = re.fullmatch(r"(\w+)\s*(==|!=)\s*0", expr_str)
+    if match:
+        var_name, op = match.groups()
+        if symbol_kinds.get(var_name) == "BOOLEAN":
+            sym = Symbol(var_name, bool=True)
+            # booleans: is_Empty == 0 -> Not(is_Empty), is_Empty != 0 -> is_Empty
+            # expr = Symbol(var_name, bool=True)
+            expr = Not(sym) if (op == "==" and truth_value) else sym
+            return expr if truth_value else Not(expr)
     parsed = parse_expr(expr_str, evaluate=False)
     expr = parsed if truth_value else Not(parsed)
     return expr
@@ -161,18 +180,18 @@ def contains_string_literal(expr_str: str) -> bool:
     return "'" in expr_str or '"' in expr_str
 
 
-def build_constraint(expr_str: str, truth_value: bool):
-    if contains_string_literal(expr_str):
-        return build_string_constraint(expr_str, truth_value)
-    else:
-        return build_numeric_constraint(expr_str, truth_value)
+# def build_constraint(expr_str: str, truth_value: bool):
+#     if contains_string_literal(expr_str):
+#         return build_string_constraint(expr_str, truth_value)
+#     else:
+#         return build_numeric_constraint(expr_str, truth_value)
 
 
 def main():
     try:
         raw = sys.stdin.read()
         request: SolverRequest = json.loads(raw)
-        # request = {"paths":[{"pathId":"<br.unb.cic.witup.samples.Math: double circleArea()>#0","conditions":[{"condition":"(this.radius >= 0.0)","truthValue":False}]}]}
+        # request = {"paths":[{"pathId":"<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>#0","conditions":[{"condition":"s.isEmpty","truthValue":False}]}],"symbolKinds":{"s":"OTHER","s.isEmpty":"BOOLEAN"}}
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON request: {e}")
         sys.exit(1)
@@ -181,7 +200,13 @@ def main():
     logger.info(f"Received {len(paths)} paths for solving")
 
     symbol_table = {}
+    symbol_kinds: dict = request.get("symbolKinds", {})
     response: SolverResponse = {"paths": []}
+    normalised_symbol_kinds: dict = {}
+
+    for name, kind in symbol_kinds.items():
+        normal_name = normalise_java_name(name)
+        normalised_symbol_kinds[normal_name] = kind
 
     for path in paths:
         path_id = path.get("pathId", "<unknown>")
@@ -194,24 +219,25 @@ def main():
         try:
             for c in conditions:
                 normalised = normalise_java_expr(c["condition"], var_mapping)
+                kind = normalised_symbol_kinds.get(normalised)
 
                 if contains_string_literal(normalised):
+                    # strings skip sympy
                     expr = build_string_constraint(normalised, c["truthValue"])
-                else:
-                    expr = build_numeric_constraint(normalised, c["truthValue"])
-                    # track symbols
-                    for name in extract_symbols(normalised):
-                        if name not in symbol_table:
-                            symbol_table[name] = Symbol(name)
-
-                # Need to separate flows out here as sympy can't handle strings
-                if isinstance(expr, z3.ExprRef):
                     z3_exprs.append(expr)
+
+                elif kind == "BOOLEAN_METHOD":
+                    expr = z3.Bool(normalised)
+                    if not c["truthValue"]:
+                        expr = z3.Not(expr)
+                    z3_exprs.append(expr)
+
                 else:
+                    expr = build_numeric_constraint(normalised, c["truthValue"], normalised_symbol_kinds)
+                    sympy_exprs.append(expr)
                     for name in extract_symbols(normalised):
                         if name not in symbol_table:
                             symbol_table[name] = Symbol(name)
-                    sympy_exprs.append(expr)
 
             if sympy_exprs:
                 combined_numeric_expr = And(*sympy_exprs)
@@ -235,7 +261,6 @@ def main():
             **result
         })
 
-    # Only JSON to stdout
     print(json.dumps(response))
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.Resolver;
+import br.unb.cic.witup.analysis.SymKind;
 import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
@@ -18,18 +19,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 
 // For now this is our basic test runner that will do an e2e run of sorts. We
 // will need to break this up soon
-public class WITUpAnalyserTest {
+public class MathTest {
   private Path testClassesDir;
   private SootUpAnalyser sootUpAnalyser;
 
@@ -48,10 +49,9 @@ public class WITUpAnalyserTest {
             testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
 
     assertNotNull(sootupGraphs);
-    assertEquals(4, sootupGraphs.size());
+    assertEquals(3, sootupGraphs.size());
   }
 
-//  @Disabled
   @Test
   public void invalidField() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -86,9 +86,10 @@ public class WITUpAnalyserTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
         resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -105,7 +106,6 @@ public class WITUpAnalyserTest {
     }
   }
 
-//  @Disabled
   @Test
   public void invalidParameter() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -142,9 +142,11 @@ public class WITUpAnalyserTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
         resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
+
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -161,7 +163,6 @@ public class WITUpAnalyserTest {
     }
   }
 
-//  @Disabled
   @Test
   public void invalidParameterConjunction() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
@@ -199,9 +200,10 @@ public class WITUpAnalyserTest {
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
         resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -209,66 +211,6 @@ public class WITUpAnalyserTest {
             .resolve("src/main/solver/solver.py")
             .toAbsolutePath()
             .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String resp = si.callSolver(request);
-      System.out.println(resp);
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @Test
-  public void invalidString() {
-    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
-
-    System.out.println(sootUpPropertyGraphs);
-
-    String methodSignature =
-            "<br.unb.cic.witup.samples.Math: boolean invalidString(java.lang.String)>";
-    SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
-    PropertyGraph sootUpCPG = invalidString.getCPG();
-
-    System.out.println(sootUpCPG);
-    String dot = sootUpCPG.toDotGraph();
-
-    try {
-      Graphviz.fromString(dot)
-              .render(Format.SVG)
-              .toFile(new File("invalid-string-cpg.svg"));
-    } catch (IOException e) {
-        throw new RuntimeException(e);
-    }
-
-    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
-
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
-
-    PropertyGraph sootUpCFG = invalidString.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
-    List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
-
-    PropertyGraph sootUpDDG = invalidString.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
-
-    Resolver resolver = new Resolver(witUpDDG);
-
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(throwConditionsPaths);
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths);
-    System.out.println(request);
-
-    String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String resp = si.callSolver(request);

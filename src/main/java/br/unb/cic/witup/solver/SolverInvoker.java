@@ -19,7 +19,7 @@ public final class SolverInvoker {
    * JSON response is returned as a string.
    */
   public String callSolver(final JSONObject request) throws IOException, InterruptedException {
-    ProcessBuilder pb = new ProcessBuilder("python3", pythonScriptPath);
+    ProcessBuilder pb = new ProcessBuilder("/home/adriano/.pyenv/versions/symsolver/bin/python", pythonScriptPath);
     // redirect stderr
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
