@@ -5,9 +5,12 @@ import br.unb.cic.witup.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.SimpleNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
-
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.Local;
@@ -18,7 +21,23 @@ import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
 import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
-import sootup.core.jimple.common.expr.*;
+import sootup.core.jimple.common.expr.AbstractBinopExpr;
+import sootup.core.jimple.common.expr.AbstractConditionExpr;
+import sootup.core.jimple.common.expr.JAddExpr;
+import sootup.core.jimple.common.expr.JCmpExpr;
+import sootup.core.jimple.common.expr.JCmpgExpr;
+import sootup.core.jimple.common.expr.JCmplExpr;
+import sootup.core.jimple.common.expr.JDivExpr;
+import sootup.core.jimple.common.expr.JEqExpr;
+import sootup.core.jimple.common.expr.JGeExpr;
+import sootup.core.jimple.common.expr.JGtExpr;
+import sootup.core.jimple.common.expr.JLeExpr;
+import sootup.core.jimple.common.expr.JLtExpr;
+import sootup.core.jimple.common.expr.JMulExpr;
+import sootup.core.jimple.common.expr.JNeExpr;
+import sootup.core.jimple.common.expr.JRemExpr;
+import sootup.core.jimple.common.expr.JSubExpr;
+import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.ref.JFieldRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
@@ -26,36 +45,22 @@ import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.types.PrimitiveType.BooleanType;
 
-
 public final class Resolver {
   private final WITUpGraph ddg;
-  private final Map<String, SymKind> symbolTable = new HashMap<>();
+  private final Map<String, SymKind> symbolKindTable;
+  private Set<String> variableSet;
 
   public Resolver(final WITUpGraph ddg) {
     this.ddg = ddg;
+    symbolKindTable = new HashMap<>();
+    variableSet = new HashSet<>();
   }
 
-  public Map<String, SymKind> getSymbolTable() {
-    return symbolTable;
+  public Map<String, SymKind> getSymbolKindTable() {
+    return symbolKindTable;
   }
 
-  public List<ResolvedThrowCondition> resolveConditionPath(
-      final List<ThrowCondition> throwConditionsPath) {
-    List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
-    for (ThrowCondition throwCondition : throwConditionsPath) {
-      SymExpr resolved = resolveThrowCondition(throwCondition.getNode());
-      boolean truthValue = throwCondition.getTruthValue();
-
-      if (resolved.kind() == SymKind.BOOLEAN_METHOD) {
-        truthValue = !truthValue;
-      }
-
-      resolvedThrowConditions.add(
-          new ResolvedThrowCondition(resolved, truthValue));
-    }
-    return resolvedThrowConditions;
-  }
-
+  // triggers the resolver to recursively trace stack variables back
   public List<List<ResolvedThrowCondition>> resolveConditionPaths(
       final List<List<ThrowCondition>> throwConditionsPaths) {
     List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
@@ -65,15 +70,37 @@ public final class Resolver {
     return resolvedThrowConditions;
   }
 
-  private static SymExpr stripBooleanEncoding(SymExpr expr) {
-    if (!(expr instanceof SymBinOp bin)) return expr;
+  public List<ResolvedThrowCondition> resolveConditionPath(
+      final List<ThrowCondition> throwConditionsPath) {
+
+    List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
+    for (ThrowCondition throwCondition : throwConditionsPath) {
+      SymExpr resolved = resolveThrowCondition(throwCondition.getNode());
+      boolean truthValue = throwCondition.getTruthValue();
+
+      if (resolved.kind() == SymKind.BOOLEAN_METHOD) {
+        truthValue = !truthValue;
+      }
+
+      resolvedThrowConditions.add(new ResolvedThrowCondition(resolved, truthValue));
+    }
+    return resolvedThrowConditions;
+  }
+
+  private static SymExpr stripBooleanEncoding(final SymExpr expr) {
+    if (!(expr instanceof SymBinOp bin)) {
+      return expr;
+    }
 
     SymExpr left = bin.getLeft();
     SymExpr right = bin.getRight();
 
-    if (right instanceof SymConst c &&
-        Integer.valueOf(0).equals(c.getValue()) &&
-            left.kind() == SymKind.BOOLEAN_METHOD) {
+    // when we have a Jimple comparison whose stack variable traces back to
+    // a method call, we don't need the equality; only the respective symbol
+    // and the truth value
+    if (right instanceof SymConst c
+        && Integer.valueOf(0).equals(c.getValue())
+        && left.kind() == SymKind.BOOLEAN_METHOD) {
 
       return left;
     }
@@ -93,19 +120,19 @@ public final class Resolver {
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
     SymExpr condition = valueToSymExpr(ifStmt.getCondition());
 
-    Set<String> varsToResolve = findVariables(condition);
+    variableSet = findVariables(condition);
 
     // traverse backward and substitute
-    SymExpr resolved = resolveVariables(condition, varsToResolve, ifNode, ddg, new HashSet<>());
+    SymExpr resolved = resolveVariables(condition, ifNode, new HashSet<>());
 
     resolved = simplifyCmpPatterns(resolved);
     resolved = stripBooleanEncoding(resolved);
-    collectSymbolKinds(resolved, this.symbolTable);
+    collectSymbolKinds(resolved);
 
     return resolved;
   }
 
-  /** Simplify patterns like (x cmpg y) >= 0 to x >= y */
+  // Simplify patterns like (x cmpg y) >= 0 to x >= y
   private static SymExpr simplifyCmpPatterns(final SymExpr expr) {
     if (!(expr instanceof SymBinOp binOp)) {
       return expr;
@@ -132,7 +159,6 @@ public final class Resolver {
         //     (x cmpg y) == 0 means x == y
         //     (x cmpg y) < 0 means x < y
         //     (x cmpg y) <= 0 means x <= y
-
         return new SymBinOp(binOp.getOp(), leftBinOp.getLeft(), leftBinOp.getRight());
       }
     }
@@ -145,49 +171,43 @@ public final class Resolver {
     return expr;
   }
 
-  private static Set<String> findVariables(final SymExpr expr) {
-    Set<String> vars = new HashSet<>();
-    collectVariables(expr, vars);
-    return vars;
+  // populates variableSet with all the variables that may need resolution
+  private Set<String> findVariables(final SymExpr expr) {
+    collectVariables(expr);
+    return variableSet;
   }
 
-  private static void collectVariables(final SymExpr expr, final Set<String> vars) {
+  private void collectVariables(final SymExpr expr) {
     if (expr instanceof SymVar) {
-      vars.add(((SymVar) expr).getName());
+      variableSet.add(((SymVar) expr).getName());
     } else if (expr instanceof SymBinOp) {
-      collectVariables(((SymBinOp) expr).getLeft(), vars);
-      collectVariables(((SymBinOp) expr).getRight(), vars);
+      collectVariables(((SymBinOp) expr).getLeft());
+      collectVariables(((SymBinOp) expr).getRight());
     } else if (expr instanceof SymField) {
-      collectVariables(((SymField) expr).getBase(), vars);
+      collectVariables(((SymField) expr).getBase());
     }
   }
 
-  private static Map<String, SymKind> findSymbolKinds(final SymExpr expr) {
-    Map<String, SymKind> symbolTypes = new HashMap<>();
-    collectSymbolKinds(expr, symbolTypes);
-    return symbolTypes;
-  }
-
-  private static void collectSymbolKinds(SymExpr expr, Map<String, SymKind> symbolTypes) {
+  // populates symbolKindTable
+  private void collectSymbolKinds(final SymExpr expr) {
     if (expr instanceof SymVar v) {
-      symbolTypes.put(v.getName(), v.kind());
+      symbolKindTable.put(v.getName(), v.kind());
     } else if (expr instanceof SymBinOp bin) {
-      collectSymbolKinds(bin.getLeft(), symbolTypes);
-      collectSymbolKinds(bin.getRight(), symbolTypes);
+      collectSymbolKinds(bin.getLeft());
+      collectSymbolKinds(bin.getRight());
     } else if (expr instanceof SymField f) {
-      collectSymbolKinds(f.getBase(), symbolTypes);
+      collectSymbolKinds(f.getBase());
     } else if (expr instanceof SymVirtualInvoke inv) {
-      collectSymbolKinds(inv.getBase(), symbolTypes);
-      symbolTypes.put(inv.toString(), inv.kind());
+      collectSymbolKinds(inv.getBase());
+      symbolKindTable.put(inv.toString(), inv.kind());
     }
   }
 
-  /** Get variable name from a Value (for assignment LHS) */
   private static String getVariableName(final Value value) {
     return value.toString();
   }
 
-  /** Map Jimple comparison operators to BinOp */
+  // Map Jimple comparison operators to BinOp //
   private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {
     if (expr instanceof JEqExpr) {
       return BinOp.EQ;
@@ -210,7 +230,7 @@ public final class Resolver {
     throw new IllegalArgumentException("Unknown condition expr: " + expr.getClass());
   }
 
-  /** Map Jimple binary operators to BinOp */
+  // Map Jimple binary operators to BinOp
   private static BinOp jimpleBinopToBinOp(final AbstractBinopExpr expr) {
     if (expr instanceof JAddExpr) {
       return BinOp.ADD;
@@ -239,17 +259,16 @@ public final class Resolver {
     throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
   }
 
-  /** Resolve variables by traversing backward through DDG
-   * recursely substitue until there are no more variables to resolve
-   *  */
+  /**
+   * Resolve variables by traversing backward through DDG recursely substitue until there are no
+   * more variables to resolve
+   */
   // it's ok to reassign current in a recursive function
-  private static SymExpr resolveVariables(
+  private SymExpr resolveVariables(
       SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
-      final Set<String> varsToResolve,
       final WITUpNode currentNode,
-      final WITUpGraph graph,
       final Set<WITUpNode> visited) {
-    if (varsToResolve.isEmpty()) {
+    if (variableSet.isEmpty()) {
       return symExpr;
     }
 
@@ -258,9 +277,9 @@ public final class Resolver {
     }
     visited.add(currentNode);
 
-    List<DataDependencyEdge> incomingDDG = getIncomingDDGEdges(currentNode, graph);
+    List<DataDependencyEdge> incomingDDG = getIncomingDDGEdges(currentNode, ddg);
     for (DataDependencyEdge edge : incomingDDG) {
-      WITUpNode sourceNode = graph.getEdgeSource(edge);
+      WITUpNode sourceNode = ddg.getEdgeSource(edge);
 
       if (sourceNode instanceof SimpleNode simpleNode) {
         PropertyGraphNode propNode = simpleNode.getNode();
@@ -278,16 +297,16 @@ public final class Resolver {
           // local variable on the lhs e.g. $stack1 == 0
           String definedVar = getVariableName(leftOp);
 
-          if (varsToResolve.contains(definedVar)) {
+          if (variableSet.contains(definedVar)) {
             // translate the RHS to symbolic expression
             SymExpr rhsSymExpr = valueToSymExpr(assign.getRightOp());
 
             // substitute this variable in our current expression
             symExpr = symExpr.substitute(definedVar, rhsSymExpr);
 
-            varsToResolve.remove(definedVar);
-            varsToResolve.addAll(findVariables(rhsSymExpr));
-            symExpr = resolveVariables(symExpr, varsToResolve, sourceNode, graph, visited);
+            variableSet.remove(definedVar);
+            variableSet.addAll(findVariables(rhsSymExpr));
+            symExpr = resolveVariables(symExpr, sourceNode, visited);
           }
         }
       }
@@ -296,7 +315,7 @@ public final class Resolver {
     return symExpr;
   }
 
-  /** Convert a Jimple Value to SymExpr */
+  // Convert a Jimple Value to SymExpr
   private static SymExpr valueToSymExpr(final Value value) {
     // eg $stack1
     if (value instanceof Local) {
@@ -334,7 +353,6 @@ public final class Resolver {
       }
     }
 
-    // Binary operations
     if (value instanceof AbstractConditionExpr) {
       AbstractConditionExpr condExpr = (AbstractConditionExpr) value;
       SymExpr left = valueToSymExpr(condExpr.getOp1());
@@ -356,8 +374,7 @@ public final class Resolver {
       SymExpr base = valueToSymExpr(invokeExpr.getBase());
       String invokedMethodName = invokeExpr.getMethodSignature().getSubSignature().getName();
       boolean returnsBoolean =
-              invokeExpr.getMethodSignature().getSubSignature().getType()
-                      instanceof BooleanType;
+          invokeExpr.getMethodSignature().getSubSignature().getType() instanceof BooleanType;
 
       return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
     }
@@ -366,7 +383,6 @@ public final class Resolver {
     return new SymVar(value.toString());
   }
 
-  /** Get incoming DDG edges for a node */
   private static List<DataDependencyEdge> getIncomingDDGEdges(
       final WITUpNode node, final WITUpGraph graph) {
     List<DataDependencyEdge> result = new ArrayList<>();

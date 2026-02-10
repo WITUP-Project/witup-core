@@ -5,21 +5,25 @@ public final class SymVirtualInvoke extends SymExpr {
   private final String invokeName; // e.g. length
   private final boolean returnsBoolean;
 
-  public SymExpr getBase() { return base; }
+  public SymExpr getBase() {
+    return base;
+  }
 
-  public String getInvokeName() { return invokeName; }
+  public String getInvokeName() {
+    return invokeName;
+  }
 
-  public SymVirtualInvoke(SymExpr base, String invokeName, boolean returnsBoolean) {
+  public SymVirtualInvoke(final SymExpr base, final String invokeName, boolean returnsBoolean) {
     this.base = base;
     this.invokeName = invokeName;
     this.returnsBoolean = returnsBoolean;
   }
 
   @Override
-  public SymExpr substitute(final String invokeName, final SymExpr replacement) {
-    SymExpr newBase = base.substitute(invokeName, replacement);
+  public SymExpr substitute(final String invField, final SymExpr replacement) {
+    SymExpr newBase = base.substitute(invField, replacement);
     if (newBase != base) {
-      return new SymVirtualInvoke(newBase, invokeName, this.returnsBoolean);
+      return new SymVirtualInvoke(newBase, invField, this.returnsBoolean);
     }
     return this;
   }

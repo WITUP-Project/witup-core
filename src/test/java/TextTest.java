@@ -1,3 +1,5 @@
+import static org.junit.jupiter.api.Assertions.*;
+
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.Resolver;
 import br.unb.cic.witup.analysis.SymKind;
@@ -11,23 +13,16 @@ import br.unb.cic.witup.solver.SolverSerialiser;
 import br.unb.cic.witup.sootup.SootUpAnalyser;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import sootup.codepropertygraph.propertygraph.PropertyGraph;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import sootup.codepropertygraph.propertygraph.PropertyGraph;
 
 public class TextTest {
   private Path testClassesDir;
@@ -43,8 +38,8 @@ public class TextTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     HashMap<String, SootUpPropertyGraphs> sootupGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
     assertNotNull(sootupGraphs);
     // This has to equal the number o methods in the class that throw
@@ -54,11 +49,11 @@ public class TextTest {
   @Test
   public void invalidString() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
     String methodSignature =
-            "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
+        "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
     SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = invalidString.getCPG();
 
@@ -70,7 +65,7 @@ public class TextTest {
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
 
     PropertyGraph sootUpDDG = invalidString.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -78,28 +73,27 @@ public class TextTest {
     Resolver resolver = new Resolver(witUpDDG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(throwConditionsPaths);
-    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
+        resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
       ObjectMapper mapper = new ObjectMapper();
 
-      SolverResponse response =
-              mapper.readValue(jsonString, SolverResponse.class);
+      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -113,13 +107,13 @@ public class TextTest {
   @Test
   public void invalidStringLength() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
     System.out.println(sootUpPropertyGraphs);
 
     String methodSignature =
-            "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
+        "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
     SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = invalidString.getCPG();
 
@@ -131,7 +125,7 @@ public class TextTest {
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
 
     PropertyGraph sootUpDDG = invalidString.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -139,28 +133,26 @@ public class TextTest {
     Resolver resolver = new Resolver(witUpDDG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(throwConditionsPaths);
-    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
-
+        resolver.resolveConditionPaths(throwConditionsPaths);
+    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
       ObjectMapper mapper = new ObjectMapper();
 
-      SolverResponse response =
-              mapper.readValue(jsonString, SolverResponse.class);
+      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -174,11 +166,11 @@ public class TextTest {
   @Test
   public void invalidEmptyString() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
     String methodSignature =
-            "<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>";
+        "<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>";
     SootUpPropertyGraphs invalidEmptyString = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = invalidEmptyString.getCPG();
 
@@ -190,7 +182,7 @@ public class TextTest {
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
 
     PropertyGraph sootUpDDG = invalidEmptyString.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -198,28 +190,27 @@ public class TextTest {
     Resolver resolver = new Resolver(witUpDDG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(throwConditionsPaths);
+        resolver.resolveConditionPaths(throwConditionsPaths);
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolTable();
+    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
       ObjectMapper mapper = new ObjectMapper();
 
-      SolverResponse response =
-              mapper.readValue(jsonString, SolverResponse.class);
+      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
