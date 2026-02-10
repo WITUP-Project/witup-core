@@ -30,8 +30,8 @@ class SolverRequest(TypedDict):
 
 class SolverPathResult(TypedDict):
     pathId: str
-    isSat: Union[bool, Literal["unknown", "error"]]
-    solutions: List[dict]  # {"variable": str, "value": str}
+    status: Literal["SAT", "UNSAT", "UNKNOWN", "ERROR"]
+    solutions: List[dict]  # {"symbol": str, "value": str}
 
 class SolverResponse(TypedDict):
     paths: List[SolverPathResult]
@@ -46,16 +46,16 @@ def sympy_to_z3(expr):
         lhs, rhs = expr.lhs, expr.rhs
         return sympy_to_z3(lhs) == sympy_to_z3(rhs)
 
-    variables = set(expr.free_symbols)
+    symbols = set(expr.free_symbols)
     expr_str = str(expr)
-    for var in variables:
+    for s in symbols:
         # Add word boundaries to only replace whole variable names
-        var_str = r'\b' + str(var) + r'\b'
+        var_str = r'\b' + str(s) + r'\b'
         # might need to consider more types here
-        if var.is_integer:
-            expr_str = re.sub(var_str, f"z3.Int('{var}')", expr_str)
+        if s.is_integer:
+            expr_str = re.sub(var_str, f"z3.Int('{s}')", expr_str)
         else:
-            expr_str = re.sub(var_str, f"z3.Real('{var}')", expr_str)
+            expr_str = re.sub(var_str, f"z3.Real('{s}')", expr_str)
 
     expr_str = expr_str.replace("And", "z3.And")
     expr_str = expr_str.replace("Or", "z3.Or")
@@ -66,7 +66,7 @@ def sympy_to_z3(expr):
 
 def check_feasibility(z3_constraints):
     if not z3_constraints:
-        return {"isSat": "unknown", "solutions": []}
+        return {"status": "UNKNOWN", "solutions": []}
 
     solver = Solver()
     for c in z3_constraints:
@@ -85,16 +85,16 @@ def check_feasibility(z3_constraints):
             else:
                 value_str = str(value)
 
-            solutions.append({"variable": var_name, "value": value_str})
+            solutions.append({"symbol": var_name, "value": value_str})
 
         return {
-            "isSat": True,
+            "status": "SAT",
             "solutions": solutions,
         }
     elif status == unsat:
-        return {"isSat": False, "solutions": []}
+        return {"status": "UNSAT", "solutions": []}
     else:
-        return {"isSat": "unknown", "solutions": []}
+        return {"status": "UNKNOWN", "solutions": []}
 
 def normalise_java_name(expr: str) -> str:
     return re.sub(r"\b([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\b",
@@ -127,9 +127,9 @@ def normalise_java_expr(expr: str, var_mapping):
 
 def denormalise_solutions(solutions, mapping):
     for sol in solutions:
-        name = sol["variable"]
+        name = sol["symbol"]
         if name in mapping:
-            sol["variable"] = mapping[name]
+            sol["symbol"] = mapping[name]
     return solutions
 
 
@@ -186,7 +186,7 @@ def contains_string_literal(expr_str: str) -> bool:
 #     else:
 #         return build_numeric_constraint(expr_str, truth_value)
 
-
+# This is becoming a monster and it's gonna need a monster refactor some time
 def main():
     try:
         raw = sys.stdin.read()
@@ -250,11 +250,11 @@ def main():
             result = check_feasibility(z3_constraints)
 
             result["solutions"] = denormalise_solutions(result["solutions"], var_mapping)
-            logger.info(f"[{path_id}] Z3 result: {result['isSat']}")
+            logger.info(f"[{path_id}] Z3 result: {result['status']}")
 
         except Exception as e:
             logger.error(f"[{path_id}] ERROR during solving: {e}")
-            result = {"isSat": "error", "solutions": []}
+            result = {"status": "ERROR", "solutions": []}
 
         response["paths"].append({
             "pathId": path_id,

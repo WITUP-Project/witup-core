@@ -5,9 +5,12 @@ import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.solver.SolverInvoker;
+import br.unb.cic.witup.solver.SolverResponse;
+import br.unb.cic.witup.solver.SolverResponseAssertions;
 import br.unb.cic.witup.solver.SolverSerialiser;
 import br.unb.cic.witup.sootup.SootUpAnalyser;
 import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import org.json.JSONObject;
@@ -24,8 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TextTest {
   private Path testClassesDir;
@@ -45,6 +47,7 @@ public class TextTest {
                     testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
     assertNotNull(sootupGraphs);
+    // This has to equal the number o methods in the class that throw
     assertEquals(3, sootupGraphs.size());
   }
 
@@ -54,23 +57,10 @@ public class TextTest {
             sootUpAnalyser.analyseThrowingMethods(
                     testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
-    System.out.println(sootUpPropertyGraphs);
-
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
     SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = invalidString.getCPG();
-
-    System.out.println(sootUpCPG);
-    String dot = sootUpCPG.toDotGraph();
-
-    try {
-      Graphviz.fromString(dot)
-              .render(Format.SVG)
-              .toFile(new File("invalid-string-cpg.svg"));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
@@ -102,8 +92,19 @@ public class TextTest {
                     .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
-      String resp = si.callSolver(request);
-      System.out.println(resp);
+      String jsonString = si.callSolver(request);
+      ObjectMapper mapper = new ObjectMapper();
+
+      SolverResponse response =
+              mapper.readValue(jsonString, SolverResponse.class);
+
+      SolverResponse.SolverPathResult p0 =
+              SolverResponseAssertions.path(response, methodSignature + "#0");
+
+      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+
+      String stringValue = SolverResponseAssertions.stringValue(p0, "s");
+      assertEquals("abc", stringValue);
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -122,17 +123,6 @@ public class TextTest {
     SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = invalidString.getCPG();
 
-    System.out.println(sootUpCPG);
-    String dot = sootUpCPG.toDotGraph();
-
-    try {
-      Graphviz.fromString(dot)
-              .render(Format.SVG)
-              .toFile(new File("invalid-string-length-cpg.svg"));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
     List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
@@ -155,7 +145,6 @@ public class TextTest {
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
-    System.out.println(request);
 
     String pythonScript =
             Paths.get(System.getProperty("user.dir"))
@@ -164,8 +153,19 @@ public class TextTest {
                     .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
-      String resp = si.callSolver(request);
-      System.out.println(resp);
+      String jsonString = si.callSolver(request);
+      ObjectMapper mapper = new ObjectMapper();
+
+      SolverResponse response =
+              mapper.readValue(jsonString, SolverResponse.class);
+
+      SolverResponse.SolverPathResult p0 =
+              SolverResponseAssertions.path(response, methodSignature + "#0");
+
+      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+
+      int lengthValue = SolverResponseAssertions.intValue(p0, "s.length");
+      assertEquals(0, lengthValue, "Expected length 0");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -177,23 +177,10 @@ public class TextTest {
             sootUpAnalyser.analyseThrowingMethods(
                     testClassesDir.toString(), "br.unb.cic.witup.samples.Text");
 
-    System.out.println(sootUpPropertyGraphs);
-
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>";
     SootUpPropertyGraphs invalidEmptyString = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = invalidEmptyString.getCPG();
-
-    System.out.println(sootUpCPG);
-    String dot = sootUpCPG.toDotGraph();
-
-    try {
-      Graphviz.fromString(dot)
-              .render(Format.SVG)
-              .toFile(new File("invalid-string-empty-cpg.svg"));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
@@ -217,7 +204,6 @@ public class TextTest {
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
-    System.out.println(request);
 
     String pythonScript =
             Paths.get(System.getProperty("user.dir"))
@@ -226,8 +212,19 @@ public class TextTest {
                     .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
-      String resp = si.callSolver(request);
-      System.out.println(resp);
+      String jsonString = si.callSolver(request);
+      ObjectMapper mapper = new ObjectMapper();
+
+      SolverResponse response =
+              mapper.readValue(jsonString, SolverResponse.class);
+
+      SolverResponse.SolverPathResult p0 =
+              SolverResponseAssertions.path(response, methodSignature + "#0");
+
+      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+
+      boolean truthValue = SolverResponseAssertions.booleanValue(p0, "s.isEmpty");
+      assertTrue(truthValue, "Expected s.isEmpty to be true");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
