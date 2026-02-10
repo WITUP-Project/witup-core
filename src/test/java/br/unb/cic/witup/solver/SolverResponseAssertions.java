@@ -3,26 +3,24 @@ package br.unb.cic.witup.solver;
 public class SolverResponseAssertions {
   private SolverResponseAssertions() {}
 
-  public static SolverResponse.SolverPathResult path(
-          SolverResponse response, String pathId) {
+  public static SolverResponse.SolverPathResult path(SolverResponse response, String pathId) {
 
     return response.getPaths().stream()
-            .filter(p -> p.getPathId().equals(pathId))
-            .findFirst()
-            .orElseThrow(() ->
-                    new AssertionError("No solver result for path: " + pathId));
+        .filter(p -> p.getPathId().equals(pathId))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No solver result for path: " + pathId));
   }
 
   public static SolverResponse.SolverPathSolution value(
-          SolverResponse.SolverPathResult path, String symbol) {
+      SolverResponse.SolverPathResult path, String symbol) {
 
     return path.getSolutions().stream()
-            .filter(s -> s.getSymbol().equals(symbol))
-            .findFirst()
-            .orElseThrow(() ->
-                    new AssertionError(
-                            "No value for symbol '" + symbol +
-                                    "' in path '" + path.getPathId() + "'"));
+        .filter(s -> s.getSymbol().equals(symbol))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new AssertionError(
+                    "No value for symbol '" + symbol + "' in path '" + path.getPathId() + "'"));
   }
 
   public static boolean booleanValue(SolverResponse.SolverPathResult path, String symbol) {
@@ -33,7 +31,7 @@ public class SolverResponseAssertions {
     String val = value(path, symbol).getValue();
     if (val.length() != 1) {
       throw new AssertionError(
-              "Expected single character for symbol '" + symbol + "' but got: " + val);
+          "Expected single character for symbol '" + symbol + "' but got: " + val);
     }
     return val.charAt(0);
   }

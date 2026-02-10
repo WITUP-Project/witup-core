@@ -1,19 +1,21 @@
 package br.unb.cic.witup.solver;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
 public final class SolverResponse {
   private final List<SolverPathResult> paths;
 
   public enum Status {
-    SAT, UNSAT, UNKNOWN, ERROR
+    SAT,
+    UNSAT,
+    UNKNOWN,
+    ERROR
   }
 
   @JsonCreator
-  public SolverResponse(@JsonProperty("paths") List<SolverPathResult> paths) {
+  public SolverResponse(@JsonProperty("paths") final List<SolverPathResult> paths) {
     this.paths = paths;
   }
 
@@ -28,9 +30,9 @@ public final class SolverResponse {
 
     @JsonCreator
     public SolverPathResult(
-            @JsonProperty("pathId") String pathId,
-            @JsonProperty("status") Status status,
-            @JsonProperty("solutions") List<SolverPathSolution> solverPathSolutions) {
+        @JsonProperty("pathId") final String pathId,
+        @JsonProperty("status") final Status status,
+        @JsonProperty("solutions") final List<SolverPathSolution> solverPathSolutions) {
       this.pathId = pathId;
       this.status = status;
       this.solverPathSolutions = solverPathSolutions;
@@ -59,8 +61,7 @@ public final class SolverResponse {
 
     @JsonCreator
     public SolverPathSolution(
-            @JsonProperty("symbol") String symbol,
-            @JsonProperty("value") String value) {
+        @JsonProperty("symbol") final String symbol, @JsonProperty("value") final String value) {
       this.symbol = symbol;
       this.value = value;
     }

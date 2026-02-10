@@ -3,7 +3,7 @@ package br.unb.cic.witup.analysis;
 public final class SymStringConst extends SymExpr {
   private final String value;
 
-  public SymStringConst(String value) {
+  public SymStringConst(final String value) {
     this.value = value;
   }
 
@@ -12,12 +12,12 @@ public final class SymStringConst extends SymExpr {
   }
 
   @Override
-  public SymExpr substitute(String varName, SymExpr replacement) {
+  public SymExpr substitute(final String varName, final SymExpr replacement) {
     return this;
   }
 
   @Override
-  public boolean contains(String varName) {
+  public boolean contains(final String varName) {
     return false;
   }
 
