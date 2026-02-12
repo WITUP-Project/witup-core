@@ -5,6 +5,7 @@ import br.unb.cic.witup.graph.edge.BooleanCFGEdge;
 import br.unb.cic.witup.graph.edge.CFGEdge;
 import br.unb.cic.witup.graph.edge.ControlDependencyEdge;
 import br.unb.cic.witup.graph.edge.DataDependencyEdge;
+import br.unb.cic.witup.graph.edge.GotoCFGEdge;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.IfStatementNode;
 import br.unb.cic.witup.graph.node.SimpleNode;
@@ -26,6 +27,7 @@ import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.IfFalseCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.IfTrueCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.NormalCfgEdge;
+import sootup.codepropertygraph.propertygraph.edges.GotoCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
@@ -56,7 +58,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     WITUpGraph graph = new WITUpGraph();
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
-      // FIXME: we are creating the same node multiple times here and it
+      // we are creating the same node multiple times here and it
       // may hurt comparisons down the line.
       WITUpNode source = createNode(edge.getSource());
       WITUpNode target = createNode(edge.getDestination());
@@ -73,7 +75,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         graph.addEdge(source, target, new BooleanCFGEdge(edge, source, target, false));
       } else if (edge instanceof NormalCfgEdge) {
         graph.addEdge(source, target, new CFGEdge(edge, source, target));
-      } else {
+      } else if (edge instanceof GotoCfgEdge) {
+        graph.addEdge(source, target, new GotoCFGEdge(edge, source, target));
+      }
+      else {
         throw new IllegalArgumentException("bad edge type: " + edge.getClass().getName());
       }
     }

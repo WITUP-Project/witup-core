@@ -40,7 +40,6 @@ public class MathTest {
     sootUpAnalyser = new SootUpAnalyser();
   }
 
-  //  @Disabled
   @Test
   public void buildSootUpPropertyGraphs() {
     HashMap<String, SootUpPropertyGraphs> sootupGraphs =
