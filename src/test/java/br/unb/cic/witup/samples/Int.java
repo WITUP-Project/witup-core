@@ -51,4 +51,12 @@ public class Int {
     }
     return a;
   }
+
+  public int lessThanConstantRhsViaNegatedBoolean(int a) {
+    boolean invalid = a < 0;
+    if (!invalid) {
+      throw new IllegalArgumentException("a cannot be positive");
+    }
+    return a;
+  }
 }

@@ -50,7 +50,7 @@ public class IntTest {
             testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     assertNotNull(sootupGraphs);
-    assertEquals(7, sootupGraphs.size());
+    assertEquals(8, sootupGraphs.size());
   }
 
   @Test
@@ -520,8 +520,8 @@ public class IntTest {
 
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
-      // path 0 is unsat as  {"condition":"(a >= 0)","truthValue":true},{"condition":"(0 ==
-      // 0)","truthValue":false}
+      // path 0 is unsat as
+      // {"condition":"(a >= 0)","truthValue":true},{"condition":"(0 == 0)","truthValue":false}
       // is impossible
       SolverResponse.SolverPathResult p0 =
           SolverResponseAssertions.path(response, methodSignature + "#0");
@@ -535,6 +535,90 @@ public class IntTest {
 
       int aValue = SolverResponseAssertions.intValue(p1, "a");
       assertTrue(aValue < 0, "Expected a < 0");
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void lessThanConstantRhsViaNegatedBoolean() {
+    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
+            sootUpAnalyser.analyseThrowingMethods(
+                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
+    SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
+
+    String dot = sootUpCPG.toDotGraph();
+    try {
+      Graphviz.fromString(dot).render(Format.SVG).toFile(new File("int-check-via-neg-boolean.svg"));
+    } catch (IOException ignored) {
+
+    }
+
+    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
+
+    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+    assertEquals(2, conditionNodes.size());
+
+    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
+    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
+
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+            WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+
+    List<List<ThrowCondition>> throwConditionsPaths =
+            WITUpGraph.findContitionPaths(pathsWithConditions);
+
+    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
+    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+
+    Resolver resolver = new Resolver(witUpCPG);
+
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
+            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+
+    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+
+    System.out.println(request.toString());
+
+    String pythonScript =
+            Paths.get(System.getProperty("user.dir"))
+                    .resolve("src/main/solver/solver.py")
+                    .toAbsolutePath()
+                    .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String jsonString = si.callSolver(request);
+      System.out.println(jsonString);
+      ObjectMapper mapper = new ObjectMapper();
+
+      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
+
+
+      SolverResponse.SolverPathResult p0 =
+              SolverResponseAssertions.path(response, methodSignature + "#0");
+
+      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+      int aValue = SolverResponseAssertions.intValue(p0, "a");
+      assertTrue(aValue >= 0, "Expected a >= 0");
+
+      // path 1 is unsat as
+      // {"condition":"(a >= 0)","truthValue":false},{"condition":"(1 != 0)","truthValue":false}
+      // is impossible
+      SolverResponse.SolverPathResult p1 =
+              SolverResponseAssertions.path(response, methodSignature + "#1");
+
+      assertEquals(SolverResponse.Status.UNSAT, p1.getStatus());
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
