@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys, json
-from sympy import S, And, Or, Not, simplify_logic, sympify, Symbol, Eq
+from sympy import S, And, Or, Not, simplify_logic, sympify, Symbol, Eq, Ne, simplify
+from sympy.logic.boolalg import BooleanTrue, BooleanFalse
 import z3
 from z3 import Solver, sat, unsat, String, StringVal
 import re
@@ -42,9 +43,20 @@ class SolverResponse(TypedDict):
 # https://github.com/mmaaz-git/sym2z/blob/main/sym2z.py
 # this is proving a bit painful. We may want to ditch sympy before z3
 def sympy_to_z3(expr):
+    # sympy will simplify things like (0 == 0) to BooleanTrue or BooleanFalse
+    if isinstance(expr, BooleanTrue):
+        return True
+
+    if isinstance(expr, BooleanFalse):
+        return False
+
     if isinstance(expr, Eq):
         lhs, rhs = expr.lhs, expr.rhs
         return sympy_to_z3(lhs) == sympy_to_z3(rhs)
+
+    if isinstance(expr, Ne):
+        lhs, rhs = expr.lhs, expr.rhs
+        return sympy_to_z3(lhs) != sympy_to_z3(rhs)
 
     symbols = set(expr.free_symbols)
     expr_str = str(expr)
@@ -212,6 +224,7 @@ def main():
         path_id = path.get("pathId", "<unknown>")
         conditions = path.get("conditions", [])
         logger.info(f"[{path_id}] Starting symbol resolution ({len(conditions)} conditions)")
+        logger.info(path)
         # track normalised names
         var_mapping = {}
         sympy_exprs = []
@@ -234,6 +247,11 @@ def main():
 
                 else:
                     expr = build_numeric_constraint(normalised, c["truthValue"], normalised_symbol_kinds)
+                    expr = simplify(expr)
+                    if isinstance(expr, BooleanTrue):
+                        z3_exprs.append(True)
+                    elif isinstance(expr, BooleanFalse):
+                        z3_exprs.append(False)
                     sympy_exprs.append(expr)
                     for name in extract_symbols(normalised):
                         if name not in symbol_table:

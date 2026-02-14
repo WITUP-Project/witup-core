@@ -1,3 +1,7 @@
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.Resolver;
 import br.unb.cic.witup.analysis.SymKind;
@@ -15,12 +19,6 @@ import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
-import org.jgrapht.GraphPath;
-import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import sootup.codepropertygraph.propertygraph.PropertyGraph;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -28,10 +26,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.jgrapht.GraphPath;
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import sootup.codepropertygraph.propertygraph.PropertyGraph;
 
 public class IntTest {
   private Path testClassesDir;
@@ -47,8 +46,8 @@ public class IntTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     HashMap<String, SootUpPropertyGraphs> sootupGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     assertNotNull(sootupGraphs);
     assertEquals(7, sootupGraphs.size());
@@ -57,8 +56,8 @@ public class IntTest {
   @Test
   public void addOverflow() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     String methodSignature = "<br.unb.cic.witup.samples.Int: int add(int,int)>";
     SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
@@ -70,16 +69,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-        List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -87,7 +87,7 @@ public class IntTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -95,10 +95,10 @@ public class IntTest {
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -108,14 +108,14 @@ public class IntTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
       int aValue = SolverResponseAssertions.intValue(p0, "a");
       int bValue = SolverResponseAssertions.intValue(p0, "b");
 
-      assertTrue(aValue + bValue > 256 , "Expected a + b > 256");
+      assertTrue(aValue + bValue > 256, "Expected a + b > 256");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -124,8 +124,8 @@ public class IntTest {
   @Test
   public void greaterThanConstantRhs() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     String methodSignature = "<br.unb.cic.witup.samples.Int: int greaterThanConstantRhs(int)>";
     SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
@@ -137,16 +137,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -154,7 +155,7 @@ public class IntTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -162,10 +163,10 @@ public class IntTest {
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -175,7 +176,7 @@ public class IntTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -190,8 +191,8 @@ public class IntTest {
   @Test
   public void lesserThanConstantLhs() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     String methodSignature = "<br.unb.cic.witup.samples.Int: int lesserThanConstantLhs(int)>";
     SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
@@ -203,16 +204,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -220,8 +222,7 @@ public class IntTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
-
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -229,10 +230,10 @@ public class IntTest {
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -242,7 +243,7 @@ public class IntTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -257,8 +258,8 @@ public class IntTest {
   @Test
   public void equalsConstantRhs() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantRhs(int)>";
     SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
@@ -270,16 +271,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -287,7 +289,7 @@ public class IntTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -295,10 +297,10 @@ public class IntTest {
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -308,7 +310,7 @@ public class IntTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -323,8 +325,8 @@ public class IntTest {
   @Test
   public void equalsConstantLhs() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantLhs(int)>";
     SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
@@ -336,16 +338,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-        List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -353,7 +356,7 @@ public class IntTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -361,10 +364,10 @@ public class IntTest {
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -374,7 +377,7 @@ public class IntTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -389,8 +392,8 @@ public class IntTest {
   @Test
   public void negatedLessThanConstantRhs() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
     String methodSignature = "<br.unb.cic.witup.samples.Int: int negatedLessThanConstantRhs(int)>";
     SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
@@ -402,16 +405,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-        List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -419,7 +423,7 @@ public class IntTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -427,10 +431,10 @@ public class IntTest {
     JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -440,7 +444,7 @@ public class IntTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -455,18 +459,17 @@ public class IntTest {
   @Test
   public void lessThanConstantRhsViaBoolean() {
     HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-            sootUpAnalyser.analyseThrowingMethods(
-                    testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
+        sootUpAnalyser.analyseThrowingMethods(
+            testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
 
-    String methodSignature = "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
+    String methodSignature =
+        "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
     SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
     PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
 
     String dot = sootUpCPG.toDotGraph();
     try {
-      Graphviz.fromString(dot)
-              .render(Format.SVG)
-              .toFile(new File("int-check-via-boolean.svg"));
+      Graphviz.fromString(dot).render(Format.SVG).toFile(new File("int-check-via-boolean.svg"));
     } catch (IOException ignored) {
 
     }
@@ -477,16 +480,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -494,7 +498,7 @@ public class IntTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -504,10 +508,10 @@ public class IntTest {
     System.out.println(request.toString());
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -516,13 +520,20 @@ public class IntTest {
 
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
+      // path 0 is unsat as  {"condition":"(a >= 0)","truthValue":true},{"condition":"(0 ==
+      // 0)","truthValue":false}
+      // is impossible
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+      assertEquals(SolverResponse.Status.UNSAT, p0.getStatus());
 
-      int aValue = SolverResponseAssertions.intValue(p0, "a");
+      SolverResponse.SolverPathResult p1 =
+          SolverResponseAssertions.path(response, methodSignature + "#1");
 
+      assertEquals(SolverResponse.Status.SAT, p1.getStatus());
+
+      int aValue = SolverResponseAssertions.intValue(p1, "a");
       assertTrue(aValue < 0, "Expected a < 0");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);

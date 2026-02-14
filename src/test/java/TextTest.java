@@ -20,7 +20,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.jgrapht.GraphPath;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,10 +66,11 @@ public class TextTest {
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -78,7 +78,7 @@ public class TextTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -130,10 +130,11 @@ public class TextTest {
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -141,7 +142,7 @@ public class TextTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -190,10 +191,11 @@ public class TextTest {
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions = WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
+        WITUpGraph.findContitionPaths(pathsWithConditions);
 
     PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
@@ -201,8 +203,7 @@ public class TextTest {
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-            resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
-
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 

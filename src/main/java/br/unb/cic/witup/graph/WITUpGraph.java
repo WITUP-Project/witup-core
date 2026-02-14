@@ -24,10 +24,10 @@ import org.jgrapht.traverse.DepthFirstIterator;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
+import sootup.codepropertygraph.propertygraph.edges.GotoCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.IfFalseCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.IfTrueCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.NormalCfgEdge;
-import sootup.codepropertygraph.propertygraph.edges.GotoCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
@@ -77,8 +77,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         graph.addEdge(source, target, new CFGEdge(edge, source, target));
       } else if (edge instanceof GotoCfgEdge) {
         graph.addEdge(source, target, new GotoCFGEdge(edge, source, target));
-      }
-      else {
+      } else {
         throw new IllegalArgumentException("bad edge type: " + edge.getClass().getName());
       }
     }
@@ -160,9 +159,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return pathsWithIfStatements;
   }
 
-  public static List<List<ThrowCondition>> findContitionPaths(final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
+  public static List<List<ThrowCondition>> findContitionPaths(
+      final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
     List<List<BooleanCFGEdge>> throwConditionsPaths =
-            getThrowConditionsPaths(pathsWithIfStatements);
+        getThrowConditionsPaths(pathsWithIfStatements);
 
     List<List<ThrowCondition>> throwConditions = getThrowConditions(throwConditionsPaths);
 

@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.jgrapht.GraphPath;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
@@ -72,7 +71,7 @@ public final class Resolver {
 
     for (int i = 0; i < throwConditionsPaths.size(); i++) {
       List<ResolvedThrowCondition> resolved =
-              resolveConditionPath(fullPaths.get(i), throwConditionsPaths.get(i));
+          resolveConditionPath(fullPaths.get(i), throwConditionsPaths.get(i));
 
       if (resolved != null && !resolved.isEmpty()) {
         resolvedThrowConditions.add(resolved);
