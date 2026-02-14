@@ -144,7 +144,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
-  public static List<List<ThrowCondition>> findConditionPaths(
+  // returns all paths that have conditions and lead to throw.
+  // should this be all paths that lead to throw instead, or would it bloat?
+  public static List<GraphPath<WITUpNode, WITUpEdge>> findPathsWithConditions(
       final WITUpGraph cfg, final WITUpNode throwNode) {
     WITUpNode entry = findEntryNode(cfg);
 
@@ -155,8 +157,12 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
         getPathsWithIfStatements(throwPaths);
 
+    return pathsWithIfStatements;
+  }
+
+  public static List<List<ThrowCondition>> findContitionPaths(final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
     List<List<BooleanCFGEdge>> throwConditionsPaths =
-        getThrowConditionsPaths(pathsWithIfStatements);
+            getThrowConditionsPaths(pathsWithIfStatements);
 
     List<List<ThrowCondition>> throwConditions = getThrowConditions(throwConditionsPaths);
 
@@ -165,6 +171,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private static List<List<ThrowCondition>> getThrowConditions(
       final List<List<BooleanCFGEdge>> throwConditionsPaths) {
+
     List<List<ThrowCondition>> throwConditions = new ArrayList<>();
     for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
       List<ThrowCondition> pathConditions = new ArrayList<>();
@@ -179,6 +186,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private static List<List<BooleanCFGEdge>> getThrowConditionsPaths(
       final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
+
     List<List<BooleanCFGEdge>> throwConditionsPaths = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : pathsWithIfStatements) {
       List<BooleanCFGEdge> booleanEdges = new ArrayList<>();
