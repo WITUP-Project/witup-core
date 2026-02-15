@@ -185,4 +185,14 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
     return throwConditions;
   }
+
+  public List<DataDependencyEdge> getIncomingDDGEdges(final WITUpNode node) {
+    List<DataDependencyEdge> result = new ArrayList<>();
+    for (WITUpEdge edge : this.incomingEdgesOf(node)) {
+      if (edge instanceof DataDependencyEdge) {
+        result.add((DataDependencyEdge) edge);
+      }
+    }
+    return result;
+  }
 }
