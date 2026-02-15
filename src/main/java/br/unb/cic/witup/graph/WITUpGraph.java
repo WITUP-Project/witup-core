@@ -104,9 +104,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return result;
   }
 
-  public static List<WITUpNode> getThrowConditionNodes(final WITUpGraph g, final ThrowStatementNode t) {
+  public List<WITUpNode> getThrowConditionNodes(final ThrowStatementNode t) {
     List<WITUpNode> throwConditionNodes = new ArrayList<>();
-    EdgeReversedGraph<WITUpNode, WITUpEdge> reversedGraph = new EdgeReversedGraph<>(g);
+    EdgeReversedGraph<WITUpNode, WITUpEdge> reversedGraph = new EdgeReversedGraph<>(this);
     Iterator<WITUpNode> iterator = new DepthFirstIterator<>(reversedGraph, t);
     while (iterator.hasNext()) {
       WITUpNode n = iterator.next();

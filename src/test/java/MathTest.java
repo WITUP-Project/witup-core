@@ -69,7 +69,7 @@ public class MathTest {
 
     // for each throw node, we are gonna need to get the respective conditions
     List<WITUpNode> conditionNodes =
-        WITUpGraph.getThrowConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
@@ -138,7 +138,7 @@ public class MathTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.getThrowConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
@@ -205,7 +205,7 @@ public class MathTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.getThrowConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
