@@ -72,11 +72,8 @@ public class IntTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
@@ -137,11 +134,8 @@ public class IntTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
@@ -201,11 +195,8 @@ public class IntTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
@@ -265,11 +256,8 @@ public class IntTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
@@ -329,11 +317,8 @@ public class IntTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
@@ -393,11 +378,8 @@ public class IntTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
@@ -465,11 +447,8 @@ public class IntTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
@@ -546,11 +525,8 @@ public class IntTest {
             witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
-    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
-    WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
-
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-            witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
+            witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
             witUpCPG.getThrowConditionsPaths(pathsWithConditions);

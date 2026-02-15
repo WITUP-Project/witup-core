@@ -16,11 +16,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.AllDirectedPaths;
+import org.jgrapht.graph.AsSubgraph;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
+import qilin.util.graph.DirectedGraph;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
@@ -121,7 +125,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   public List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(final WITUpNode throwNode) {
     WITUpNode entry = findEntryNode();
 
-    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(this);
+    // Getting the CFG here removes all redundancy (hundreds less paths)
+    AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
+
+    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
             allPaths.getAllPaths(entry, throwNode, true, null);
 
@@ -135,6 +142,16 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return pathsWithIfStatements;
+  }
+
+  private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
+    AsSubgraph<WITUpNode, WITUpEdge> cfg = new AsSubgraph<>(
+            this,
+            null,
+            this.edgeSet().stream()
+                    .filter(edge -> edge instanceof CFGEdge)
+                    .collect(Collectors.toSet()));
+    return cfg;
   }
 
   private WITUpNode findEntryNode() {
