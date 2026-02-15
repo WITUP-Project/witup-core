@@ -65,24 +65,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -133,24 +130,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -200,24 +194,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -267,24 +258,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -334,24 +322,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -401,24 +386,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -476,24 +458,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -560,24 +539,21 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            WITUpGraph.findConditionNodes(witUpCPG, (ThrowStatementNode) throwNodes.get(0));
+            witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-            WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+            witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
-            WITUpGraph.findContitionPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
+            witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
     Resolver resolver = new Resolver(witUpCPG);
 

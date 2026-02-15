@@ -94,9 +94,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return new SimpleNode(node);
   }
 
-  public static List<WITUpNode> findThrowNodes(final WITUpGraph g) {
+  public List<WITUpNode> getThrowNodes() {
     List<WITUpNode> result = new ArrayList<>();
-    for (WITUpNode n : g.vertexSet()) {
+    for (WITUpNode n : this.vertexSet()) {
       if (n instanceof ThrowStatementNode) {
         result.add(n);
       }
@@ -104,11 +104,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return result;
   }
 
-  public static List<WITUpNode> findConditionNodes(final WITUpGraph g, final ThrowStatementNode t) {
+  public List<WITUpNode> getThrowConditionNodes(final ThrowStatementNode t) {
     List<WITUpNode> throwConditionNodes = new ArrayList<>();
-    // Not sure how costly this reversal can be at scale. Doc says there is a penalty
-    // We can build the reversed graph if we need
-    EdgeReversedGraph<WITUpNode, WITUpEdge> reversedGraph = new EdgeReversedGraph<>(g);
+    EdgeReversedGraph<WITUpNode, WITUpEdge> reversedGraph = new EdgeReversedGraph<>(this);
     Iterator<WITUpNode> iterator = new DepthFirstIterator<>(reversedGraph, t);
     while (iterator.hasNext()) {
       WITUpNode n = iterator.next();
@@ -120,15 +118,33 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
-  public static WITUpNode findEntryNode(final WITUpGraph g) {
-    // Track incoming edges by *PropertyGraphNode identity*
-    Set<PropertyGraphNode> hasIncoming = new HashSet<>(g.vertexSet().size());
+  public List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(final WITUpNode throwNode) {
+    WITUpNode entry = findEntryNode();
 
-    for (WITUpEdge e : g.edgeSet()) {
+    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(this);
+    List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
+            allPaths.getAllPaths(entry, throwNode, true, null);
+
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
+    for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
+      for (WITUpNode node : path.getVertexList()) {
+        if (node instanceof IfStatementNode) {
+          pathsWithIfStatements.add(path);
+          break;
+        }
+      }
+    }
+    return pathsWithIfStatements;
+  }
+
+  private WITUpNode findEntryNode() {
+    Set<PropertyGraphNode> hasIncoming = new HashSet<>(this.vertexSet().size());
+
+    for (WITUpEdge e : this.edgeSet()) {
       hasIncoming.add(e.getEdge().getDestination());
     }
 
-    for (WITUpNode witNode : g.vertexSet()) {
+    for (WITUpNode witNode : this.vertexSet()) {
       PropertyGraphNode pgNode = witNode.getNode();
 
       if (hasIncoming.contains(pgNode)) {
@@ -143,48 +159,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
-  // returns all paths that have conditions and lead to throw.
-  // should this be all paths that lead to throw instead, or would it bloat?
-  public static List<GraphPath<WITUpNode, WITUpEdge>> findPathsWithConditions(
-      final WITUpGraph cfg, final WITUpNode throwNode) {
-    WITUpNode entry = findEntryNode(cfg);
-
-    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
-    List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
-        allPaths.getAllPaths(entry, throwNode, true, null);
-
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        getPathsWithIfStatements(throwPaths);
-
-    return pathsWithIfStatements;
-  }
-
-  public static List<List<ThrowCondition>> findContitionPaths(
-      final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
-    List<List<BooleanCFGEdge>> throwConditionsPaths =
-        getThrowConditionsPaths(pathsWithIfStatements);
-
-    List<List<ThrowCondition>> throwConditions = getThrowConditions(throwConditionsPaths);
-
-    return throwConditions;
-  }
-
-  private static List<List<ThrowCondition>> getThrowConditions(
-      final List<List<BooleanCFGEdge>> throwConditionsPaths) {
-
-    List<List<ThrowCondition>> throwConditions = new ArrayList<>();
-    for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
-      List<ThrowCondition> pathConditions = new ArrayList<>();
-      for (BooleanCFGEdge edge : throwConditionsPath) {
-        WITUpNode sourceNode = edge.getSource();
-        pathConditions.add(new ThrowCondition(sourceNode, edge.getCondition()));
-      }
-      throwConditions.add(pathConditions);
-    }
-    return throwConditions;
-  }
-
-  private static List<List<BooleanCFGEdge>> getThrowConditionsPaths(
+  public List<List<ThrowCondition>> getThrowConditionsPaths(
       final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
 
     List<List<BooleanCFGEdge>> throwConditionsPaths = new ArrayList<>();
@@ -197,20 +172,16 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
       throwConditionsPaths.add(booleanEdges);
     }
-    return throwConditionsPaths;
-  }
 
-  private static List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(
-      final List<GraphPath<WITUpNode, WITUpEdge>> throwPaths) {
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
-      for (WITUpNode node : path.getVertexList()) {
-        if (node instanceof IfStatementNode) {
-          pathsWithIfStatements.add(path);
-          break;
-        }
+    List<List<ThrowCondition>> throwConditions = new ArrayList<>();
+    for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
+      List<ThrowCondition> pathConditions = new ArrayList<>();
+      for (BooleanCFGEdge edge : throwConditionsPath) {
+        WITUpNode sourceNode = edge.getSource();
+        pathConditions.add(new ThrowCondition(sourceNode, edge.getCondition()));
       }
+      throwConditions.add(pathConditions);
     }
-    return pathsWithIfStatements;
+    return throwConditions;
   }
 }
