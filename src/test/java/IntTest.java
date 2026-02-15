@@ -81,9 +81,6 @@ public class IntTest {
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
-
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
@@ -149,9 +146,6 @@ public class IntTest {
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
-
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
@@ -215,9 +209,6 @@ public class IntTest {
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -283,9 +274,6 @@ public class IntTest {
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
-
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
@@ -350,9 +338,6 @@ public class IntTest {
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
-
     Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
@@ -416,9 +401,6 @@ public class IntTest {
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -491,9 +473,6 @@ public class IntTest {
 
     List<List<ThrowCondition>> throwConditionsPaths =
         witUpCPG.getThrowConditionsPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
     Resolver resolver = new Resolver(witUpCPG);
 
@@ -575,9 +554,6 @@ public class IntTest {
 
     List<List<ThrowCondition>> throwConditionsPaths =
             witUpCPG.getThrowConditionsPaths(pathsWithConditions);
-
-    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
-    WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
     Resolver resolver = new Resolver(witUpCPG);
 
