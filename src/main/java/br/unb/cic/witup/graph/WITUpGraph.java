@@ -24,7 +24,6 @@ import org.jgrapht.graph.AsSubgraph;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
-import qilin.util.graph.DirectedGraph;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
