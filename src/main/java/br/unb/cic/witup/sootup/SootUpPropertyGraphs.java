@@ -27,7 +27,9 @@ public final class SootUpPropertyGraphs {
     return cfg;
   }
 
-  public PropertyGraph getCDG() { return cdg; }
+  public PropertyGraph getCDG() {
+    return cdg;
+  }
 
   public PropertyGraph getCPG() {
     return cpg;

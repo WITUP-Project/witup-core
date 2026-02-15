@@ -5,6 +5,7 @@ import br.unb.cic.witup.analysis.Resolver;
 import br.unb.cic.witup.analysis.SymKind;
 import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
+import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.solver.SolverInvoker;
 import br.unb.cic.witup.solver.SolverResponse;
@@ -19,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jgrapht.GraphPath;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,26 +56,30 @@ public class TextTest {
 
     String methodSignature =
         "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
-    SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
-    PropertyGraph sootUpCPG = invalidString.getCPG();
+    SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
     List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
 
-    PropertyGraph sootUpCFG = invalidString.getCFG();
+    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
-    PropertyGraph sootUpDDG = invalidString.getDDG();
+    List<List<ThrowCondition>> throwConditionsPaths =
+        WITUpGraph.findContitionPaths(pathsWithConditions);
+
+    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
-    Resolver resolver = new Resolver(witUpDDG);
+    Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
@@ -114,26 +120,30 @@ public class TextTest {
 
     String methodSignature =
         "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
-    SootUpPropertyGraphs invalidString = sootUpPropertyGraphs.get(methodSignature);
-    PropertyGraph sootUpCPG = invalidString.getCPG();
+    SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
     List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
 
-    PropertyGraph sootUpCFG = invalidString.getCFG();
+    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
-    PropertyGraph sootUpDDG = invalidString.getDDG();
+    List<List<ThrowCondition>> throwConditionsPaths =
+        WITUpGraph.findContitionPaths(pathsWithConditions);
+
+    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
-    Resolver resolver = new Resolver(witUpDDG);
+    Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
@@ -171,26 +181,29 @@ public class TextTest {
 
     String methodSignature =
         "<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>";
-    SootUpPropertyGraphs invalidEmptyString = sootUpPropertyGraphs.get(methodSignature);
-    PropertyGraph sootUpCPG = invalidEmptyString.getCPG();
+    SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
+    PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
     List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
 
-    PropertyGraph sootUpCFG = invalidEmptyString.getCFG();
+    PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        WITUpGraph.findConditionPaths(witUpCFG, throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
 
-    PropertyGraph sootUpDDG = invalidEmptyString.getDDG();
+    List<List<ThrowCondition>> throwConditionsPaths =
+        WITUpGraph.findContitionPaths(pathsWithConditions);
+
+    PropertyGraph sootUpDDG = sootUpGraphs.getDDG();
     WITUpGraph witUpDDG = WITUpGraph.fromPropertyGraph(sootUpDDG);
 
-    Resolver resolver = new Resolver(witUpDDG);
+    Resolver resolver = new Resolver(witUpCPG);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(throwConditionsPaths);
+        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 

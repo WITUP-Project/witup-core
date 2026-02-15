@@ -13,7 +13,8 @@ public final class SymVirtualInvoke extends SymExpr {
     return invokeName;
   }
 
-  public SymVirtualInvoke(final SymExpr base, final String invokeName, boolean returnsBoolean) {
+  public SymVirtualInvoke(
+      final SymExpr base, final String invokeName, final boolean returnsBoolean) {
     this.base = base;
     this.invokeName = invokeName;
     this.returnsBoolean = returnsBoolean;

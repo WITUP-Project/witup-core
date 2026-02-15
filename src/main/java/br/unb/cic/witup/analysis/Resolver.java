@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jgrapht.GraphPath;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.Local;
@@ -46,12 +47,13 @@ import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.types.PrimitiveType.BooleanType;
 
 public final class Resolver {
-  private final WITUpGraph ddg;
+  private final WITUpGraph cpg;
   private final Map<String, SymKind> symbolKindTable;
   private Set<String> variableSet;
+  private Set<WITUpNode> nodesInPath;
 
-  public Resolver(final WITUpGraph ddg) {
-    this.ddg = ddg;
+  public Resolver(final WITUpGraph cpg) {
+    this.cpg = cpg;
     symbolKindTable = new HashMap<>();
     variableSet = new HashSet<>();
   }
@@ -62,16 +64,27 @@ public final class Resolver {
 
   // triggers the resolver to recursively trace stack variables back
   public List<List<ResolvedThrowCondition>> resolveConditionPaths(
+      final List<GraphPath<WITUpNode, WITUpEdge>> fullPaths,
       final List<List<ThrowCondition>> throwConditionsPaths) {
+
     List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
-    for (List<ThrowCondition> throwConditionsPath : throwConditionsPaths) {
-      resolvedThrowConditions.add(resolveConditionPath(throwConditionsPath));
+
+    for (int i = 0; i < throwConditionsPaths.size(); i++) {
+      List<ResolvedThrowCondition> resolved =
+          resolveConditionPath(fullPaths.get(i), throwConditionsPaths.get(i));
+
+      if (resolved != null && !resolved.isEmpty()) {
+        resolvedThrowConditions.add(resolved);
+      }
     }
     return resolvedThrowConditions;
   }
 
   public List<ResolvedThrowCondition> resolveConditionPath(
+      final GraphPath<WITUpNode, WITUpEdge> fullPath,
       final List<ThrowCondition> throwConditionsPath) {
+
+    this.nodesInPath = new HashSet<>(fullPath.getVertexList());
 
     List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
     for (ThrowCondition throwCondition : throwConditionsPath) {
@@ -259,6 +272,18 @@ public final class Resolver {
     throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
   }
 
+  private boolean isNodeInPath(final WITUpNode node) {
+    PropertyGraphNode targetNode = node.getNode();
+
+    for (WITUpNode pathNode : nodesInPath) {
+      if (pathNode.getNode().equals(targetNode)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Resolve variables by traversing backward through DDG recursely substitue until there are no
    * more variables to resolve
@@ -277,9 +302,13 @@ public final class Resolver {
     }
     visited.add(currentNode);
 
-    List<DataDependencyEdge> incomingDDG = getIncomingDDGEdges(currentNode, ddg);
-    for (DataDependencyEdge edge : incomingDDG) {
-      WITUpNode sourceNode = ddg.getEdgeSource(edge);
+    List<DataDependencyEdge> incomingDDGEdges = getIncomingDDGEdges(currentNode, cpg);
+    for (DataDependencyEdge edge : incomingDDGEdges) {
+      WITUpNode sourceNode = cpg.getEdgeSource(edge);
+
+      if (!isNodeInPath(sourceNode)) {
+        continue;
+      }
 
       if (sourceNode instanceof SimpleNode simpleNode) {
         PropertyGraphNode propNode = simpleNode.getNode();
