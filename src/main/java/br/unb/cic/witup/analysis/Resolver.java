@@ -69,6 +69,9 @@ public final class Resolver {
 
     List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
 
+    // we can fix it back to iterator pattern and derive the condition path
+    // from the full path as we have the cpd
+    // for each full path, get the throw condition path and pass to resolve
     for (int i = 0; i < throwConditionsPaths.size(); i++) {
       List<ResolvedThrowCondition> resolved =
           resolveConditionPath(fullPaths.get(i), throwConditionsPaths.get(i));
