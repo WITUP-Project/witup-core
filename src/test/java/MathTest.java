@@ -64,7 +64,7 @@ public class MathTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     // for each throw node, we are gonna need to get the respective conditions
@@ -134,7 +134,7 @@ public class MathTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -201,7 +201,7 @@ public class MathTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =

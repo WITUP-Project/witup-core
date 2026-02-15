@@ -94,9 +94,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return new SimpleNode(node);
   }
 
-  public static List<WITUpNode> findThrowNodes(final WITUpGraph g) {
+  public List<WITUpNode> findThrowNodes() {
     List<WITUpNode> result = new ArrayList<>();
-    for (WITUpNode n : g.vertexSet()) {
+    for (WITUpNode n : this.vertexSet()) {
       if (n instanceof ThrowStatementNode) {
         result.add(n);
       }

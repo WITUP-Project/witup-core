@@ -65,7 +65,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -133,7 +133,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -200,7 +200,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -267,7 +267,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -334,7 +334,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -401,7 +401,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -476,7 +476,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
@@ -560,7 +560,7 @@ public class IntTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =

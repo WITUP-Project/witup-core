@@ -61,7 +61,7 @@ public class TextTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
@@ -125,7 +125,7 @@ public class TextTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
@@ -186,7 +186,7 @@ public class TextTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = WITUpGraph.findThrowNodes(witUpCPG);
+    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
