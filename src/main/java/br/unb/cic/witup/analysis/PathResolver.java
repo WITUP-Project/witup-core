@@ -46,16 +46,18 @@ import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 import sootup.core.types.PrimitiveType.BooleanType;
 
-public final class Resolver {
+public final class PathResolver {
   private final WITUpGraph cpg;
   private final Map<String, SymKind> symbolKindTable;
+  private final List<GraphPath<WITUpNode, WITUpEdge>> paths;
   private Set<String> variableSet;
   private Set<WITUpNode> nodesInPath;
 
-  public Resolver(final WITUpGraph cpg) {
+  public PathResolver(final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> paths) {
     this.cpg = cpg;
     symbolKindTable = new HashMap<>();
     variableSet = new HashSet<>();
+    this.paths = paths;
   }
 
   public Map<String, SymKind> getSymbolKindTable() {
@@ -63,18 +65,15 @@ public final class Resolver {
   }
 
   // triggers the resolver to recursively trace stack variables back
-  public List<List<ResolvedThrowCondition>> resolveConditionPaths(
-      final List<GraphPath<WITUpNode, WITUpEdge>> fullPaths,
-      final List<List<ThrowCondition>> throwConditionsPaths) {
+  public List<List<ResolvedThrowCondition>> resolveConditionPaths() {
 
     List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
 
     // we can fix it back to iterator pattern and derive the condition path
     // from the full path as we have the cpd
     // for each full path, get the throw condition path and pass to resolve
-    for (int i = 0; i < throwConditionsPaths.size(); i++) {
-      List<ResolvedThrowCondition> resolved =
-          resolveConditionPath(fullPaths.get(i), throwConditionsPaths.get(i));
+    for (GraphPath<WITUpNode, WITUpEdge> p: this.paths) {
+      List<ResolvedThrowCondition> resolved = resolveConditionPath(p);
 
       if (resolved != null && !resolved.isEmpty()) {
         resolvedThrowConditions.add(resolved);
@@ -84,13 +83,12 @@ public final class Resolver {
   }
 
   public List<ResolvedThrowCondition> resolveConditionPath(
-      final GraphPath<WITUpNode, WITUpEdge> fullPath,
-      final List<ThrowCondition> throwConditionsPath) {
+      final GraphPath<WITUpNode, WITUpEdge> p) {
 
-    this.nodesInPath = new HashSet<>(fullPath.getVertexList());
+    this.nodesInPath = new HashSet<>(p.getVertexList());
 
     List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
-    for (ThrowCondition throwCondition : throwConditionsPath) {
+    for (ThrowCondition throwCondition : cpg.getThrowConditions(p)) {
       SymExpr resolved = resolveThrowCondition(throwCondition.getNode());
       boolean truthValue = throwCondition.getTruthValue();
 

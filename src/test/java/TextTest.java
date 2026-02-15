@@ -1,7 +1,7 @@
 import static org.junit.jupiter.api.Assertions.*;
 
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
-import br.unb.cic.witup.analysis.Resolver;
+import br.unb.cic.witup.analysis.PathResolver;
 import br.unb.cic.witup.analysis.SymKind;
 import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
@@ -63,16 +63,13 @@ public class TextTest {
 
     List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
         witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
-
-    Resolver resolver = new Resolver(witUpCPG);
+    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -121,16 +118,13 @@ public class TextTest {
 
     List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
         witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
-
-    Resolver resolver = new Resolver(witUpCPG);
+    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -176,16 +170,13 @@ public class TextTest {
 
     List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
         witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
-
-    Resolver resolver = new Resolver(witUpCPG);
+    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 

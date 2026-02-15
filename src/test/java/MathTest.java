@@ -3,7 +3,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.ResolvedThrowCondition;
-import br.unb.cic.witup.analysis.Resolver;
+import br.unb.cic.witup.analysis.PathResolver;
 import br.unb.cic.witup.analysis.SymKind;
 import br.unb.cic.witup.analysis.ThrowCondition;
 import br.unb.cic.witup.graph.WITUpGraph;
@@ -72,16 +72,14 @@ public class MathTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
         witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
-    Resolver resolver = new Resolver(witUpCPG);
+    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -135,16 +133,14 @@ public class MathTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
         witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
-    Resolver resolver = new Resolver(witUpCPG);
+    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -196,16 +192,14 @@ public class MathTest {
         witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
         witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
 
-    List<List<ThrowCondition>> throwConditionsPaths =
-        witUpCPG.getThrowConditionsPaths(pathsWithConditions);
 
-    Resolver resolver = new Resolver(witUpCPG);
+    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
 
     List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths(pathsWithConditions, throwConditionsPaths);
+        resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
