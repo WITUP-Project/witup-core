@@ -51,7 +51,15 @@ public final class PathResolver {
   private final Map<String, SymKind> symbolKindTable;
   private final List<GraphPath<WITUpNode, WITUpEdge>> paths;
   private Set<String> variableSet;
-  private Set<WITUpNode> nodesInPath;
+  private GraphPath<WITUpNode, WITUpEdge> currentPath;
+
+  private void setCurrentPath(GraphPath<WITUpNode, WITUpEdge> p) {
+    this.currentPath = p;
+  }
+
+  private GraphPath<WITUpNode, WITUpEdge> getCurrentPath() {
+    return this.currentPath;
+  }
 
   public PathResolver(final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> paths) {
     this.cpg = cpg;
@@ -85,8 +93,7 @@ public final class PathResolver {
   public List<ResolvedThrowCondition> resolveConditionPath(
       final GraphPath<WITUpNode, WITUpEdge> p) {
 
-    this.nodesInPath = new HashSet<>(p.getVertexList());
-
+    this.setCurrentPath(p);
     List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
     for (ThrowCondition throwCondition : cpg.getThrowConditions(p)) {
       SymExpr resolved = resolveThrowCondition(throwCondition.getNode());
@@ -276,6 +283,7 @@ public final class PathResolver {
   private boolean isNodeInPath(final WITUpNode node) {
     PropertyGraphNode targetNode = node.getNode();
 
+    Set<WITUpNode> nodesInPath = new HashSet<>(this.getCurrentPath().getVertexList());
     for (WITUpNode pathNode : nodesInPath) {
       if (pathNode.getNode().equals(targetNode)) {
         return true;
@@ -307,6 +315,7 @@ public final class PathResolver {
     for (DataDependencyEdge edge : incomingDDGEdges) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
 
+      // do not resolve data dependency edges that are not in the current path.
       if (!isNodeInPath(sourceNode)) {
         continue;
       }
