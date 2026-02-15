@@ -94,7 +94,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return new SimpleNode(node);
   }
 
-  public List<WITUpNode> findThrowNodes() {
+  public List<WITUpNode> getThrowNodes() {
     List<WITUpNode> result = new ArrayList<>();
     for (WITUpNode n : this.vertexSet()) {
       if (n instanceof ThrowStatementNode) {
@@ -104,10 +104,8 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return result;
   }
 
-  public static List<WITUpNode> findConditionNodes(final WITUpGraph g, final ThrowStatementNode t) {
+  public static List<WITUpNode> getThrowConditionNodes(final WITUpGraph g, final ThrowStatementNode t) {
     List<WITUpNode> throwConditionNodes = new ArrayList<>();
-    // Not sure how costly this reversal can be at scale. Doc says there is a penalty
-    // We can build the reversed graph if we need
     EdgeReversedGraph<WITUpNode, WITUpEdge> reversedGraph = new EdgeReversedGraph<>(g);
     Iterator<WITUpNode> iterator = new DepthFirstIterator<>(reversedGraph, t);
     while (iterator.hasNext()) {
@@ -120,8 +118,26 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
+  public List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(final WITUpNode throwNode) {
+    WITUpNode entry = findEntryNode(this);
+
+    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(this);
+    List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
+            allPaths.getAllPaths(entry, throwNode, true, null);
+
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
+    for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
+      for (WITUpNode node : path.getVertexList()) {
+        if (node instanceof IfStatementNode) {
+          pathsWithIfStatements.add(path);
+          break;
+        }
+      }
+    }
+    return pathsWithIfStatements;
+  }
+
   public static WITUpNode findEntryNode(final WITUpGraph g) {
-    // Track incoming edges by *PropertyGraphNode identity*
     Set<PropertyGraphNode> hasIncoming = new HashSet<>(g.vertexSet().size());
 
     for (WITUpEdge e : g.edgeSet()) {
@@ -143,21 +159,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
-  // returns all paths that have conditions and lead to throw.
-  // should this be all paths that lead to throw instead, or would it bloat?
-  public static List<GraphPath<WITUpNode, WITUpEdge>> findPathsWithConditions(
-      final WITUpGraph cfg, final WITUpNode throwNode) {
-    WITUpNode entry = findEntryNode(cfg);
 
-    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
-    List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
-        allPaths.getAllPaths(entry, throwNode, true, null);
-
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        getPathsWithIfStatements(throwPaths);
-
-    return pathsWithIfStatements;
-  }
 
   public static List<List<ThrowCondition>> findContitionPaths(
       final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
@@ -200,17 +202,4 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionsPaths;
   }
 
-  private static List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(
-      final List<GraphPath<WITUpNode, WITUpEdge>> throwPaths) {
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
-      for (WITUpNode node : path.getVertexList()) {
-        if (node instanceof IfStatementNode) {
-          pathsWithIfStatements.add(path);
-          break;
-        }
-      }
-    }
-    return pathsWithIfStatements;
-  }
 }

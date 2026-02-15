@@ -61,13 +61,13 @@ public class TextTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         WITUpGraph.findContitionPaths(pathsWithConditions);
@@ -125,13 +125,13 @@ public class TextTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         WITUpGraph.findContitionPaths(pathsWithConditions);
@@ -186,13 +186,13 @@ public class TextTest {
 
     WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
 
-    List<WITUpNode> throwNodes = witUpCPG.findThrowNodes();
+    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
 
     PropertyGraph sootUpCFG = sootUpGraphs.getCFG();
     WITUpGraph witUpCFG = WITUpGraph.fromPropertyGraph(sootUpCFG);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConditions =
-        WITUpGraph.findPathsWithConditions(witUpCFG, throwNodes.get(0));
+        witUpCFG.getPathsWithIfStatements(throwNodes.get(0));
 
     List<List<ThrowCondition>> throwConditionsPaths =
         WITUpGraph.findContitionPaths(pathsWithConditions);
