@@ -9,7 +9,7 @@ import org.json.JSONObject;
 
 public final class SolverInvoker {
 
-  private static final String PYTHON_BIN_ENV = "PYTHON_BIN";
+  private static final String PYTHON_ENV_PATH = "PYTHON_ENV_PATH";
   private final String pythonScriptPath;
 
   public SolverInvoker(final String pythonScriptPath) {
@@ -22,7 +22,7 @@ public final class SolverInvoker {
    */
   public String callSolver(final JSONObject request) throws IOException, InterruptedException {
     ProcessBuilder pb =
-        new ProcessBuilder(System.getenv(PYTHON_BIN_ENV), pythonScriptPath);
+        new ProcessBuilder(System.getenv(PYTHON_ENV_PATH), pythonScriptPath);
     // redirect stderr
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
