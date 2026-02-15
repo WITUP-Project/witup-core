@@ -119,7 +119,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(final WITUpNode throwNode) {
-    WITUpNode entry = findEntryNode(this);
+    WITUpNode entry = findEntryNode();
 
     AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(this);
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
@@ -137,14 +137,14 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return pathsWithIfStatements;
   }
 
-  public static WITUpNode findEntryNode(final WITUpGraph g) {
-    Set<PropertyGraphNode> hasIncoming = new HashSet<>(g.vertexSet().size());
+  private WITUpNode findEntryNode() {
+    Set<PropertyGraphNode> hasIncoming = new HashSet<>(this.vertexSet().size());
 
-    for (WITUpEdge e : g.edgeSet()) {
+    for (WITUpEdge e : this.edgeSet()) {
       hasIncoming.add(e.getEdge().getDestination());
     }
 
-    for (WITUpNode witNode : g.vertexSet()) {
+    for (WITUpNode witNode : this.vertexSet()) {
       PropertyGraphNode pgNode = witNode.getNode();
 
       if (hasIncoming.contains(pgNode)) {
@@ -159,34 +159,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
-
-
-  public static List<List<ThrowCondition>> findContitionPaths(
-      final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
-    List<List<BooleanCFGEdge>> throwConditionsPaths =
-        getThrowConditionsPaths(pathsWithIfStatements);
-
-    List<List<ThrowCondition>> throwConditions = getThrowConditions(throwConditionsPaths);
-
-    return throwConditions;
-  }
-
-  private static List<List<ThrowCondition>> getThrowConditions(
-      final List<List<BooleanCFGEdge>> throwConditionsPaths) {
-
-    List<List<ThrowCondition>> throwConditions = new ArrayList<>();
-    for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
-      List<ThrowCondition> pathConditions = new ArrayList<>();
-      for (BooleanCFGEdge edge : throwConditionsPath) {
-        WITUpNode sourceNode = edge.getSource();
-        pathConditions.add(new ThrowCondition(sourceNode, edge.getCondition()));
-      }
-      throwConditions.add(pathConditions);
-    }
-    return throwConditions;
-  }
-
-  private static List<List<BooleanCFGEdge>> getThrowConditionsPaths(
+  public List<List<ThrowCondition>> getThrowConditionsPaths(
       final List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements) {
 
     List<List<BooleanCFGEdge>> throwConditionsPaths = new ArrayList<>();
@@ -199,7 +172,16 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
       throwConditionsPaths.add(booleanEdges);
     }
-    return throwConditionsPaths;
-  }
 
+    List<List<ThrowCondition>> throwConditions = new ArrayList<>();
+    for (List<BooleanCFGEdge> throwConditionsPath : throwConditionsPaths) {
+      List<ThrowCondition> pathConditions = new ArrayList<>();
+      for (BooleanCFGEdge edge : throwConditionsPath) {
+        WITUpNode sourceNode = edge.getSource();
+        pathConditions.add(new ThrowCondition(sourceNode, edge.getCondition()));
+      }
+      throwConditions.add(pathConditions);
+    }
+    return throwConditions;
+  }
 }
