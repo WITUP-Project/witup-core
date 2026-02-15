@@ -25,7 +25,6 @@ import sootup.core.jimple.common.expr.JNeExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
-import sootup.core.jimple.common.ref.JFieldRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.types.PrimitiveType;
 
@@ -66,13 +65,11 @@ public abstract class SymExpr {
     }
 
     // eg this.radius
-    if (value instanceof JFieldRef fieldRef) {
+    if (value instanceof JInstanceFieldRef instField) {
       // For instance fields: this.<ClassName: type fieldName>
-      if (fieldRef instanceof JInstanceFieldRef instField) {
-        SymExpr base = fromValue(instField.getBase());
-        String fieldName = instField.getFieldSignature().getName();
-        return new SymField(base, fieldName);
-      }
+      SymExpr base = fromValue(instField.getBase());
+      String fieldName = instField.getFieldSignature().getName();
+      return new SymField(base, fieldName);
     }
 
     if (value instanceof AbstractConditionExpr condExpr) {

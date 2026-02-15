@@ -123,34 +123,36 @@ public final class PathResolver {
         continue;
       }
 
-      if (sourceNode instanceof SimpleNode simpleNode) {
-        PropertyGraphNode propNode = simpleNode.getNode();
+      if (!(sourceNode instanceof SimpleNode simpleNode)) {
+        continue;
+      }
 
-        if (!(propNode instanceof StmtGraphNode)) {
-          continue;
-        }
+      PropertyGraphNode propNode = simpleNode.getNode();
+      if (!(simpleNode.getNode() instanceof StmtGraphNode)) {
+        continue;
+      }
 
-        StmtGraphNode stmtNode = (StmtGraphNode) propNode;
-        Stmt stmt = stmtNode.getStmt();
+      StmtGraphNode stmtNode = (StmtGraphNode) propNode;
+      Stmt stmt = stmtNode.getStmt();
 
-        if (stmt instanceof JAssignStmt) {
-          JAssignStmt assign = (JAssignStmt) stmt;
-          Value leftOp = assign.getLeftOp();
-          // local variable on the lhs e.g. $stack1 == 0
-          String definedVar = getVariableName(leftOp);
+      if (!(stmt instanceof JAssignStmt assign)) {
+        continue;
+      }
 
-          if (variableSet.contains(definedVar)) {
-            // translate the RHS to symbolic expression
-            SymExpr rhsSymExpr = SymExpr.fromValue(assign.getRightOp());
+      Value leftOp = assign.getLeftOp();
+      // local variable on the lhs e.g. $stack1 == 0
+      String definedVar = getVariableName(leftOp);
 
-            // substitute this variable in our current expression
-            symExpr = symExpr.substitute(definedVar, rhsSymExpr);
+      if (variableSet.contains(definedVar)) {
+        // translate the RHS to symbolic expression
+        SymExpr rhsSymExpr = SymExpr.fromValue(assign.getRightOp());
 
-            variableSet.remove(definedVar);
-            variableSet.addAll(findVariables(rhsSymExpr));
-            symExpr = resolveVariables(symExpr, sourceNode, visited);
-          }
-        }
+        // substitute this variable in our current expression
+        symExpr = symExpr.substitute(definedVar, rhsSymExpr);
+
+        variableSet.remove(definedVar);
+        variableSet.addAll(findVariables(rhsSymExpr));
+        symExpr = resolveVariables(symExpr, sourceNode, visited);
       }
     }
 
@@ -196,7 +198,4 @@ public final class PathResolver {
       symbolKindTable.put(inv.toString(), inv.kind());
     }
   }
-
-
-
-  }
+}
