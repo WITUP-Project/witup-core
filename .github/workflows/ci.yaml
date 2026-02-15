@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHON_VENV: .venv
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.14
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('pom.xml') }}
+
+      - name: Cache Python virtualenv
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: ${{ runner.os }}-python-${{ hashFiles('src/main/solver/requirements.txt') }}
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv $PYTHON_VENV
+          . $PYTHON_VENV/bin/activate
+          pip install --upgrade pip
+          pip install -r src/main/solver/requirements.txt
+
+      - name: Run Maven verify
+        run: mvn clean verify
