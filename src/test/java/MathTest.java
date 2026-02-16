@@ -2,10 +2,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.PathResolver;
+import br.unb.cic.witup.analysis.ResolvedThrowCondition;
 import br.unb.cic.witup.analysis.SymKind;
-import br.unb.cic.witup.analysis.ThrowCondition;
+import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
@@ -14,8 +14,6 @@ import br.unb.cic.witup.solver.SolverInvoker;
 import br.unb.cic.witup.solver.SolverResponse;
 import br.unb.cic.witup.solver.SolverResponseAssertions;
 import br.unb.cic.witup.solver.SolverSerialiser;
-import br.unb.cic.witup.sootup.SootUpAnalyser;
-import br.unb.cic.witup.sootup.SootUpPropertyGraphs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,61 +23,48 @@ import java.util.List;
 import java.util.Map;
 import org.jgrapht.GraphPath;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import sootup.codepropertygraph.propertygraph.PropertyGraph;
+import org.junit.jupiter.api.TestInstance;
 
-// For now this is our basic test runner that will do an e2e run of sorts. We
-// will need to break this up soon
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MathTest {
-  private Path testClassesDir;
-  private SootUpAnalyser sootUpAnalyser;
+  HashMap<String, WITUpGraph> witupGraphs;
 
-  @BeforeEach
+  @BeforeAll
   void setUp() {
     Path projectRoot = Paths.get(System.getProperty("user.dir"));
-    testClassesDir = projectRoot.resolve("target/test-classes");
-    sootUpAnalyser = new SootUpAnalyser();
+    Path testClassesDir = projectRoot.resolve("target/test-classes");
+    WITUpAnalyser witUpAnalyser =
+        new WITUpAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
+    witupGraphs = witUpAnalyser.buildWitUpGraphs();
   }
 
   @Test
   public void buildSootUpPropertyGraphs() {
-    HashMap<String, SootUpPropertyGraphs> sootupGraphs =
-        sootUpAnalyser.analyseThrowingMethods(
-            testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
-
-    assertNotNull(sootupGraphs);
-    assertEquals(3, sootupGraphs.size());
+    assertNotNull(witupGraphs);
+    assertEquals(3, witupGraphs.size());
   }
 
   @Test
   public void invalidField() {
-    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-        sootUpAnalyser.analyseThrowingMethods(
-            testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
-
     String methodSignature = "<br.unb.cic.witup.samples.Math: double circleArea()>";
-    SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
-    PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
 
-    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
-
-    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     // for each throw node, we are gonna need to get the respective conditions
     List<WITUpNode> conditionNodes =
-        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getPathsWithIfStatements(throwNodes.get(0));
 
+    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
 
-    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
-
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths();
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -112,35 +97,22 @@ public class MathTest {
 
   @Test
   public void invalidParameter() {
-    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-        sootUpAnalyser.analyseThrowingMethods(
-            testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
-
-    System.out.println(sootUpPropertyGraphs);
-
     String methodSignature = "<br.unb.cic.witup.samples.Math: int invalidParameter(int,int)>";
-    SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
-    PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
 
-    System.out.println(sootUpCPG);
-
-    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
-
-    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getPathsWithIfStatements(throwNodes.get(0));
 
+    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
 
-    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
-
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths();
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -174,32 +146,23 @@ public class MathTest {
 
   @Test
   public void invalidParameterConjunction() {
-    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs =
-        sootUpAnalyser.analyseThrowingMethods(
-            testClassesDir.toString(), "br.unb.cic.witup.samples.Math");
-
     String methodSignature =
         "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
-    SootUpPropertyGraphs sootUpGraphs = sootUpPropertyGraphs.get(methodSignature);
-    PropertyGraph sootUpCPG = sootUpGraphs.getCPG();
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
 
-    WITUpGraph witUpCPG = WITUpGraph.fromPropertyGraph(sootUpCPG);
-
-    List<WITUpNode> throwNodes = witUpCPG.getThrowNodes();
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        witUpCPG.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        witUpCPG.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getPathsWithIfStatements(throwNodes.get(0));
 
+    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
 
-    PathResolver resolver = new PathResolver(witUpCPG, pathsWithIfStatements);
-
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths =
-        resolver.resolveConditionPaths();
+    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 

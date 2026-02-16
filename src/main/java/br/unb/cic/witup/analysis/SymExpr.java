@@ -90,7 +90,8 @@ public abstract class SymExpr {
       SymExpr base = fromValue(invokeExpr.getBase());
       String invokedMethodName = invokeExpr.getMethodSignature().getSubSignature().getName();
       boolean returnsBoolean =
-              invokeExpr.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
+          invokeExpr.getMethodSignature().getSubSignature().getType()
+              instanceof PrimitiveType.BooleanType;
 
       return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
     }
@@ -168,7 +169,7 @@ public abstract class SymExpr {
       if ((leftBinOp.getOp() == BinOp.CMPG
               || leftBinOp.getOp() == BinOp.CMPL
               || leftBinOp.getOp() == BinOp.CMP)
-              && rightConst.getValue().equals(0)) {
+          && rightConst.getValue().equals(0)) {
 
         // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
         // So: (x cmpg y) >= 0 means x >= y
@@ -200,8 +201,8 @@ public abstract class SymExpr {
     // a method call, we don't need the equality; only the respective symbol
     // and the truth value
     if (right instanceof SymConst c
-            && Integer.valueOf(0).equals(c.getValue())
-            && left.kind() == SymKind.BOOLEAN_METHOD) {
+        && Integer.valueOf(0).equals(c.getValue())
+        && left.kind() == SymKind.BOOLEAN_METHOD) {
 
       return left;
     }
