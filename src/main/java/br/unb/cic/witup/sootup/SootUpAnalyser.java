@@ -1,12 +1,11 @@
 package br.unb.cic.witup.sootup;
 
-import java.util.HashMap;
-import java.util.Set;
-import sootup.core.graph.StmtGraph;
+import sootup.codepropertygraph.cdg.CdgCreator;
+import sootup.codepropertygraph.cfg.CfgCreator;
+import sootup.codepropertygraph.ddg.DdgCreator;
+import sootup.codepropertygraph.propertygraph.PropertyGraph;
+import sootup.codepropertygraph.propertygraph.util.PropertyGraphsMerger;
 import sootup.core.inputlocation.AnalysisInputLocation;
-import sootup.core.jimple.common.stmt.JThrowStmt;
-import sootup.core.jimple.common.stmt.Stmt;
-import sootup.core.model.Body;
 import sootup.java.bytecode.frontend.inputlocation.JavaClassPathAnalysisInputLocation;
 import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootMethod;
@@ -18,14 +17,15 @@ import sootup.java.core.views.JavaView;
  * method to be analysed, build the individual graphs and the resulting Code Property Graph (CPG)
  */
 public final class SootUpAnalyser {
-  private final SootUpGraphBuilder sootUpGraphBuilder;
+  private final String location;
+  private final String className;
 
-  public SootUpAnalyser() {
-    this.sootUpGraphBuilder = new SootUpGraphBuilder();
+  public SootUpAnalyser(final String location, String className) {
+    this.location = location;
+    this.className = className;
   }
 
-  public HashMap<String, SootUpPropertyGraphs> analyseThrowingMethods(
-      final String location, final String className) {
+  public JavaSootClass getSootClass() {
     AnalysisInputLocation inputLocation = new JavaClassPathAnalysisInputLocation(location);
     JavaView view = new JavaView(inputLocation);
     JavaClassType classType = view.getIdentifierFactory().getClassType(className);
@@ -34,27 +34,21 @@ public final class SootUpAnalyser {
         view.getClass(classType)
             .orElseThrow(() -> new RuntimeException("Soot class not found: " + classType));
 
-    return buildSootUpPropertyGraphs(sootClass);
+    return sootClass;
   }
 
-  private HashMap<String, SootUpPropertyGraphs> buildSootUpPropertyGraphs(
-      final JavaSootClass sootClass) {
-    HashMap<String, SootUpPropertyGraphs> sootUpPropertyGraphs = new HashMap<>();
+  public PropertyGraph buildCPG(final JavaSootMethod m) {
+    CfgCreator cfgCreator = new CfgCreator();
+    CdgCreator cdgCreator = new CdgCreator();
+    DdgCreator ddgCreator = new DdgCreator();
 
-    Set<JavaSootMethod> methods = sootClass.getMethods();
-    methods.forEach(
-        m -> {
-          Body body = m.getBody();
-          StmtGraph<?> graph = body.getStmtGraph();
+    PropertyGraph cfg = cfgCreator.createGraph(m);
+    PropertyGraph cdg = cdgCreator.createGraph(m);
+    PropertyGraph ddg = ddgCreator.createGraph(m);
 
-          for (Stmt s : graph) {
-            if (s instanceof JThrowStmt) {
-              sootUpPropertyGraphs.put(
-                  m.getSignature().toString(), sootUpGraphBuilder.buildPropertyGraphs(m));
-              break;
-            }
-          }
-        });
-    return sootUpPropertyGraphs;
+    PropertyGraph cpg = cfg;
+    cpg = PropertyGraphsMerger.mergeGraphs(cpg, cdg);
+    cpg = PropertyGraphsMerger.mergeGraphs(cpg, ddg);
+    return cpg;
   }
 }

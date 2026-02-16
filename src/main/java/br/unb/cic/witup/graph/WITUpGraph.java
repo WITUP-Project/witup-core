@@ -17,7 +17,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.graph.AsSubgraph;
@@ -129,7 +128,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
     AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
-            allPaths.getAllPaths(entry, throwNode, true, null);
+        allPaths.getAllPaths(entry, throwNode, true, null);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
@@ -144,12 +143,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
-    AsSubgraph<WITUpNode, WITUpEdge> cfg = new AsSubgraph<>(
+    AsSubgraph<WITUpNode, WITUpEdge> cfg =
+        new AsSubgraph<>(
             this,
             null,
             this.edgeSet().stream()
-                    .filter(edge -> edge instanceof CFGEdge)
-                    .collect(Collectors.toSet()));
+                .filter(edge -> edge instanceof CFGEdge)
+                .collect(Collectors.toSet()));
     return cfg;
   }
 

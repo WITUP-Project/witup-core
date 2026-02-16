@@ -6,24 +6,23 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-
 import org.json.JSONObject;
 
 public final class SolverInvoker {
-  private static final String pythonExecutable = Paths.get(".venv", "bin", "python")
-          .toAbsolutePath().toString();
+  private static final String pythonExecutable =
+      Paths.get(".venv", "bin", "python").toAbsolutePath().toString();
   private final String pythonScriptPath;
 
   public SolverInvoker(final String pythonScriptPath) {
     this.pythonScriptPath = pythonScriptPath;
   }
+
   /**
    * Calls a Python solver script with the given JSON request. Python logs go to JVM stderr; the
    * JSON response is returned as a string.
    */
   public String callSolver(final JSONObject request) throws IOException, InterruptedException {
-    ProcessBuilder pb =
-        new ProcessBuilder(pythonExecutable, pythonScriptPath);
+    ProcessBuilder pb = new ProcessBuilder(pythonExecutable, pythonScriptPath);
     // redirect stderr
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 

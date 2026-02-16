@@ -35,7 +35,7 @@ public final class PathResolver {
 
   public List<List<ResolvedThrowCondition>> resolveConditionPaths() {
     List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> p: this.paths) {
+    for (GraphPath<WITUpNode, WITUpEdge> p : this.paths) {
       List<ResolvedThrowCondition> resolved = resolveConditionPath(p);
 
       if (!resolved.isEmpty()) {
@@ -46,7 +46,7 @@ public final class PathResolver {
   }
 
   public List<ResolvedThrowCondition> resolveConditionPath(
-          final GraphPath<WITUpNode, WITUpEdge> p) {
+      final GraphPath<WITUpNode, WITUpEdge> p) {
 
     this.setCurrentPath(p);
     List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
@@ -103,9 +103,9 @@ public final class PathResolver {
 
   // it's ok to reassign current in a recursive function
   private SymExpr resolveVariables(
-          SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
-          final WITUpNode currentNode,
-          final Set<WITUpNode> visited) {
+      SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
+      final WITUpNode currentNode,
+      final Set<WITUpNode> visited) {
     if (variableSet.isEmpty()) {
       return symExpr;
     }
@@ -179,7 +179,6 @@ public final class PathResolver {
   private GraphPath<WITUpNode, WITUpEdge> getCurrentPath() {
     return this.currentPath;
   }
-
 
   public Map<String, SymKind> getSymbolKindTable() {
     return symbolKindTable;
