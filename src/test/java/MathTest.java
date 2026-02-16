@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import org.jgrapht.GraphPath;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -31,7 +31,7 @@ import org.junit.jupiter.api.TestInstance;
 public class MathTest {
   HashMap<String, WITUpGraph> witupGraphs;
 
-  @BeforeEach
+  @BeforeAll
   void setUp() {
     Path projectRoot = Paths.get(System.getProperty("user.dir"));
     Path testClassesDir = projectRoot.resolve("target/test-classes");
