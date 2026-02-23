@@ -7,6 +7,9 @@ public final class SymVar extends SymExpr {
     this.name = name;
   }
 
+  @Override
+  public <T> T accept(SymExprVisitor<T> visitor) { return visitor.visitVar(this); }
+
   public String getName() {
     return name;
   }

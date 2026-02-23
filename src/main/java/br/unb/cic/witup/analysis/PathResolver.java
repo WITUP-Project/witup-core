@@ -23,7 +23,7 @@ public final class PathResolver {
   private final WITUpGraph cpg;
   private final Map<String, SymKind> symbolKindTable;
   private final List<GraphPath<WITUpNode, WITUpEdge>> paths;
-  private Set<String> variableSet;
+  private final Set<String> variableSet;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
 
   public PathResolver(final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> paths) {
@@ -72,7 +72,7 @@ public final class PathResolver {
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
     SymExpr condition = SymExpr.fromValue(ifStmt.getCondition());
 
-    variableSet = findVariables(condition);
+    collectVariables(condition);
 
     // traverse backward and substitute
     SymExpr resolved = resolveVariables(condition, ifNode, new HashSet<>());
@@ -83,22 +83,9 @@ public final class PathResolver {
 
     return resolved;
   }
-
-  // populates variableSet with all the variables that may need resolution
-  private Set<String> findVariables(final SymExpr expr) {
-    collectVariables(expr);
-    return variableSet;
-  }
-
+  
   private void collectVariables(final SymExpr expr) {
-    if (expr instanceof SymVar) {
-      variableSet.add(((SymVar) expr).getName());
-    } else if (expr instanceof SymBinOp) {
-      collectVariables(((SymBinOp) expr).getLeft());
-      collectVariables(((SymBinOp) expr).getRight());
-    } else if (expr instanceof SymField) {
-      collectVariables(((SymField) expr).getBase());
-    }
+    variableSet.addAll(new VariableCollector().collect(expr));
   }
 
   // it's ok to reassign current in a recursive function
@@ -151,7 +138,7 @@ public final class PathResolver {
         symExpr = symExpr.substitute(definedVar, rhsSymExpr);
 
         variableSet.remove(definedVar);
-        variableSet.addAll(findVariables(rhsSymExpr));
+        collectVariables(rhsSymExpr);
         symExpr = resolveVariables(symExpr, sourceNode, visited);
       }
     }

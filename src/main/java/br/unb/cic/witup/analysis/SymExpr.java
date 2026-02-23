@@ -29,7 +29,8 @@ import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.types.PrimitiveType;
 
 public abstract class SymExpr {
-  /** Substitute a variable with another expression */
+  public abstract <T> T accept(SymExprVisitor<T> visitor);
+
   public abstract SymExpr substitute(String varName, SymExpr replacement);
 
   public abstract String toString();

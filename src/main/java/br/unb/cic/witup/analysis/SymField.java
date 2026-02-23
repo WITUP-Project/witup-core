@@ -9,6 +9,9 @@ public final class SymField extends SymExpr {
     this.fieldName = fieldName;
   }
 
+  @Override
+  public <T> T accept(SymExprVisitor<T> visitor) { return visitor.visitField(this); }
+
   public SymExpr getBase() {
     return base;
   }
