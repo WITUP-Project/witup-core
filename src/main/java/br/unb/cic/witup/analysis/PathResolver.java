@@ -172,16 +172,6 @@ public final class PathResolver {
   }
 
   private void collectSymbolKinds(final SymExpr expr) {
-    if (expr instanceof SymVar v) {
-      symbolKindTable.put(v.getName(), v.kind());
-    } else if (expr instanceof SymBinOp bin) {
-      collectSymbolKinds(bin.getLeft());
-      collectSymbolKinds(bin.getRight());
-    } else if (expr instanceof SymField f) {
-      collectSymbolKinds(f.getBase());
-    } else if (expr instanceof SymVirtualInvoke inv) {
-      collectSymbolKinds(inv.getBase());
-      symbolKindTable.put(inv.toString(), inv.kind());
-    }
+    symbolKindTable.putAll(new SymbolKindCollector().collect(expr));
   }
 }
