@@ -32,18 +32,19 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('pom.xml') }}
 
-      - name: Cache Python virtualenv
+      - name: Cache pip
         uses: actions/cache@v3
         with:
-          path: .venv
-          key: ${{ runner.os }}-python-${{ hashFiles('src/main/solver/requirements.txt') }}
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('src/main/solver/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install Python dependencies
         run: |
           python -m venv $PYTHON_VENV
-          . $PYTHON_VENV/bin/activate
-          pip install --upgrade pip
-          pip install -r src/main/solver/requirements.txt
+          $PYTHON_VENV/bin/python -m pip install --upgrade pip
+          $PYTHON_VENV/bin/pip install -r src/main/solver/requirements.txt
 
       - name: Run Maven verify
         run: mvn clean verify
