@@ -21,7 +21,9 @@ public final class SymVirtualInvoke extends SymExpr {
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) { return visitor.visitVirtualInvoke(this); }
+  public <T> T accept(SymExprVisitor<T> visitor) {
+    return visitor.visitVirtualInvoke(this);
+  }
 
   @Override
   public SymExpr substitute(final String invField, final SymExpr replacement) {

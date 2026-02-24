@@ -1,8 +1,8 @@
-//package br.unb.cic.witup.analysis;
+// package br.unb.cic.witup.analysis;
 //
-//import java.util.List;
+// import java.util.List;
 //
-//public final class SymStaticInvoke extends SymExpr {
+// public final class SymStaticInvoke extends SymExpr {
 //  private final String invokeName; // e.g. length
 //  private final boolean returnsBoolean;
 //  private final List<SymExpr> args;
@@ -15,7 +15,8 @@
 //    return invokeName;
 //  }
 //
-//  public SymStaticInvoke(final String invokeName, final boolean returnsBoolean, final List<SymExpr> args) {
+//  public SymStaticInvoke(final String invokeName, final boolean returnsBoolean, final
+// List<SymExpr> args) {
 //    this.invokeName = invokeName;
 //    this.returnsBoolean = returnsBoolean;
 //    this.args = args;
@@ -43,4 +44,4 @@
 //  public SymKind kind() {
 //    return returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER;
 //  }
-//}
+// }

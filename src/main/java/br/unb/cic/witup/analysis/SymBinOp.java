@@ -12,7 +12,9 @@ public final class SymBinOp extends SymExpr {
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) { return visitor.visitBinOp(this); }
+  public <T> T accept(SymExprVisitor<T> visitor) {
+    return visitor.visitBinOp(this);
+  }
 
   public BinOp getOp() {
     return op;

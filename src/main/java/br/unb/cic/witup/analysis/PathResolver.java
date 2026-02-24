@@ -83,7 +83,7 @@ public final class PathResolver {
 
     return resolved;
   }
-  
+
   private void collectVariables(final SymExpr expr) {
     variableSet.addAll(new VariableCollector().collect(expr));
   }

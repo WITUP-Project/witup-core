@@ -16,7 +16,7 @@
         <!-- Linter plugin versions -->
         <spotbugs.maven.plugin.version>4.8.2.0</spotbugs.maven.plugin.version>
         <checkstyle.maven.plugin.version>3.6.0</checkstyle.maven.plugin.version>
-        <pmd.maven.plugin.version>3.21.2</pmd.maven.plugin.version>
+        <pmd.maven.plugin.version>3.28.0</pmd.maven.plugin.version>
         <maven.surefire.plugin.version>3.2.3</maven.surefire.plugin.version>
     </properties>
 
@@ -195,7 +195,7 @@
                 <version>${pmd.maven.plugin.version}</version>
                 <configuration>
                     <minimumTokens>100</minimumTokens>
-                    <targetJdk>17</targetJdk>
+                    <targetJdk>21</targetJdk>
                     <excludes>
                         <exclude>**/*Bean.java</exclude>
                         <exclude>**/generated/*.java</exclude>

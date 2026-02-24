@@ -11,12 +11,14 @@ public class SymbolKindCollector implements SymExprVisitor<Void> {
     return symbolKindTable;
   }
 
-  @Override public Void visitVar(SymVar v) {
+  @Override
+  public Void visitVar(SymVar v) {
     symbolKindTable.put(v.getName(), v.kind());
     return null;
   }
 
-  @Override public Void visitBinOp(SymBinOp b) {
+  @Override
+  public Void visitBinOp(SymBinOp b) {
     b.getLeft().accept(this);
     b.getRight().accept(this);
     return null;
@@ -27,7 +29,8 @@ public class SymbolKindCollector implements SymExprVisitor<Void> {
     return null;
   }
 
-  @Override public Void visitField(SymField f) {
+  @Override
+  public Void visitField(SymField f) {
     f.getBase().accept(this);
     return null;
   }
@@ -37,7 +40,8 @@ public class SymbolKindCollector implements SymExprVisitor<Void> {
     return null;
   }
 
-  @Override public Void visitVirtualInvoke(SymVirtualInvoke v) {
+  @Override
+  public Void visitVirtualInvoke(SymVirtualInvoke v) {
     v.getBase().accept(this);
     symbolKindTable.put(v.toString(), v.kind());
     return null;

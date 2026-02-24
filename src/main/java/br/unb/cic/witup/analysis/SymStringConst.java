@@ -8,7 +8,9 @@ public final class SymStringConst extends SymExpr {
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) { return visitor.visitStringConst(this); }
+  public <T> T accept(SymExprVisitor<T> visitor) {
+    return visitor.visitStringConst(this);
+  }
 
   public String getValue() {
     return value;

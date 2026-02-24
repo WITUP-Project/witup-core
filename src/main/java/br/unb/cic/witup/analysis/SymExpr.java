@@ -82,8 +82,7 @@ public abstract class SymExpr {
     SymExpr base = fromValue(e.getBase());
     String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
     boolean returnsBoolean =
-            e.getMethodSignature().getSubSignature().getType()
-                    instanceof PrimitiveType.BooleanType;
+        e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
 
     return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
   }

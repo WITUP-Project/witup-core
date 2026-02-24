@@ -11,22 +11,37 @@ public class VariableCollector implements SymExprVisitor<Void> {
     return variables;
   }
 
-  @Override public Void visitVar(SymVar v) {
+  @Override
+  public Void visitVar(SymVar v) {
     variables.add(v.getName());
     return null;
   }
-  @Override public Void visitConst(SymConst c) { return null; }
-  @Override public Void visitStringConst(SymStringConst c) { return null; }
-  @Override public Void visitBinOp(SymBinOp b) {
+
+  @Override
+  public Void visitConst(SymConst c) {
+    return null;
+  }
+
+  @Override
+  public Void visitStringConst(SymStringConst c) {
+    return null;
+  }
+
+  @Override
+  public Void visitBinOp(SymBinOp b) {
     b.getLeft().accept(this);
     b.getRight().accept(this);
     return null;
   }
-  @Override public Void visitField(SymField f) {
+
+  @Override
+  public Void visitField(SymField f) {
     f.getBase().accept(this);
     return null;
   }
-  @Override public Void visitVirtualInvoke(SymVirtualInvoke inv) {
+
+  @Override
+  public Void visitVirtualInvoke(SymVirtualInvoke inv) {
     inv.getBase().accept(this);
     return null;
   }
