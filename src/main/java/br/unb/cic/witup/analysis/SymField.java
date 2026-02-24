@@ -10,7 +10,7 @@ public final class SymField extends SymExpr {
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) {
+  public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitField(this);
   }
 

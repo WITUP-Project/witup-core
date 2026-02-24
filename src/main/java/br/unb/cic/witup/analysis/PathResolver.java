@@ -63,7 +63,7 @@ public final class PathResolver {
     return resolvedThrowConditions;
   }
 
-  private void setCurrentPath(GraphPath<WITUpNode, WITUpEdge> p) {
+  private void setCurrentPath(final GraphPath<WITUpNode, WITUpEdge> p) {
     this.currentPath = p;
   }
 

@@ -147,23 +147,20 @@ public abstract class SymExpr {
     SymExpr right = simplifyCmpPatterns(binOp.getRight());
 
     // Pattern: (x cmpg/cmpl y) op 0
-    if (left instanceof SymBinOp leftBinOp && right instanceof SymConst rightConst) {
+    if (left instanceof SymBinOp leftBinOp
+        && right instanceof SymConst rightConst
+        && (leftBinOp.getOp() == BinOp.CMPG
+            || leftBinOp.getOp() == BinOp.CMPL
+            || leftBinOp.getOp() == BinOp.CMP)
+        && rightConst.getValue().equals(0)) {
 
-      // Check if it's a cmp operation compared to 0. Not sure if we need
-      // to handle comparisons with numbers other than 0
-      if ((leftBinOp.getOp() == BinOp.CMPG
-              || leftBinOp.getOp() == BinOp.CMPL
-              || leftBinOp.getOp() == BinOp.CMP)
-          && rightConst.getValue().equals(0)) {
-
-        // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
-        // So: (x cmpg y) >= 0 means x >= y
-        //     (x cmpg y) > 0 means x > y
-        //     (x cmpg y) == 0 means x == y
-        //     (x cmpg y) < 0 means x < y
-        //     (x cmpg y) <= 0 means x <= y
-        return new SymBinOp(binOp.getOp(), leftBinOp.getLeft(), leftBinOp.getRight());
-      }
+      // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
+      // So: (x cmpg y) >= 0 means x >= y
+      //     (x cmpg y) > 0 means x > y
+      //     (x cmpg y) == 0 means x == y
+      //     (x cmpg y) < 0 means x < y
+      //     (x cmpg y) <= 0 means x <= y
+      return new SymBinOp(binOp.getOp(), leftBinOp.getLeft(), leftBinOp.getRight());
     }
 
     // Return with simplified children

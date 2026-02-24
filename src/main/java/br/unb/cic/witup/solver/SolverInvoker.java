@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import org.json.JSONObject;
 
 public final class SolverInvoker {
-  private static final String pythonExecutable =
+  private static final String PYTHON_EXECUTABLE =
       Paths.get(".venv", "bin", "python").toAbsolutePath().toString();
   private final String pythonScriptPath;
 
@@ -22,7 +22,7 @@ public final class SolverInvoker {
    * JSON response is returned as a string.
    */
   public String callSolver(final JSONObject request) throws IOException, InterruptedException {
-    ProcessBuilder pb = new ProcessBuilder(pythonExecutable, pythonScriptPath);
+    ProcessBuilder pb = new ProcessBuilder(PYTHON_EXECUTABLE, pythonScriptPath);
     // redirect stderr
     pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
