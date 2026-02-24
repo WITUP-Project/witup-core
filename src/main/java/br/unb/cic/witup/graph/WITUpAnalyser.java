@@ -10,10 +10,10 @@ import sootup.core.model.Body;
 import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootMethod;
 
-public class WITUpAnalyser {
+public final class WITUpAnalyser {
   private final SootUpAnalyser sootUpAnalyser;
 
-  public WITUpAnalyser(String location, String className) {
+  public WITUpAnalyser(final String location, final String className) {
     this.sootUpAnalyser = new SootUpAnalyser(location, className);
   }
 

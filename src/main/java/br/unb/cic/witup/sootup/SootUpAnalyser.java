@@ -20,7 +20,7 @@ public final class SootUpAnalyser {
   private final String location;
   private final String className;
 
-  public SootUpAnalyser(final String location, String className) {
+  public SootUpAnalyser(final String location, final String className) {
     this.location = location;
     this.className = className;
   }

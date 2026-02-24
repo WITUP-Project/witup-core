@@ -7,6 +7,11 @@ public final class SymStringConst extends SymExpr {
     this.value = value;
   }
 
+  @Override
+  public <T> T accept(final SymExprVisitor<T> visitor) {
+    return visitor.visitStringConst(this);
+  }
+
   public String getValue() {
     return value;
   }

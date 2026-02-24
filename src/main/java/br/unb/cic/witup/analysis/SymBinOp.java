@@ -11,6 +11,11 @@ public final class SymBinOp extends SymExpr {
     this.right = right;
   }
 
+  @Override
+  public <T> T accept(final SymExprVisitor<T> visitor) {
+    return visitor.visitBinOp(this);
+  }
+
   public BinOp getOp() {
     return op;
   }

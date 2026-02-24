@@ -29,7 +29,8 @@ import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.types.PrimitiveType;
 
 public abstract class SymExpr {
-  /** Substitute a variable with another expression */
+  public abstract <T> T accept(SymExprVisitor<T> visitor);
+
   public abstract SymExpr substitute(String varName, SymExpr replacement);
 
   public abstract String toString();
@@ -40,64 +41,50 @@ public abstract class SymExpr {
   public abstract SymKind kind();
 
   public static SymExpr fromValue(final Value value) {
-    // eg $stack1
-    if (value instanceof Local) {
-      return new SymVar(value.toString());
-    }
+    return switch (value) {
+      case Local l -> new SymVar(l.toString());
+      case IntConstant c -> new SymConst(c.getValue());
+      case DoubleConstant c -> new SymConst(c.getValue());
+      case FloatConstant c -> new SymConst(c.getValue());
+      case LongConstant c -> new SymConst(c.getValue());
+      case StringConstant c -> new SymStringConst(c.getValue());
+      case NullConstant ignored -> new SymConst(null);
+      case JInstanceFieldRef r -> fromFieldRef(r);
+      case AbstractConditionExpr e -> fromAbstractCondExpr(e);
+      case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
+      case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
+      default -> new SymVar(value.toString());
+    };
+  }
 
-    if (value instanceof IntConstant) {
-      return new SymConst(((IntConstant) value).getValue());
-    }
-    if (value instanceof DoubleConstant) {
-      return new SymConst(((DoubleConstant) value).getValue());
-    }
-    if (value instanceof FloatConstant) {
-      return new SymConst(((FloatConstant) value).getValue());
-    }
-    if (value instanceof LongConstant) {
-      return new SymConst(((LongConstant) value).getValue());
-    }
-    if (value instanceof StringConstant) {
-      return new SymStringConst(((StringConstant) value).getValue());
-    }
-    if (value instanceof NullConstant) {
-      return new SymConst(null);
-    }
+  private static SymExpr fromFieldRef(final JInstanceFieldRef r) {
+    // this.<ClassName: type fieldName>
+    SymExpr base = fromValue(r.getBase());
+    String fieldName = r.getFieldSignature().getName();
+    return new SymField(base, fieldName);
+  }
 
-    // eg this.radius
-    if (value instanceof JInstanceFieldRef instField) {
-      // For instance fields: this.<ClassName: type fieldName>
-      SymExpr base = fromValue(instField.getBase());
-      String fieldName = instField.getFieldSignature().getName();
-      return new SymField(base, fieldName);
-    }
+  private static SymExpr fromAbstractCondExpr(final AbstractConditionExpr e) {
+    SymExpr left = fromValue(e.getOp1());
+    SymExpr right = fromValue(e.getOp2());
+    BinOp op = jimpleOpToBinOp(e);
+    return new SymBinOp(op, left, right);
+  }
 
-    if (value instanceof AbstractConditionExpr condExpr) {
-      SymExpr left = fromValue(condExpr.getOp1());
-      SymExpr right = fromValue(condExpr.getOp2());
-      BinOp op = jimpleOpToBinOp(condExpr);
-      return new SymBinOp(op, left, right);
-    }
+  private static SymExpr fromAbstractBinOpExpr(final AbstractBinopExpr e) {
+    SymExpr left = fromValue(e.getOp1());
+    SymExpr right = fromValue(e.getOp2());
+    BinOp op = jimpleBinopToBinOp(e);
+    return new SymBinOp(op, left, right);
+  }
 
-    if (value instanceof AbstractBinopExpr binExpr) {
-      SymExpr left = fromValue(binExpr.getOp1());
-      SymExpr right = fromValue(binExpr.getOp2());
-      BinOp op = jimpleBinopToBinOp(binExpr);
-      return new SymBinOp(op, left, right);
-    }
+  private static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
+    SymExpr base = fromValue(e.getBase());
+    String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
+    boolean returnsBoolean =
+        e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
 
-    if (value instanceof JVirtualInvokeExpr invokeExpr) {
-      SymExpr base = fromValue(invokeExpr.getBase());
-      String invokedMethodName = invokeExpr.getMethodSignature().getSubSignature().getName();
-      boolean returnsBoolean =
-          invokeExpr.getMethodSignature().getSubSignature().getType()
-              instanceof PrimitiveType.BooleanType;
-
-      return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
-    }
-
-    // Fallback: treat as symbolic variable
-    return new SymVar(value.toString());
+    return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
   }
 
   private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {
@@ -160,25 +147,20 @@ public abstract class SymExpr {
     SymExpr right = simplifyCmpPatterns(binOp.getRight());
 
     // Pattern: (x cmpg/cmpl y) op 0
-    if (left instanceof SymBinOp && right instanceof SymConst) {
-      SymBinOp leftBinOp = (SymBinOp) left;
-      SymConst rightConst = (SymConst) right;
+    if (left instanceof SymBinOp leftBinOp
+        && right instanceof SymConst rightConst
+        && (leftBinOp.getOp() == BinOp.CMPG
+            || leftBinOp.getOp() == BinOp.CMPL
+            || leftBinOp.getOp() == BinOp.CMP)
+        && rightConst.getValue().equals(0)) {
 
-      // Check if it's a cmp operation compared to 0. Not sure if we need
-      // to handle comparisons with numbers other than 0
-      if ((leftBinOp.getOp() == BinOp.CMPG
-              || leftBinOp.getOp() == BinOp.CMPL
-              || leftBinOp.getOp() == BinOp.CMP)
-          && rightConst.getValue().equals(0)) {
-
-        // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
-        // So: (x cmpg y) >= 0 means x >= y
-        //     (x cmpg y) > 0 means x > y
-        //     (x cmpg y) == 0 means x == y
-        //     (x cmpg y) < 0 means x < y
-        //     (x cmpg y) <= 0 means x <= y
-        return new SymBinOp(binOp.getOp(), leftBinOp.getLeft(), leftBinOp.getRight());
-      }
+      // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
+      // So: (x cmpg y) >= 0 means x >= y
+      //     (x cmpg y) > 0 means x > y
+      //     (x cmpg y) == 0 means x == y
+      //     (x cmpg y) < 0 means x < y
+      //     (x cmpg y) <= 0 means x <= y
+      return new SymBinOp(binOp.getOp(), leftBinOp.getLeft(), leftBinOp.getRight());
     }
 
     // Return with simplified children
