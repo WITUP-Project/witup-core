@@ -114,12 +114,13 @@ def normalise_java_name(expr: str) -> str:
 
 def normalise_java_expr(expr: str, var_mapping):
     """
-    Replace 's.abc' with 's_abcr' so sympy/Z3 can handle it.
+    Replace 's.abc' with 's_abc' so sympy/Z3 can handle it.
     Creates a local mapping of all normalised variables and updates the global
     mapping
     """
     local_mapping = {}
-    def replacer(match):
+    # replace this.abc, a.xyz, etc.
+    def field_replacer(match):
         original = match.group(0)
         obj = match.group(1)
         attr = match.group(2)
@@ -129,8 +130,33 @@ def normalise_java_expr(expr: str, var_mapping):
 
     normalised_expr = re.sub(
         r"\b([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)\b",
-        replacer,
+        field_replacer,
         expr
+    )
+
+    # replace arr[i] with arr_i
+    def array_replacer(match):
+        original = match.group(0)
+        array_name = match.group(1)
+        index_expr = match.group(2)
+
+        index_norm = (
+            index_expr
+            .replace("+", "_plus_")
+            .replace("-", "_minus_")
+            .replace("*", "_mul_")
+            .replace("/", "_div_")
+            .replace(" ", "")
+        )
+
+        normalised = f"{array_name}_{index_norm}"
+        local_mapping[normalised] = original
+        return normalised
+
+    normalised_expr = re.sub(
+        r"\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\[\s*([^\]]+)\s*\]",
+        array_replacer,
+        normalised_expr
     )
 
     var_mapping.update(local_mapping)
@@ -203,7 +229,7 @@ def main():
     try:
         raw = sys.stdin.read()
         request: SolverRequest = json.loads(raw)
-        # request = {"paths":[{"pathId":"<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>#0","conditions":[{"condition":"s.isEmpty","truthValue":False}]}],"symbolKinds":{"s":"OTHER","s.isEmpty":"BOOLEAN"}}
+        # request = {"paths":[{'pathId': '<br.unb.cic.witup.samples.Array: int getElement(int[],int)>#0', 'conditions': [{'condition': '(arr[i] != 0)', 'truthValue': False}]}],"symbolKinds":{"arr[i]":"OTHER"}}
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse JSON request: {e}")
         sys.exit(1)
@@ -217,8 +243,8 @@ def main():
     normalised_symbol_kinds: dict = {}
 
     for name, kind in symbol_kinds.items():
-        normal_name = normalise_java_name(name)
-        normalised_symbol_kinds[normal_name] = kind
+        normalised_name = normalise_java_name(name)
+        normalised_symbol_kinds[normalised_name] = kind
 
     for path in paths:
         path_id = path.get("pathId", "<unknown>")

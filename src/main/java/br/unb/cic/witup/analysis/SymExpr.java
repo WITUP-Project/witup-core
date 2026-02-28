@@ -25,6 +25,7 @@ import sootup.core.jimple.common.expr.JNeExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
+import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.types.PrimitiveType;
 
@@ -53,6 +54,7 @@ public abstract class SymExpr {
       case AbstractConditionExpr e -> fromAbstractCondExpr(e);
       case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
       case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
+      case JArrayRef r -> fromArrayRef(r);
       default -> new SymVar(value.toString());
     };
   }
@@ -85,6 +87,13 @@ public abstract class SymExpr {
         e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
 
     return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
+  }
+
+  private static SymExpr fromArrayRef(final JArrayRef r) {
+    SymExpr base = fromValue(r.getBase());
+    // this needs deeper thought as entire expressions can be inside
+    String index = r.getIndex().toString();
+    return new SymArrayRef(base, index);
   }
 
   private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {

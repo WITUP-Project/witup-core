@@ -12,4 +12,6 @@ public interface SymExprVisitor<T> {
   T visitVar(SymVar v);
 
   T visitVirtualInvoke(SymVirtualInvoke v);
+
+  T visitArrayRef(SymArrayRef r);
 }
