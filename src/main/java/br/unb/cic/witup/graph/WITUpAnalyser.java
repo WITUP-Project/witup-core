@@ -1,8 +1,15 @@
 package br.unb.cic.witup.graph;
 
 import br.unb.cic.witup.sootup.SootUpAnalyser;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
+
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.core.graph.StmtGraph;
 import sootup.core.jimple.common.stmt.JThrowStmt;
 import sootup.core.jimple.common.stmt.Stmt;
@@ -26,6 +33,14 @@ public final class WITUpAnalyser {
         m -> {
           Body body = m.getBody();
           StmtGraph<?> graph = body.getStmtGraph();
+
+          PropertyGraph g = sootUpAnalyser.buildCPG(m);
+          String dot = g.toDotGraph();
+          try {
+            Graphviz.fromString(dot).render(Format.SVG).toFile(new File(m.getSignature() + ".svg"));
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
 
           for (Stmt s : graph) {
             if (s instanceof JThrowStmt) {
