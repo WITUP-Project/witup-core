@@ -45,4 +45,10 @@ public final class VariableCollector implements SymExprVisitor<Void> {
     inv.getBase().accept(this);
     return null;
   }
+
+  @Override
+  public Void visitArrayRef(SymArrayRef r) {
+    r.getBase().accept(this);
+    return null;
+  }
 }
