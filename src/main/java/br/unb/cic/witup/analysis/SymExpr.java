@@ -19,6 +19,7 @@ import sootup.core.jimple.common.expr.JEqExpr;
 import sootup.core.jimple.common.expr.JGeExpr;
 import sootup.core.jimple.common.expr.JGtExpr;
 import sootup.core.jimple.common.expr.JLeExpr;
+import sootup.core.jimple.common.expr.JLengthExpr;
 import sootup.core.jimple.common.expr.JLtExpr;
 import sootup.core.jimple.common.expr.JMulExpr;
 import sootup.core.jimple.common.expr.JNeExpr;
@@ -55,6 +56,7 @@ public abstract class SymExpr {
       case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
       case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
       case JArrayRef r -> fromArrayRef(r);
+      case JLengthExpr e -> fromLength(e);
       default -> new SymVar(value.toString());
     };
   }
@@ -94,6 +96,11 @@ public abstract class SymExpr {
     // this needs deeper thought as entire expressions can be inside
     String index = r.getIndex().toString();
     return new SymArrayRef(base, index);
+  }
+
+  private static SymExpr fromLength(final JLengthExpr r) {
+    SymExpr op = fromValue(r.getOp());
+    return new SymLength(op);
   }
 
   private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {

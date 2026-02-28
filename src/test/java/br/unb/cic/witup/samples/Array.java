@@ -7,4 +7,11 @@ public class Array {
     }
     return arr[i];
   }
+
+  public int checkLength(int[] arr) {
+    if (arr.length == 0) {
+      throw new IllegalArgumentException("array is empty");
+    }
+    return arr.length;
+  }
 }

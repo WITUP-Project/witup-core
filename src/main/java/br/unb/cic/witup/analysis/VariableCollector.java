@@ -51,4 +51,10 @@ public final class VariableCollector implements SymExprVisitor<Void> {
     r.getBase().accept(this);
     return null;
   }
+
+  @Override
+  public Void visitLength(SymLength l) {
+    l.getOp().accept(this);
+    return null;
+  }
 }
