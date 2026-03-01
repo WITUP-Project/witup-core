@@ -2,9 +2,16 @@ package br.unb.cic.witup.analysis.symbolic;
 
 public final class SymVar extends SymExpr {
   private final String name;
+  private final SymKind kind;
 
-  public SymVar(final String name) {
+  public SymVar(final String name, final SymKind kind) {
     this.name = name;
+    this.kind = kind;
+  }
+
+  // DEPRECATED
+  public SymVar(final String name) {
+    this(name, SymKind.OTHER);
   }
 
   @Override
@@ -53,6 +60,6 @@ public final class SymVar extends SymExpr {
 
   @Override
   public SymKind kind() {
-    return SymKind.OTHER;
+    return kind;
   }
 }

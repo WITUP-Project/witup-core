@@ -32,7 +32,9 @@ import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
+import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
+import sootup.core.types.Type;
 
 public abstract class SymExpr {
   public abstract <T> T accept(SymExprVisitor<T> visitor);
@@ -64,6 +66,20 @@ public abstract class SymExpr {
       case JCastExpr e -> fromCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
       default -> new SymVar(value.toString());
+    };
+  }
+
+  private static SymKind symKindFromType(final Type type) {
+    return switch (type) {
+      case PrimitiveType.ShortType ignored  -> SymKind.INT;
+      case PrimitiveType.ByteType ignored   -> SymKind.INT;
+      case PrimitiveType.BooleanType ignored -> SymKind.BOOLEAN;
+      case PrimitiveType.IntType ignored    -> SymKind.INT;
+      case PrimitiveType.LongType ignored   -> SymKind.INT;
+      case PrimitiveType.FloatType ignored  -> SymKind.REAL;
+      case PrimitiveType.DoubleType ignored -> SymKind.REAL;
+      case ClassType ct when ct.getFullyQualifiedName().equals("java.lang.String") -> SymKind.STRING;
+      default                               -> SymKind.OTHER;
     };
   }
 

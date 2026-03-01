@@ -13,11 +13,14 @@ import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.solver.SolverInvoker;
 import br.unb.cic.witup.solver.SolverResponse;
 import br.unb.cic.witup.solver.SolverResponseAssertions;
+import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SolverSerialiser;
+import br.unb.cic.witup.solver.ThrowConditionSolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +68,19 @@ public class IntTest {
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
+
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
+    }
+
+    solver.close();
+
+    System.out.println(results);
 
     Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
