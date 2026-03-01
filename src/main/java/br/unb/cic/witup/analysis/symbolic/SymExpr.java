@@ -20,6 +20,7 @@ import sootup.core.jimple.common.expr.JDivExpr;
 import sootup.core.jimple.common.expr.JEqExpr;
 import sootup.core.jimple.common.expr.JGeExpr;
 import sootup.core.jimple.common.expr.JGtExpr;
+import sootup.core.jimple.common.expr.JInstanceOfExpr;
 import sootup.core.jimple.common.expr.JLeExpr;
 import sootup.core.jimple.common.expr.JLengthExpr;
 import sootup.core.jimple.common.expr.JLtExpr;
@@ -42,7 +43,6 @@ public abstract class SymExpr {
 
   public abstract boolean contains(String varName);
 
-  // not sure if this is good practice
   public abstract SymKind kind();
 
   public static SymExpr fromValue(final Value value) {
@@ -53,7 +53,7 @@ public abstract class SymExpr {
       case FloatConstant c -> new SymConst(c.getValue());
       case LongConstant c -> new SymConst(c.getValue());
       case StringConstant c -> new SymStringConst(c.getValue());
-      case NullConstant ignored -> new SymConst(null);
+      case NullConstant ignored -> new SymConst(null); // Consider if we need SymNull
       case JInstanceFieldRef r -> fromFieldRef(r);
       case AbstractConditionExpr e -> fromAbstractCondExpr(e);
       case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
@@ -61,7 +61,8 @@ public abstract class SymExpr {
       case JArrayRef r -> fromArrayRef(r);
       case JLengthExpr e -> fromLength(e);
       case JNewArrayExpr e -> fromNewArray(e);
-      case JCastExpr c -> fromCast(c);
+      case JCastExpr e -> fromCast(e);
+      case JInstanceOfExpr e -> fromInstanceOf(e);
       default -> new SymVar(value.toString());
     };
   }
@@ -118,6 +119,12 @@ public abstract class SymExpr {
     SymExpr op = fromValue(r.getOp());
     String type = r.getType().toString();
     return new SymCast(op, type);
+  }
+
+  private static SymExpr fromInstanceOf(final JInstanceOfExpr r) {
+    SymExpr op = fromValue(r.getOp());
+    String type = r.getCheckType().toString();
+    return new SymInstanceOf(op, type);
   }
 
   private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {
@@ -209,17 +216,17 @@ public abstract class SymExpr {
       return expr;
     }
 
-    SymExpr left = bin.getLeft();
-    SymExpr right = bin.getRight();
+    SymExpr lhs = bin.getLeft();
+    SymExpr rhs = bin.getRight();
 
     // when we have a Jimple comparison whose stack variable traces back to
     // a method call, we don't need the equality; only the respective symbol
     // and the truth value
-    if (right instanceof SymConst c
+    if (rhs instanceof SymConst c
         && Integer.valueOf(0).equals(c.getValue())
-        && left.kind() == SymKind.BOOLEAN_METHOD) {
+        && (lhs.kind() == SymKind.BOOLEAN_METHOD) || lhs.kind() == SymKind.BOOLEAN) {
 
-      return left;
+      return lhs;
     }
 
     return expr;

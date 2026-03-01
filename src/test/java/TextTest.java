@@ -40,7 +40,7 @@ public class TextTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     assertNotNull(witupGraphs);
-    assertEquals(3, witupGraphs.size());
+    assertEquals(4, witupGraphs.size());
   }
 
   @Test
@@ -171,6 +171,50 @@ public class TextTest {
 
       boolean truthValue = SolverResponseAssertions.booleanValue(p0, "s.isEmpty");
       assertTrue(truthValue, "Expected s.isEmpty to be true");
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void requireString() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+            cpg.getConstraintPaths(throwNodes.get(0));
+
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
+
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
+
+    String pythonScript =
+            Paths.get(System.getProperty("user.dir"))
+                    .resolve("src/main/solver/solver.py")
+                    .toAbsolutePath()
+                    .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String jsonString = si.callSolver(request);
+      ObjectMapper mapper = new ObjectMapper();
+
+      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
+
+      SolverResponse.SolverPathResult p0 =
+              SolverResponseAssertions.path(response, methodSignature + "#0");
+
+      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+
+      boolean truthValue = SolverResponseAssertions.booleanValue(p0, "s_instanceof_java_lang_String");
+      assertFalse(truthValue, "Expected s_instanceof_java_lang_String to be false");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }

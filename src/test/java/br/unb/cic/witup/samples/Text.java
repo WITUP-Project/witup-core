@@ -21,4 +21,11 @@ public class Text {
     }
     return true;
   }
+
+  public String requireString(Object s) {
+    if (!(s instanceof String)) {
+      throw new RuntimeException("must be string");
+    }
+    return (String) s;
+  }
 }
