@@ -1,6 +1,10 @@
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymKind;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -11,22 +15,17 @@ import br.unb.cic.witup.solver.SolverResponse;
 import br.unb.cic.witup.solver.SolverResponseAssertions;
 import br.unb.cic.witup.solver.SolverSerialiser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.jgrapht.GraphPath;
-import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.jgrapht.GraphPath;
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ArrayTest {
@@ -37,7 +36,7 @@ public class ArrayTest {
     Path projectRoot = Paths.get(System.getProperty("user.dir"));
     Path testClassesDir = projectRoot.resolve("target/test-classes");
     WITUpAnalyser witUpAnalyser =
-            new WITUpAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Array");
+        new WITUpAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Array");
     witupGraphs = witUpAnalyser.buildWitUpGraphs();
   }
 
@@ -57,11 +56,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -73,10 +72,10 @@ public class ArrayTest {
     JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraints, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -86,7 +85,7 @@ public class ArrayTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -108,11 +107,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -124,10 +123,10 @@ public class ArrayTest {
     JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraints, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -137,7 +136,7 @@ public class ArrayTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -159,11 +158,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -175,10 +174,10 @@ public class ArrayTest {
     JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolKinds);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -188,7 +187,7 @@ public class ArrayTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 

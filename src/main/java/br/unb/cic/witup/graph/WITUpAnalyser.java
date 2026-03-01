@@ -1,14 +1,12 @@
 package br.unb.cic.witup.graph;
 
 import br.unb.cic.witup.sootup.SootUpAnalyser;
-
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
-
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.core.graph.StmtGraph;
 import sootup.core.jimple.common.stmt.JThrowStmt;

@@ -1,10 +1,10 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-public class SymArrayRef extends SymExpr {
-  SymExpr base;
-  String index;
+public final class SymArrayRef extends SymExpr {
+  private final SymExpr base;
+  private final String index;
 
-  public SymArrayRef(SymExpr base, String index) {
+  public SymArrayRef(final SymExpr base, final String index) {
     this.base = base;
     this.index = index;
   }
@@ -14,12 +14,12 @@ public class SymArrayRef extends SymExpr {
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) {
+  public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitArrayRef(this);
   }
 
   @Override
-  public SymExpr substitute(String varName, SymExpr replacement) {
+  public SymExpr substitute(final String varName, final SymExpr replacement) {
     SymExpr newBase = base.substitute(varName, replacement);
     if (newBase != base) {
       return new SymArrayRef(newBase, index);
@@ -33,7 +33,7 @@ public class SymArrayRef extends SymExpr {
   }
 
   @Override
-  public boolean contains(String varName) {
+  public boolean contains(final String varName) {
     return base.contains(varName);
   }
 

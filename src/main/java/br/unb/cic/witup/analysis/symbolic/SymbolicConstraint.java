@@ -1,7 +1,6 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import java.util.List;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 

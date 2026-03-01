@@ -1,8 +1,8 @@
 import static org.junit.jupiter.api.Assertions.*;
 
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymKind;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -179,13 +179,13 @@ public class TextTest {
   @Test
   public void requireString() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
+        "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -197,10 +197,10 @@ public class TextTest {
     JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -209,11 +209,12 @@ public class TextTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
-      boolean truthValue = SolverResponseAssertions.booleanValue(p0, "s_instanceof_java_lang_String");
+      boolean truthValue =
+          SolverResponseAssertions.booleanValue(p0, "s_instanceof_java_lang_String");
       assertFalse(truthValue, "Expected s_instanceof_java_lang_String to be false");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
