@@ -159,6 +159,20 @@ def normalise_java_expr(expr: str, var_mapping):
         normalised_expr
     )
 
+    def cast_replacer(match):
+        original = match.group(0)
+        cast_type = match.group(1)
+        operand = match.group(2)
+        normalised = f"{cast_type}_{operand}"
+        local_mapping[normalised] = original
+        return normalised
+
+    normalised_expr = re.sub(
+        r"\(([a-zA-Z_][a-zA-Z0-9_]*)\)([a-zA-Z_][a-zA-Z0-9_]*)",
+        cast_replacer,
+        normalised_expr
+    )
+
     var_mapping.update(local_mapping)
     return normalised_expr
 

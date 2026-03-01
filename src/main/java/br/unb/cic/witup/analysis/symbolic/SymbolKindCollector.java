@@ -65,4 +65,10 @@ public final class SymbolKindCollector implements SymExprVisitor<Void> {
   public Void visitNewArray(SymNewArray r) {
     return null;
   }
+
+  @Override
+  public Void visitCast(SymCast c) {
+    symbolKindTable.put(c.toString(), c.kind());
+    return null;
+  }
 }
