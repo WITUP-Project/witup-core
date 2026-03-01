@@ -62,4 +62,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitNewArray(SymNewArray r) {
     return null;
   }
+
+  @Override
+  public Void visitCast(SymCast c) {
+    return null;
+  }
 }

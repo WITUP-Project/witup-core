@@ -15,7 +15,9 @@ import java.util.Set;
 import org.jgrapht.GraphPath;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
+import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Value;
+import sootup.core.jimple.common.expr.JCastExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
@@ -130,6 +132,10 @@ public final class BackwardSymbolicGenerator {
         continue;
       }
 
+      if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
+        continue;
+      }
+
       Value leftOp = assign.getLeftOp();
       // local variable on the lhs e.g. $stack1 == 0
       String definedVar = getVariableName(leftOp);
@@ -171,5 +177,9 @@ public final class BackwardSymbolicGenerator {
 
   private void collectSymbolKinds(final SymExpr expr) {
     symbolKindTable.putAll(new SymbolKindCollector().collect(expr));
+  }
+
+  private boolean isStackVariable(final LValue value) {
+    return value.toString().contains("$stack");
   }
 }

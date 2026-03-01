@@ -18,4 +18,6 @@ public interface SymExprVisitor<T> {
   T visitLength(SymLength l);
 
   T visitNewArray(SymNewArray r);
+
+  T visitCast(SymCast c);
 }

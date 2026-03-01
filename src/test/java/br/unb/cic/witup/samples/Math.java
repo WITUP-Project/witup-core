@@ -33,4 +33,19 @@ public class Math {
     }
     return p;
   }
+
+  public int truncate(double d) {
+    int truncated = (int) d;
+    if (truncated < 0) {
+      throw new RuntimeException("truncated cannot be negative");
+    }
+    return truncated;
+  }
+
+  public int truncateInline(double d) {
+    if ((int) d < 0) {
+      throw new RuntimeException("truncated cannot be negative");
+    }
+    return (int) d;
+  }
 }
