@@ -1,16 +1,4 @@
-package br.unb.cic.witup.analysis;
-
-import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
-import br.unb.cic.witup.analysis.symbolic.SymBinOp;
-import br.unb.cic.witup.analysis.symbolic.SymConst;
-import br.unb.cic.witup.analysis.symbolic.SymExpr;
-import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
-import br.unb.cic.witup.analysis.symbolic.SymField;
-import br.unb.cic.witup.analysis.symbolic.SymLength;
-import br.unb.cic.witup.analysis.symbolic.SymNewArray;
-import br.unb.cic.witup.analysis.symbolic.SymStringConst;
-import br.unb.cic.witup.analysis.symbolic.SymVar;
-import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
+package br.unb.cic.witup.analysis.symbolic;
 
 import java.util.HashSet;
 import java.util.Set;

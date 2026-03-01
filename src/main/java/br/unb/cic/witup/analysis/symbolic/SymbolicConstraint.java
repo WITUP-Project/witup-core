@@ -1,8 +1,7 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 import java.util.List;
 
-import br.unb.cic.witup.analysis.symbolic.SymExpr;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

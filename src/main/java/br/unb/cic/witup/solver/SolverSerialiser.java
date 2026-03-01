@@ -1,6 +1,6 @@
 package br.unb.cic.witup.solver;
 
-import br.unb.cic.witup.analysis.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymKind;
 import java.util.List;
 import java.util.Map;

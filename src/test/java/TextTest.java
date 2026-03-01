@@ -1,7 +1,7 @@
 import static org.junit.jupiter.api.Assertions.*;
 
-import br.unb.cic.witup.analysis.BackwardSymbolicGenerator;
-import br.unb.cic.witup.analysis.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymKind;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
@@ -51,17 +51,17 @@ public class TextTest {
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
     System.out.println(request);
 
     String pythonScript =
@@ -96,17 +96,17 @@ public class TextTest {
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -140,17 +140,17 @@ public class TextTest {
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))

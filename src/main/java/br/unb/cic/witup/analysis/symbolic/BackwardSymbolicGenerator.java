@@ -1,8 +1,6 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.symbolic.SymExpr;
-import br.unb.cic.witup.analysis.symbolic.SymKind;
-import br.unb.cic.witup.analysis.symbolic.SymbolKindCollector;
+import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -31,13 +29,11 @@ public final class BackwardSymbolicGenerator {
   private final WITUpGraph cpg;
   private final Map<String, SymKind> symbolKindTable;
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
-  private final Set<String> variableSet;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
 
   public BackwardSymbolicGenerator(final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
     this.cpg = cpg;
     symbolKindTable = new HashMap<>();
-    variableSet = new HashSet<>();
     this.constraintPaths = constraintPaths;
   }
 
@@ -58,7 +54,7 @@ public final class BackwardSymbolicGenerator {
 
     this.setCurrentPath(p);
     List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
-    for (ThrowConstraintNode throwConstraint : cpg.getThrowConstraints(p)) {
+    for (ThrowConstraint throwConstraint : cpg.getThrowConstraints(p)) {
       SymExpr symExpr = generateSymbolicExpression(throwConstraint.node());
       boolean truthValue = throwConstraint.truthValue();
 
@@ -80,8 +76,6 @@ public final class BackwardSymbolicGenerator {
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
     SymExpr symExpr = SymExpr.fromValue(ifStmt.getCondition());
 
-    collectVariables(symExpr);
-
     // traverse backward and substitute temporaries so that each SymbolicConstraint
     // element has all the information it needs to pass to a solver
     symExpr = backwardSubstitute(symExpr, constraintNode, new HashSet<>());
@@ -93,10 +87,6 @@ public final class BackwardSymbolicGenerator {
     return symExpr;
   }
 
-  private void collectVariables(final SymExpr expr) {
-    variableSet.addAll(new VariableCollector().collect(expr));
-  }
-
   // it's ok to reassign current in a recursive function
   // given a Jimple statement, produces a SymExpr by backwards
   // tracing temporaries back to their origins
@@ -104,14 +94,17 @@ public final class BackwardSymbolicGenerator {
       SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
       final WITUpNode currentNode,
       final Set<WITUpNode> visited) {
-    if (variableSet.isEmpty()) {
-      return symExpr;
-    }
 
     if (visited.contains(currentNode)) {
       return symExpr;
     }
     visited.add(currentNode);
+
+    Set<String> freeVars = new VariableCollector().collect(symExpr);
+
+    if (freeVars.isEmpty()) {
+      return symExpr;
+    }
 
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
@@ -141,17 +134,11 @@ public final class BackwardSymbolicGenerator {
       // local variable on the lhs e.g. $stack1 == 0
       String definedVar = getVariableName(leftOp);
 
-      if (variableSet.contains(definedVar)) {
-        // translate the RHS to symbolic expression
-        SymExpr rhsSymExpr = SymExpr.fromValue(assign.getRightOp());
+      if (!freeVars.contains(definedVar)) continue;
 
-        // substitute this variable in our current expression
-        symExpr = symExpr.substitute(definedVar, rhsSymExpr);
-
-        variableSet.remove(definedVar);
-        collectVariables(rhsSymExpr);
-        symExpr = backwardSubstitute(symExpr, sourceNode, visited);
-      }
+      SymExpr rhsSymExpr = SymExpr.fromValue(assign.getRightOp());
+      symExpr = symExpr.substitute(definedVar, rhsSymExpr);
+      symExpr = backwardSubstitute(symExpr, sourceNode, visited);
     }
 
     return symExpr;

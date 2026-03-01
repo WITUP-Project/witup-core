@@ -1,6 +1,6 @@
 package br.unb.cic.witup.graph;
 
-import br.unb.cic.witup.analysis.ThrowConstraintNode;
+import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.graph.edge.BooleanCFGEdge;
 import br.unb.cic.witup.graph.edge.CFGEdge;
 import br.unb.cic.witup.graph.edge.ControlDependencyEdge;
@@ -106,7 +106,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return result;
   }
 
-  public List<WITUpNode> getThrowConstraintNodes(final ThrowStatementNode t) {
+  public List<WITUpNode> getThrowConditionNodes(final ThrowStatementNode t) {
     List<WITUpNode> throwConditionNodes = new ArrayList<>();
     EdgeReversedGraph<WITUpNode, WITUpEdge> reversedGraph = new EdgeReversedGraph<>(this);
     Iterator<WITUpNode> iterator = new DepthFirstIterator<>(reversedGraph, t);
@@ -175,15 +175,15 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
-  public List<ThrowConstraintNode> getThrowConstraints(final GraphPath<WITUpNode, WITUpEdge> path) {
-    List<ThrowConstraintNode> throwConstraintNodes = new ArrayList<>();
+  public List<ThrowConstraint> getThrowConstraints(final GraphPath<WITUpNode, WITUpEdge> path) {
+    List<ThrowConstraint> throwConstraints = new ArrayList<>();
     for (WITUpEdge e : path.getEdgeList()) {
       if (e instanceof BooleanCFGEdge) {
         WITUpNode sourceNode = e.getSource();
-        throwConstraintNodes.add(new ThrowConstraintNode(sourceNode, ((BooleanCFGEdge) e).getCondition()));
+        throwConstraints.add(new ThrowConstraint(sourceNode, ((BooleanCFGEdge) e).getCondition()));
       }
     }
-    return throwConstraintNodes;
+    return throwConstraints;
   }
 
   public List<DataDependencyEdge> getIncomingDDGEdges(final WITUpNode node) {
