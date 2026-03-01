@@ -279,7 +279,7 @@ def main():
                     expr = build_string_constraint(normalised, c["truthValue"])
                     z3_exprs.append(expr)
 
-                elif kind == "BOOLEAN_METHOD":
+                elif kind == "BOOLEAN_METHOD" or kind == "BOOLEAN":
                     expr = z3.Bool(normalised)
                     if not c["truthValue"]:
                         expr = z3.Not(expr)

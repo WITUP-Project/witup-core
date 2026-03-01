@@ -67,4 +67,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitCast(SymCast c) {
     return null;
   }
+
+  @Override
+  public Void visitInstanceOf(SymInstanceOf r) {
+    return null;
+  }
 }
