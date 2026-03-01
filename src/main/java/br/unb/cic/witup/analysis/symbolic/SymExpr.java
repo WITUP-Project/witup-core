@@ -1,5 +1,6 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.BinOp;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.constant.DoubleConstant;
@@ -26,6 +27,7 @@ import sootup.core.jimple.common.expr.JNeExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
+import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.types.PrimitiveType;
@@ -57,6 +59,7 @@ public abstract class SymExpr {
       case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
       case JArrayRef r -> fromArrayRef(r);
       case JLengthExpr e -> fromLength(e);
+      case JNewArrayExpr e -> fromNewArray(e);
       default -> new SymVar(value.toString());
     };
   }
@@ -101,6 +104,12 @@ public abstract class SymExpr {
   private static SymExpr fromLength(final JLengthExpr r) {
     SymExpr op = fromValue(r.getOp());
     return new SymLength(op);
+  }
+
+  private static SymExpr fromNewArray(final JNewArrayExpr r) {
+    String baseType = r.getBaseType().toString();
+    int size = Integer.parseInt(r.getSize().toString());
+    return new SymNewArray(baseType, size);
   }
 
   private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {

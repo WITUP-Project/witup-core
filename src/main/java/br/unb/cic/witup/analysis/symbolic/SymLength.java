@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 public class SymLength extends SymExpr {
   SymExpr op;

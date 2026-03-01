@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 public final class SymField extends SymExpr {
   private final SymExpr base; // e.g., "this" or another object

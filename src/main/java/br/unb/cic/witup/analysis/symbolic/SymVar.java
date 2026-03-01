@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 public final class SymVar extends SymExpr {
   private final String name;

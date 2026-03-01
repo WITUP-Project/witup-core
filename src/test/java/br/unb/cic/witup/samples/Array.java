@@ -14,4 +14,11 @@ public class Array {
     }
     return arr.length;
   }
+
+  public int[] allocate(int n) {
+    if (n < 0) {
+      throw new IllegalArgumentException("negative size");
+    }
+    return new int[n];
+  }
 }

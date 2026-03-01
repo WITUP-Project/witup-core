@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -55,6 +55,11 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   @Override
   public Void visitLength(SymLength l) {
     l.getOp().accept(this);
+    return null;
+  }
+
+  @Override
+  public Void visitNewArray(SymNewArray r) {
     return null;
   }
 }

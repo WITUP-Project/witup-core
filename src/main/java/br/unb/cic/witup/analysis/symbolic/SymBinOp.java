@@ -1,4 +1,6 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
+
+import br.unb.cic.witup.analysis.BinOp;
 
 public final class SymBinOp extends SymExpr {
   private final BinOp op;

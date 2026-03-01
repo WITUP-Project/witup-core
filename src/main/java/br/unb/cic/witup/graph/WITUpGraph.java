@@ -1,6 +1,6 @@
 package br.unb.cic.witup.graph;
 
-import br.unb.cic.witup.analysis.ThrowCondition;
+import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.graph.edge.BooleanCFGEdge;
 import br.unb.cic.witup.graph.edge.CFGEdge;
 import br.unb.cic.witup.graph.edge.ControlDependencyEdge;
@@ -120,7 +120,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
-  public List<GraphPath<WITUpNode, WITUpEdge>> getPathsWithIfStatements(final WITUpNode throwNode) {
+  public List<GraphPath<WITUpNode, WITUpEdge>> getConstraintPaths(final WITUpNode throwNode) {
     WITUpNode entry = findEntryNode();
 
     // Getting the CFG here removes all redundancy (hundreds less paths)
@@ -175,15 +175,15 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
-  public List<ThrowCondition> getThrowConditions(final GraphPath<WITUpNode, WITUpEdge> path) {
-    List<ThrowCondition> throwConditions = new ArrayList<>();
+  public List<ThrowConstraint> getThrowConstraints(final GraphPath<WITUpNode, WITUpEdge> path) {
+    List<ThrowConstraint> throwConstraints = new ArrayList<>();
     for (WITUpEdge e : path.getEdgeList()) {
       if (e instanceof BooleanCFGEdge) {
         WITUpNode sourceNode = e.getSource();
-        throwConditions.add(new ThrowCondition(sourceNode, ((BooleanCFGEdge) e).getCondition()));
+        throwConstraints.add(new ThrowConstraint(sourceNode, ((BooleanCFGEdge) e).getCondition()));
       }
     }
-    return throwConditions;
+    return throwConstraints;
   }
 
   public List<DataDependencyEdge> getIncomingDDGEdges(final WITUpNode node) {

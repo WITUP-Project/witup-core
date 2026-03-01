@@ -2,9 +2,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import br.unb.cic.witup.analysis.PathResolver;
-import br.unb.cic.witup.analysis.ResolvedThrowCondition;
-import br.unb.cic.witup.analysis.SymKind;
+import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymKind;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -59,17 +59,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -111,17 +111,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -161,17 +161,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -211,17 +211,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -261,17 +261,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -311,17 +311,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -362,17 +362,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))
@@ -420,17 +420,17 @@ public class IntTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
 
     String pythonScript =
         Paths.get(System.getProperty("user.dir"))

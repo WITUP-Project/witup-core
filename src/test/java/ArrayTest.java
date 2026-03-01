@@ -1,6 +1,6 @@
-import br.unb.cic.witup.analysis.PathResolver;
-import br.unb.cic.witup.analysis.ResolvedThrowCondition;
-import br.unb.cic.witup.analysis.SymKind;
+import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymKind;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -44,7 +44,7 @@ public class ArrayTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     assertNotNull(witupGraphs);
-    assertEquals(2, witupGraphs.size());
+    assertEquals(3, witupGraphs.size());
   }
 
   @Test
@@ -60,17 +60,17 @@ public class ArrayTest {
             cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-            cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+            cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraints = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraints, symbolTypes);
 
     String pythonScript =
             Paths.get(System.getProperty("user.dir"))
@@ -111,17 +111,17 @@ public class ArrayTest {
             cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-            cpg.getPathsWithIfStatements(throwNodes.get(0));
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+            cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> symbolicConstraints = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
+    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
 
     SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(resolvedConditionPaths, symbolTypes);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraints, symbolTypes);
 
     String pythonScript =
             Paths.get(System.getProperty("user.dir"))
@@ -144,6 +144,57 @@ public class ArrayTest {
       int arrayElementValue = SolverResponseAssertions.intValue(p0, "arr.length");
 
       assertEquals(0, arrayElementValue, "Expected arr.length == 0");
+    } catch (IOException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void allocate() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[] allocate(int)>";
+
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+            cpg.getConstraintPaths(throwNodes.get(0));
+
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
+
+    Map<String, SymKind> symbolKinds = sg.getSymbolKindTable();
+
+    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
+    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolKinds);
+
+    String pythonScript =
+            Paths.get(System.getProperty("user.dir"))
+                    .resolve("src/main/solver/solver.py")
+                    .toAbsolutePath()
+                    .toString();
+    SolverInvoker si = new SolverInvoker(pythonScript);
+    try {
+      String jsonString = si.callSolver(request);
+      System.out.println(jsonString);
+      ObjectMapper mapper = new ObjectMapper();
+
+      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
+
+      SolverResponse.SolverPathResult p0 =
+              SolverResponseAssertions.path(response, methodSignature + "#0");
+
+      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+
+      int sizeValue = SolverResponseAssertions.intValue(p0, "n");
+
+      assertTrue(sizeValue < 0, "Expected n < 0");
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }

@@ -1,7 +1,7 @@
 package br.unb.cic.witup.solver;
 
-import br.unb.cic.witup.analysis.ResolvedThrowCondition;
-import br.unb.cic.witup.analysis.SymKind;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymKind;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -15,18 +15,18 @@ public final class SolverSerialiser {
   }
 
   public JSONObject serializeResolvedPaths(
-      final List<List<ResolvedThrowCondition>> resolvedPaths,
+      final List<List<SymbolicConstraint>> resolvedPaths,
       final Map<String, SymKind> symbolTypes) {
     JSONArray pathsArray = new JSONArray();
 
     for (int i = 0; i < resolvedPaths.size(); i++) {
-      List<ResolvedThrowCondition> path = resolvedPaths.get(i);
+      List<SymbolicConstraint> path = resolvedPaths.get(i);
       JSONArray conditionsArray = new JSONArray();
 
-      for (ResolvedThrowCondition rc : path) {
+      for (SymbolicConstraint rc : path) {
         JSONObject obj = new JSONObject();
         obj.put("truthValue", rc.getTruthValue());
-        obj.put("condition", rc.getNode().toString());
+        obj.put("condition", rc.getSymExpr().toString());
         conditionsArray.put(obj);
       }
 

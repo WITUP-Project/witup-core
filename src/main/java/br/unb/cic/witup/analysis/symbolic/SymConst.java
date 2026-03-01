@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 public final class SymConst extends SymExpr {
   // Can be Integer, Double, String, etc. We may need to keep track of types somewhere
