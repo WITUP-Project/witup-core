@@ -3,8 +3,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymKind;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;

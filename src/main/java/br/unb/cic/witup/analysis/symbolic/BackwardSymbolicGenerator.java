@@ -23,9 +23,9 @@ import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
 /**
- * Translates Jimple constraints into SymbolicConstraints. Uses backwards data
- * flow resolution to trace temporaries, parameters back to their origin node
- * Produces a path of symbolic constraints to be tested by Z3.
+ * Translates Jimple constraints into SymbolicConstraints. Uses backwards data flow resolution to
+ * trace temporaries, parameters back to their origin node Produces a path of symbolic constraints
+ * to be tested by Z3.
  */
 public final class BackwardSymbolicGenerator {
   private final WITUpGraph cpg;
@@ -33,7 +33,8 @@ public final class BackwardSymbolicGenerator {
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
 
-  public BackwardSymbolicGenerator(final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
+  public BackwardSymbolicGenerator(
+      final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
     this.cpg = cpg;
     symbolKindTable = new HashMap<>();
     this.constraintPaths = constraintPaths;
@@ -140,7 +141,9 @@ public final class BackwardSymbolicGenerator {
       // local variable on the lhs e.g. $stack1 == 0
       String definedVar = getVariableName(leftOp);
 
-      if (!freeVars.contains(definedVar)) continue;
+      if (!freeVars.contains(definedVar)) {
+        continue;
+      }
 
       SymExpr rhsSymExpr = SymExpr.fromValue(assign.getRightOp());
       symExpr = symExpr.substitute(definedVar, rhsSymExpr);

@@ -1,7 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-public class SymLength extends SymExpr {
-  SymExpr op;
+public final class SymLength extends SymExpr {
+  private final SymExpr op;
 
   public SymLength(final SymExpr op) {
     this.op = op;
@@ -12,13 +12,13 @@ public class SymLength extends SymExpr {
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) {
+  public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitLength(this);
   }
 
   @Override
-  public SymExpr substitute(String varName, SymExpr replacement) {
-    SymExpr newOp =  op.substitute(varName, replacement);
+  public SymExpr substitute(final String varName, final SymExpr replacement) {
+    SymExpr newOp = op.substitute(varName, replacement);
     if (newOp != op) {
       return new SymLength(newOp);
     }
@@ -31,7 +31,7 @@ public class SymLength extends SymExpr {
   }
 
   @Override
-  public boolean contains(String varName) {
+  public boolean contains(final String varName) {
     return op.contains(varName);
   }
 

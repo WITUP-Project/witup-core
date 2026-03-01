@@ -1,10 +1,10 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-public class SymInstanceOf extends SymExpr {
-  SymExpr op;
-  String type;
+public final class SymInstanceOf extends SymExpr {
+  private final SymExpr op;
+  private final String type;
 
-  public SymInstanceOf(SymExpr op, String type) {
+  public SymInstanceOf(final SymExpr op, final String type) {
     this.op = op;
     this.type = type;
   }
@@ -12,17 +12,18 @@ public class SymInstanceOf extends SymExpr {
   public SymExpr getOp() {
     return op;
   }
+
   public String getType() {
     return type;
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) {
+  public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitInstanceOf(this);
   }
 
   @Override
-  public SymExpr substitute(String varName, SymExpr replacement) {
+  public SymExpr substitute(final String varName, final SymExpr replacement) {
     return this;
   }
 
@@ -32,7 +33,7 @@ public class SymInstanceOf extends SymExpr {
   }
 
   @Override
-  public boolean contains(String varName) {
+  public boolean contains(final String varName) {
     return op.contains(varName);
   }
 

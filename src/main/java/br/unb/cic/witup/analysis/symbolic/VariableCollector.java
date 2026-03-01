@@ -47,29 +47,29 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
-  public Void visitArrayRef(SymArrayRef r) {
+  public Void visitArrayRef(final SymArrayRef r) {
     r.getBase().accept(this);
     return null;
   }
 
   @Override
-  public Void visitLength(SymLength l) {
+  public Void visitLength(final SymLength l) {
     l.getOp().accept(this);
     return null;
   }
 
   @Override
-  public Void visitNewArray(SymNewArray r) {
+  public Void visitNewArray(final SymNewArray r) {
     return null;
   }
 
   @Override
-  public Void visitCast(SymCast c) {
+  public Void visitCast(final SymCast c) {
     return null;
   }
 
   @Override
-  public Void visitInstanceOf(SymInstanceOf r) {
+  public Void visitInstanceOf(final SymInstanceOf r) {
     return null;
   }
 }

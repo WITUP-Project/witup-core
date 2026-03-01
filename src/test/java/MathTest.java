@@ -3,8 +3,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymKind;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -203,19 +203,18 @@ public class MathTest {
 
   @Test
   public void truncate() {
-    String methodSignature =
-            "<br.unb.cic.witup.samples.Math: int truncate(double)>";
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncate(double)>";
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -227,10 +226,10 @@ public class MathTest {
     JSONObject request = serialiser.serializeResolvedPaths(symbolicConditionPaths, symbolKinds);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -239,7 +238,7 @@ public class MathTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 
@@ -252,19 +251,18 @@ public class MathTest {
 
   @Test
   public void truncateInline() {
-    String methodSignature =
-            "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -276,10 +274,10 @@ public class MathTest {
     JSONObject request = serialiser.serializeResolvedPaths(symbolicConditionPaths, symbolKinds);
 
     String pythonScript =
-            Paths.get(System.getProperty("user.dir"))
-                    .resolve("src/main/solver/solver.py")
-                    .toAbsolutePath()
-                    .toString();
+        Paths.get(System.getProperty("user.dir"))
+            .resolve("src/main/solver/solver.py")
+            .toAbsolutePath()
+            .toString();
     SolverInvoker si = new SolverInvoker(pythonScript);
     try {
       String jsonString = si.callSolver(request);
@@ -288,7 +286,7 @@ public class MathTest {
       SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
 
       SolverResponse.SolverPathResult p0 =
-              SolverResponseAssertions.path(response, methodSignature + "#0");
+          SolverResponseAssertions.path(response, methodSignature + "#0");
 
       assertEquals(SolverResponse.Status.SAT, p0.getStatus());
 

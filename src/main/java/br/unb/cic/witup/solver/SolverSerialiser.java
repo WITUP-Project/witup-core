@@ -1,7 +1,7 @@
 package br.unb.cic.witup.solver;
 
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymKind;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -15,8 +15,7 @@ public final class SolverSerialiser {
   }
 
   public JSONObject serializeResolvedPaths(
-      final List<List<SymbolicConstraint>> resolvedPaths,
-      final Map<String, SymKind> symbolTypes) {
+      final List<List<SymbolicConstraint>> resolvedPaths, final Map<String, SymKind> symbolTypes) {
     JSONArray pathsArray = new JSONArray();
 
     for (int i = 0; i < resolvedPaths.size(); i++) {

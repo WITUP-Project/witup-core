@@ -48,32 +48,32 @@ public final class SymbolKindCollector implements SymExprVisitor<Void> {
   }
 
   @Override
-  public Void visitArrayRef(SymArrayRef r) {
+  public Void visitArrayRef(final SymArrayRef r) {
     r.getBase().accept(this);
     symbolKindTable.put(r.toString(), r.kind());
     return null;
   }
 
   @Override
-  public Void visitLength(SymLength l) {
+  public Void visitLength(final SymLength l) {
     l.getOp().accept(this);
     symbolKindTable.put(l.toString(), l.kind());
     return null;
   }
 
   @Override
-  public Void visitNewArray(SymNewArray r) {
+  public Void visitNewArray(final SymNewArray r) {
     return null;
   }
 
   @Override
-  public Void visitCast(SymCast c) {
+  public Void visitCast(final SymCast c) {
     symbolKindTable.put(c.toString(), c.kind());
     return null;
   }
 
   @Override
-  public Void visitInstanceOf(SymInstanceOf r) {
+  public Void visitInstanceOf(final SymInstanceOf r) {
     symbolKindTable.put(r.toString(), r.kind());
     return null;
   }

@@ -26,10 +26,10 @@ import sootup.core.jimple.common.expr.JLengthExpr;
 import sootup.core.jimple.common.expr.JLtExpr;
 import sootup.core.jimple.common.expr.JMulExpr;
 import sootup.core.jimple.common.expr.JNeExpr;
+import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
-import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.types.PrimitiveType;
@@ -223,8 +223,9 @@ public abstract class SymExpr {
     // a method call, we don't need the equality; only the respective symbol
     // and the truth value
     if (rhs instanceof SymConst c
-        && Integer.valueOf(0).equals(c.getValue())
-        && (lhs.kind() == SymKind.BOOLEAN_METHOD) || lhs.kind() == SymKind.BOOLEAN) {
+            && Integer.valueOf(0).equals(c.getValue())
+            && (lhs.kind() == SymKind.BOOLEAN_METHOD)
+        || lhs.kind() == SymKind.BOOLEAN) {
 
       return lhs;
     }
