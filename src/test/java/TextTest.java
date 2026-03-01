@@ -1,8 +1,8 @@
 import static org.junit.jupiter.api.Assertions.*;
 
-import br.unb.cic.witup.analysis.PathResolver;
-import br.unb.cic.witup.analysis.ResolvedThrowCondition;
-import br.unb.cic.witup.analysis.SymKind;
+import br.unb.cic.witup.analysis.BackwardSymbolicGenerator;
+import br.unb.cic.witup.analysis.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymKind;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -52,11 +52,11 @@ public class TextTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -97,11 +97,11 @@ public class TextTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -141,11 +141,11 @@ public class TextTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 

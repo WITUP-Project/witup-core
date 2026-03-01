@@ -2,9 +2,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import br.unb.cic.witup.analysis.PathResolver;
-import br.unb.cic.witup.analysis.ResolvedThrowCondition;
-import br.unb.cic.witup.analysis.SymKind;
+import br.unb.cic.witup.analysis.BackwardSymbolicGenerator;
+import br.unb.cic.witup.analysis.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymKind;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -56,15 +56,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -108,15 +108,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -158,15 +158,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -208,15 +208,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -258,15 +258,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -308,15 +308,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -359,15 +359,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 
@@ -417,15 +417,15 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConstraintNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements =
-        cpg.getPathsWithIfStatements(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
-    PathResolver resolver = new PathResolver(cpg, pathsWithIfStatements);
+    BackwardSymbolicGenerator resolver = new BackwardSymbolicGenerator(cpg, pathsWithIfStatements);
 
-    List<List<ResolvedThrowCondition>> resolvedConditionPaths = resolver.resolveConditionPaths();
+    List<List<SymbolicConstraint>> resolvedConditionPaths = resolver.generateSymbolicConstraintPaths();
 
     Map<String, SymKind> symbolTypes = resolver.getSymbolKindTable();
 

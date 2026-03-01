@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 public interface SymExprVisitor<T> {
   T visitBinOp(SymBinOp b);
@@ -16,4 +16,6 @@ public interface SymExprVisitor<T> {
   T visitArrayRef(SymArrayRef r);
 
   T visitLength(SymLength l);
+
+  T visitNewArray(SymNewArray r);
 }

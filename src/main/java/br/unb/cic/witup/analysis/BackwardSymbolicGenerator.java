@@ -1,5 +1,8 @@
 package br.unb.cic.witup.analysis;
 
+import br.unb.cic.witup.analysis.symbolic.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.SymKind;
+import br.unb.cic.witup.analysis.symbolic.SymbolKindCollector;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
@@ -19,69 +22,75 @@ import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
-public final class PathResolver {
+/**
+ * Translates Jimple constraints into SymbolicConstraints. Uses backwards data
+ * flow resolution to trace temporaries, parameters back to their origin node
+ * Produces a path of symbolic constraints to be tested by Z3.
+ */
+public final class BackwardSymbolicGenerator {
   private final WITUpGraph cpg;
   private final Map<String, SymKind> symbolKindTable;
-  private final List<GraphPath<WITUpNode, WITUpEdge>> paths;
+  private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private final Set<String> variableSet;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
 
-  public PathResolver(final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> paths) {
+  public BackwardSymbolicGenerator(final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
     this.cpg = cpg;
     symbolKindTable = new HashMap<>();
     variableSet = new HashSet<>();
-    this.paths = paths;
+    this.constraintPaths = constraintPaths;
   }
 
-  public List<List<ResolvedThrowCondition>> resolveConditionPaths() {
-    List<List<ResolvedThrowCondition>> resolvedThrowConditions = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> p : this.paths) {
-      List<ResolvedThrowCondition> resolved = resolveConditionPath(p);
+  public List<List<SymbolicConstraint>> generateSymbolicConstraintPaths() {
+    List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
+    for (GraphPath<WITUpNode, WITUpEdge> p : this.constraintPaths) {
+      List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
 
       if (!resolved.isEmpty()) {
-        resolvedThrowConditions.add(resolved);
+        symbolicConstraints.add(resolved);
       }
     }
-    return resolvedThrowConditions;
+    return symbolicConstraints;
   }
 
-  public List<ResolvedThrowCondition> resolveConditionPath(
+  public List<SymbolicConstraint> generateSymbolicConstraints(
       final GraphPath<WITUpNode, WITUpEdge> p) {
 
     this.setCurrentPath(p);
-    List<ResolvedThrowCondition> resolvedThrowConditions = new ArrayList<>();
-    for (ThrowCondition throwCondition : cpg.getThrowConditions(p)) {
-      SymExpr resolved = resolveThrowCondition(throwCondition.getNode());
-      boolean truthValue = throwCondition.getTruthValue();
+    List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
+    for (ThrowConstraintNode throwConstraint : cpg.getThrowConstraints(p)) {
+      SymExpr symExpr = generateSymbolicExpression(throwConstraint.node());
+      boolean truthValue = throwConstraint.truthValue();
 
-      if (resolved.kind() == SymKind.BOOLEAN_METHOD) {
+      if (symExpr.kind() == SymKind.BOOLEAN_METHOD) {
         truthValue = !truthValue;
       }
 
-      resolvedThrowConditions.add(new ResolvedThrowCondition(resolved, truthValue));
+      symbolicConstraints.add(new SymbolicConstraint(symExpr, truthValue));
     }
-    return resolvedThrowConditions;
+    return symbolicConstraints;
   }
 
   private void setCurrentPath(final GraphPath<WITUpNode, WITUpEdge> p) {
     this.currentPath = p;
   }
 
-  public SymExpr resolveThrowCondition(final WITUpNode ifNode) {
-    StmtGraphNode n = (StmtGraphNode) ifNode.getNode();
+  public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
+    StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
-    SymExpr condition = SymExpr.fromValue(ifStmt.getCondition());
+    SymExpr symExpr = SymExpr.fromValue(ifStmt.getCondition());
 
-    collectVariables(condition);
+    collectVariables(symExpr);
 
-    // traverse backward and substitute
-    SymExpr resolved = resolveVariables(condition, ifNode, new HashSet<>());
+    // traverse backward and substitute temporaries so that each SymbolicConstraint
+    // element has all the information it needs to pass to a solver
+    symExpr = backwardSubstitute(symExpr, constraintNode, new HashSet<>());
 
-    resolved = SymExpr.simplifyCmpPatterns(resolved);
-    resolved = SymExpr.stripBooleanEncoding(resolved);
-    collectSymbolKinds(resolved);
+    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
+    symExpr = SymExpr.stripBooleanEncoding(symExpr);
+    collectSymbolKinds(symExpr);
 
-    return resolved;
+    return symExpr;
   }
 
   private void collectVariables(final SymExpr expr) {
@@ -89,7 +98,9 @@ public final class PathResolver {
   }
 
   // it's ok to reassign current in a recursive function
-  private SymExpr resolveVariables(
+  // given a Jimple statement, produces a SymExpr by backwards
+  // tracing temporaries back to their origins
+  private SymExpr backwardSubstitute(
       SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
       final WITUpNode currentNode,
       final Set<WITUpNode> visited) {
@@ -139,7 +150,7 @@ public final class PathResolver {
 
         variableSet.remove(definedVar);
         collectVariables(rhsSymExpr);
-        symExpr = resolveVariables(symExpr, sourceNode, visited);
+        symExpr = backwardSubstitute(symExpr, sourceNode, visited);
       }
     }
 

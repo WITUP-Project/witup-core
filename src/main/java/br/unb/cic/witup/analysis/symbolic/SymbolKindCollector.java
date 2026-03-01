@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.symbolic;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,6 +58,11 @@ public final class SymbolKindCollector implements SymExprVisitor<Void> {
   public Void visitLength(SymLength l) {
     l.getOp().accept(this);
     symbolKindTable.put(l.toString(), l.kind());
+    return null;
+  }
+
+  @Override
+  public Void visitNewArray(SymNewArray r) {
     return null;
   }
 }
