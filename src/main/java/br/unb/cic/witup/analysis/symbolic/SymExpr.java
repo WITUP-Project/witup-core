@@ -49,7 +49,10 @@ public abstract class SymExpr {
 
   public static SymExpr fromValue(final Value value) {
     return switch (value) {
-      case Local l -> new SymVar(l.toString());
+      case Local l -> new SymVar(
+              l.toString(),
+              symKindFromType(l.getType())
+      );
       case IntConstant c -> new SymConst(c.getValue());
       case DoubleConstant c -> new SymConst(c.getValue());
       case FloatConstant c -> new SymConst(c.getValue());

@@ -2,8 +2,10 @@ package br.unb.cic.witup.solver;
 
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import com.microsoft.z3.Context;
+import com.microsoft.z3.Expr;
 import com.microsoft.z3.FuncDecl;
 import com.microsoft.z3.Model;
+import com.microsoft.z3.SeqExpr;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
 
@@ -40,7 +42,28 @@ public final class ThrowConditionSolver {
     Map<String, String> result = new HashMap<>();
     for (FuncDecl<?> decl : model.getDecls()) {
       String name = decl.getName().toString();
-      String value = model.getConstInterp(decl).toString();
+
+      Expr<?> valueExpr = model.getConstInterp(decl);
+
+      if (valueExpr == null) {
+        continue;
+      }
+
+      String value;
+
+      if (valueExpr instanceof SeqExpr<?> seq) {
+        value = seq.getString();
+      }
+      else if (valueExpr.isIntNum()) {
+        value = valueExpr.toString();
+      }
+      else if (valueExpr.isBool()) {
+        value = valueExpr.toString();
+      }
+      else {
+        // fallback
+        value = valueExpr.toString();
+      }
       result.put(name, value);
     }
     return result;

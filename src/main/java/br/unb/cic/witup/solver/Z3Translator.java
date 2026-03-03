@@ -4,7 +4,6 @@ import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
-import br.unb.cic.witup.analysis.symbolic.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymField;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
@@ -39,12 +38,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   // entry point — translates a full constraint including truth value
   public BoolExpr translateConstraint(final SymbolicConstraint constraint) {
     Expr<?> expr = constraint.getSymExpr().accept(this);
-    BoolExpr boolExpr = coerceToBool(expr, constraint.getSymExpr());
+    BoolExpr boolExpr = coerceToBool(expr);
     return constraint.getTruthValue() ? boolExpr : context.mkNot(boolExpr);
   }
 
   // coerce an Expr<?> to BoolExpr based on kind
-  private BoolExpr coerceToBool(final Expr<?> expr, final SymExpr source) {
+  private BoolExpr coerceToBool(final Expr<?> expr) {
     if (expr instanceof BoolExpr b) {
       return b;
     }
@@ -59,6 +58,23 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public Expr<?> visitBinOp(final SymBinOp b) {
     Expr<?> left = b.getLeft().accept(this);
     Expr<?> right = b.getRight().accept(this);
+
+//    Sort sort = b.getLeft().accept(sortInferrer);
+
+//    if (sort.equals(ctx.getRealSort())) {
+//      ArithExpr<RealSort> lReal = (ArithExpr<RealSort>) left;
+//      ArithExpr<RealSort> rReal = (ArithExpr<RealSort>) right;
+//      return switch (b.getOp()) {
+//        case LT  -> ctx.mkLt(lReal, rReal);
+//        case ADD -> ctx.mkAdd(lReal, rReal);
+//        // ...
+//        default  -> ctx.mkEq(left, right);
+//      };
+//    }
+
+    // default: integer path
+//    ArithExpr<IntSort> lInt = (ArithExpr<IntSort>) left;
+//    ArithExpr<IntSort> rInt = (ArithExpr<IntSort>) right;
 
     return switch (b.getOp()) {
       // comparison — produce BoolExpr

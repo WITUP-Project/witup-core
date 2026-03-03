@@ -33,6 +33,6 @@ public final class SymStringConst extends SymExpr {
 
   @Override
   public SymKind kind() {
-    return SymKind.OTHER;
+    return SymKind.STRING;
   }
 }

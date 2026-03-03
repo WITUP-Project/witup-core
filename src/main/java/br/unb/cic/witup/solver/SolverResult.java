@@ -15,4 +15,8 @@ public record SolverResult(
   public boolean isUnsat() {
     return status == Status.UNSATISFIABLE;
   }
+
+  public Map<String, String> getModel() {
+    return model;
+  }
 }

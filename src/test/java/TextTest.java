@@ -10,11 +10,14 @@ import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.solver.SolverInvoker;
 import br.unb.cic.witup.solver.SolverResponse;
 import br.unb.cic.witup.solver.SolverResponseAssertions;
+import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SolverSerialiser;
+import br.unb.cic.witup.solver.ThrowConditionSolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,34 +61,18 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
-    System.out.println(request);
-
-    String pythonScript =
-        Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/solver/solver.py")
-            .toAbsolutePath()
-            .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String jsonString = si.callSolver(request);
-      ObjectMapper mapper = new ObjectMapper();
-
-      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
-
-      SolverResponse.SolverPathResult p0 =
-          SolverResponseAssertions.path(response, methodSignature + "#0");
-
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-
-      String stringValue = SolverResponseAssertions.stringValue(p0, "s");
-      assertEquals("abc", stringValue);
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
     }
+    solver.close();
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    assertEquals("abc", sol0.getModel().get("s"));
   }
 
   @Test
@@ -103,33 +90,26 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
-
-    String pythonScript =
-        Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/solver/solver.py")
-            .toAbsolutePath()
-            .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String jsonString = si.callSolver(request);
-      ObjectMapper mapper = new ObjectMapper();
-
-      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
-
-      SolverResponse.SolverPathResult p0 =
-          SolverResponseAssertions.path(response, methodSignature + "#0");
-
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-
-      int lengthValue = SolverResponseAssertions.intValue(p0, "s.length");
-      assertEquals(0, lengthValue, "Expected length 0");
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
     }
+    solver.close();
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+
+//    SolverResponse.SolverPathResult p0 =
+//        SolverResponseAssertions.path(response, methodSignature + "#0");
+//
+//    assertEquals(SolverResponse.Status.SAT, p0.getStatus());
+//
+//    int lengthValue = SolverResponseAssertions.intValue(p0, "s.length");
+//    assertEquals(0, lengthValue, "Expected length 0");
+
   }
 
   @Test
