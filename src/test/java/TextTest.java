@@ -101,15 +101,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-
-//    SolverResponse.SolverPathResult p0 =
-//        SolverResponseAssertions.path(response, methodSignature + "#0");
-//
-//    assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-//
-//    int lengthValue = SolverResponseAssertions.intValue(p0, "s.length");
-//    assertEquals(0, lengthValue, "Expected length 0");
-
+    assertEquals(0, Integer.parseInt(sol0.getModel().get("s.length")));
   }
 
   @Test
@@ -127,33 +119,18 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
-
-    String pythonScript =
-        Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/solver/solver.py")
-            .toAbsolutePath()
-            .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String jsonString = si.callSolver(request);
-      ObjectMapper mapper = new ObjectMapper();
-
-      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
-
-      SolverResponse.SolverPathResult p0 =
-          SolverResponseAssertions.path(response, methodSignature + "#0");
-
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-
-      boolean truthValue = SolverResponseAssertions.booleanValue(p0, "s.isEmpty");
-      assertTrue(truthValue, "Expected s.isEmpty to be true");
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
     }
+    solver.close();
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(Boolean.parseBoolean(sol0.getModel().get("s.isEmpty")));
   }
 
   @Test
@@ -171,33 +148,17 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolTypes);
-
-    String pythonScript =
-        Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/solver/solver.py")
-            .toAbsolutePath()
-            .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String jsonString = si.callSolver(request);
-      ObjectMapper mapper = new ObjectMapper();
-
-      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
-
-      SolverResponse.SolverPathResult p0 =
-          SolverResponseAssertions.path(response, methodSignature + "#0");
-
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-
-      boolean truthValue =
-          SolverResponseAssertions.booleanValue(p0, "s_instanceof_java_lang_String");
-      assertFalse(truthValue, "Expected s_instanceof_java_lang_String to be false");
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
     }
+    solver.close();
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    assertFalse(Boolean.parseBoolean(sol0.getModel().get("s_instanceof_java_lang_String")));
   }
 }
