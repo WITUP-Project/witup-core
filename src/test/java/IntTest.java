@@ -68,7 +68,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -105,7 +104,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -139,7 +137,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -173,7 +170,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -207,7 +203,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -241,7 +236,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -276,7 +270,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     // path 0 is unsat as
     // {"condition":"(a >= 0)","truthValue":true},{"condition":"(0 == 0)","truthValue":false}
@@ -317,7 +310,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());

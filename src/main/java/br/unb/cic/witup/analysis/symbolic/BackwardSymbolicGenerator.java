@@ -1,6 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.ThrowConstraint;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.graph.edge.WITUpEdge;

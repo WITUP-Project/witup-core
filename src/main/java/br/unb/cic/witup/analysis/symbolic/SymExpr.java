@@ -1,6 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.BinOp;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.constant.DoubleConstant;
@@ -97,7 +98,7 @@ public abstract class SymExpr {
     // this.<ClassName: type fieldName>
     SymExpr base = fromValue(r.getBase());
     String fieldName = r.getFieldSignature().getName();
-    return new SymField(base, fieldName);
+    return new SymFieldAccess(base, fieldName, symKindFromType(r.getType()));
   }
 
   private static SymExpr fromAbstractCondExpr(final AbstractConditionExpr e) {

@@ -60,7 +60,6 @@ public class TextTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
@@ -89,7 +88,6 @@ public class TextTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
@@ -118,7 +116,6 @@ public class TextTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
@@ -147,7 +144,6 @@ public class TextTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());

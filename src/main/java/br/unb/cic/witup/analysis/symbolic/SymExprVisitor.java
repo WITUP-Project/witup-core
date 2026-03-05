@@ -5,7 +5,7 @@ public interface SymExprVisitor<T> {
 
   T visitConst(SymConst c);
 
-  T visitField(SymField f);
+  T visitField(SymFieldAccess f);
 
   T visitStringConst(SymStringConst s);
 

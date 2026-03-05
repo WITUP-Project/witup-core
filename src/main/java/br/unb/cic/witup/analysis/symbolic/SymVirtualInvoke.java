@@ -1,5 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+
 public final class SymVirtualInvoke extends SymExpr {
   private final SymExpr base; // e.g. s
   private final String invokeName; // e.g. length
