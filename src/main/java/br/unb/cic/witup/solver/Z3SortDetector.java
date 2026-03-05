@@ -16,7 +16,6 @@ import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import com.microsoft.z3.ArraySort;
 import com.microsoft.z3.Context;
-import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Sort;
 
 public final class Z3SortDetector implements SymExprVisitor<Sort> {

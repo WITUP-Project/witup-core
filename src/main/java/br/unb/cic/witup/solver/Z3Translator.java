@@ -26,12 +26,8 @@ import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Sort;
 import com.microsoft.z3.UninterpretedSort;
-import com.microsoft.z3.enumerations.Z3_sort_kind;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_SEQ_SORT;
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_UNINTERPRETED_SORT;
 
 public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private final Context context;
@@ -69,11 +65,9 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       Sort leftSort = left.getSort();
       Sort rightSort = right.getSort();
 
-      Z3_sort_kind leftKind = left.getSort().getSortKind();
-      Z3_sort_kind rightKind = right.getSort().getSortKind();
-
       if (!left.getSort().equals(right.getSort())) {
         // Automatic coercion if comparing OBJECT array element to STRING
+        // hopefully won't byte us later
         if (leftSort instanceof ArraySort leftArrSort &&
                 leftArrSort.getRange().equals(objectSort) &&
                 rightSort.equals(context.getStringSort())) {
