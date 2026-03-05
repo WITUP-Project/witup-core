@@ -1,6 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.BinOp;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymBinOp extends SymExpr {
   private final BinOp op;

@@ -1,5 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+
 public final class SymCast extends SymExpr {
   private final SymExpr op;
   private final String type;

@@ -1,5 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+
 public final class SymNewArray extends SymExpr {
   private final String baseType;
   private final int size;

@@ -1,12 +1,16 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+
 public final class SymArrayRef extends SymExpr {
   private final SymExpr array;
   private final SymExpr index;
+  private final SymKind kind;
 
-  public SymArrayRef(SymExpr array, SymExpr index) {
+  public SymArrayRef(SymExpr array, SymExpr index,  SymKind kind) {
     this.array = array;
     this.index = index;
+    this.kind = kind;
   }
 
   public SymExpr getArray() {

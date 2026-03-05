@@ -35,4 +35,15 @@ public class Array {
     }
     return arr[i];
   }
+
+  public class MyObject {
+    public int value;
+  }
+
+  public MyObject getObjectFromArray(MyObject[] arr, int i) {
+    if (arr[0].value > 10) {
+      throw new IllegalArgumentException("value too large");
+    }
+    return arr[i];
+  }
 }

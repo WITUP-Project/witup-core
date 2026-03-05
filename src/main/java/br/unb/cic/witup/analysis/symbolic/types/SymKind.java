@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis.symbolic;
+package br.unb.cic.witup.analysis.symbolic.types;
 
 public enum SymKind {
   BOOLEAN,

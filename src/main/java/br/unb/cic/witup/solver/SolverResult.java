@@ -1,10 +1,17 @@
 package br.unb.cic.witup.solver;
 
+import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.IntExpr;
+import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Status;
+import com.microsoft.z3.Expr;
+import com.microsoft.z3.enumerations.Z3_sort_kind;
+
 import java.util.Map;
+
+import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_UNINTERPRETED_SORT;
 
 // (String pathId, Status status, Map<String, ModelValue> model)
 public final class SolverResult {
@@ -59,40 +66,38 @@ public final class SolverResult {
 
   public int getInt(String name) {
     ModelValue value = model.get(name);
-    if (!(value instanceof ModelValue.IntValue iv)) {
-      throw new IllegalStateException(
-          "Expected IntValue for " + name + ", got " + value.getClass());
-    }
-    return iv.value();
+    if (value == null) throw new IllegalStateException("No model value for: " + name);
+    return value.getInt();
   }
 
   public boolean getBool(String name) {
     ModelValue value = model.get(name);
-    if (!(value instanceof ModelValue.BoolValue bv)) {
-      throw new IllegalStateException(
-          "Expected BoolValue for " + name + ", got " + value.getClass());
-    }
-    return bv.value();
+    if (value == null) throw new IllegalStateException("No model value for: " + name);
+    return value.getBool();
   }
 
   public String getString(String name) {
     ModelValue value = model.get(name);
-    if (!(value instanceof ModelValue.StringValue sv)) {
-      throw new IllegalStateException(
-          "Expected StringValue for " + name + ", got " + value.getClass());
-    }
-    return sv.value();
+    if (value == null) throw new IllegalStateException("No model value for: " + name);
+    return value.getString();
   }
 
   public ModelValue.ArrayValue getArray(String name) {
     ModelValue value = model.get(name);
+
     if (!(value instanceof ModelValue.ArrayValue av)) {
-      throw new IllegalStateException(
-              "Expected ArrayValue for " + name + ", got " + (value == null ? "null" : value.getClass())
-      );
+      throw new IllegalStateException("Expected ArrayValue for " + name + ", got " +
+              (value == null ? "null" : value.getClass()));
     }
     return av;
   }
+
+//  public ModelValue.ObjectValue getObject(String name) {
+//    Expr<?> val = context.mkConst(name, context.mkUninterpretedSort(name + "_obj"));
+//    Expr<?> eval = z3Model.eval(val, true);
+//
+//    return new ModelValue.ObjectValue(eval, z3Model, context);
+//  }
 
   public IntExpr getIntExpr(String name) {
     return context.mkIntConst(name);

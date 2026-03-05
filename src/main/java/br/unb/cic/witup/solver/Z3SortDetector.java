@@ -6,9 +6,9 @@ import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
-import br.unb.cic.witup.analysis.symbolic.SymField;
+import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
-import br.unb.cic.witup.analysis.symbolic.SymKind;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymNewArray;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
@@ -41,7 +41,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   }
 
   @Override
-  public Sort visitField(final SymField f) {
+  public Sort visitField(final SymFieldAccess f) {
     return context.getIntSort();
   }
 
@@ -97,13 +97,16 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitArray(final SymArray symArray) {
+    System.out.println("visitArray: " + symArray.getName() +
+            " elementKind=" + symArray.getElementKind() +
+            " typeStr=" + symArray.getObjectType());
     // Declare array sort based on element type
     Sort elemSort = switch (symArray.getElementKind()) {
       case INT -> context.getIntSort();
       case STRING -> context.getStringSort();
       case REAL -> context.getRealSort();
       case BOOLEAN -> context.getBoolSort();
-      case OBJECT -> context.getStringSort();
+      case OBJECT -> context.mkUninterpretedSort("java.lang.Object");
       default -> context.getIntSort();
     };
     // array indices are always ints
