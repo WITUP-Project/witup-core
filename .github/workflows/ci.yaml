@@ -9,15 +9,10 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      PYTHON_VENV: .venv
+      Z3_VERSION: z3-4.17.0
+      LD_LIBRARY_PATH: ${{ github.workspace }}/src/main/java/resources/native/linux
 
     steps:
-      - name: Debug compiler versions
-        run: |
-          python3 --version
-          g++ --version
-          make --version
-          
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -26,31 +21,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: maven
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.14
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('pom.xml') }}
-
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('src/main/solver/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install Python dependencies
+      - name: Verify native z3 libraries exist
         run: |
-          python -m venv $PYTHON_VENV
-          $PYTHON_VENV/bin/python -m pip install --upgrade pip
-          $PYTHON_VENV/bin/pip install -r src/main/solver/requirements.txt
+          ls -la src/main/java/resources/native/linux
+          ldd src/main/java/resources/native/linux/libz3java.so
 
       - name: Run Maven verify
         run: mvn clean verify
