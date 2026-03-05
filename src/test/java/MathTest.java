@@ -81,7 +81,7 @@ public class MathTest {
 
     SolverResult sol = results.getFirst();
     assertTrue(sol.isSat());
-    assertTrue(sol.getInt("this.radius").value() < 0, "Expected radius <= 0");
+    assertTrue(sol.getInt("this.radius") < 0, "Expected radius <= 0");
   }
 
   @Test
@@ -115,7 +115,7 @@ public class MathTest {
 
     SolverResult sol = results.getFirst();
     assertTrue(sol.isSat());
-    assertEquals(0, sol.getInt("y").getValue(), "Expected y == 0");
+    assertEquals(0, sol.getInt("y"), "Expected y == 0");
   }
 
   @Test
@@ -149,11 +149,11 @@ public class MathTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertTrue(sol0.getInt("p").getValue() < 0, "Expected p < 0");
+    assertTrue(sol0.getInt("p") < 0, "Expected p < 0");
 
     SolverResult sol1 = results.get(1);
     assertTrue(sol1.isSat());
-    assertTrue(sol1.getInt("p").getValue() > 1, "Expected p > 1");
+    assertTrue(sol1.getInt("p") > 1, "Expected p > 1");
   }
 
   @Test
@@ -186,7 +186,7 @@ public class MathTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertTrue(sol0.getInt("truncated").getValue() < 0, "Expected truncated < 0");
+    assertTrue(sol0.getInt("truncated") < 0, "Expected truncated < 0");
   }
 
   @Test
@@ -219,6 +219,6 @@ public class MathTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertTrue(sol0.getInt("(int)d").getValue() < 0, "Expected (int)d\" < 0");
+    assertTrue(sol0.getInt("(int)d") < 0, "Expected (int)d\" < 0");
   }
 }

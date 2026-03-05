@@ -28,27 +28,48 @@ public record SolverResult(
     return model;
   }
 
-  public ModelValue.IntValue getInt(String name) {
+  public int getInt(String name) {
     ModelValue value = model.get(name);
     if (!(value instanceof ModelValue.IntValue iv)) {
       throw new IllegalStateException("Expected IntValue for " + name + ", got " + value.getClass());
     }
-    return iv;
+    return iv.getValue();
   }
 
-  public ModelValue.BoolValue getBool(String name) {
+  public boolean getBool(String name) {
     ModelValue value = model.get(name);
     if (!(value instanceof ModelValue.BoolValue bv)) {
       throw new IllegalStateException("Expected BoolValue for " + name + ", got " + value.getClass());
     }
-    return bv;
+    return bv.getValue();
   }
 
-  public ModelValue.StringValue getString(String name) {
+  public String getString(String name) {
     ModelValue value = model.get(name);
     if (!(value instanceof ModelValue.StringValue sv)) {
       throw new IllegalStateException("Expected StringValue for " + name + ", got " + value.getClass());
     }
-    return sv;
+    return sv.getValue();
+  }
+
+  // this makes the tests look cleaner, but might be too much
+  // consider removing
+  @SuppressWarnings("unchecked")
+  public <T> T get(String name, Class<T> cls) {
+    ModelValue val = model.get(name);
+    if (val == null) {
+      throw new IllegalStateException("No value for " + name);
+    }
+    Object primitive;
+    if (cls == Integer.class && val instanceof ModelValue.IntValue iv) {
+      primitive = iv.getValue();
+    } else if (cls == Boolean.class && val instanceof ModelValue.BoolValue bv) {
+      primitive = bv.getValue();
+    } else if (cls == String.class && val instanceof ModelValue.StringValue sv) {
+      primitive = sv.getValue();
+    } else {
+      throw new IllegalStateException("Expected " + cls.getSimpleName() + " for " + name + ", got " + val.getClass());
+    }
+    return (T) primitive;
   }
 }

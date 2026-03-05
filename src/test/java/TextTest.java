@@ -161,7 +161,6 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new ModelValue.BoolValue(false),
-            sol0.getBool("s_instanceof_java_lang_String"));
+    assertFalse(sol0.getBool("s_instanceof_java_lang_String"));
   }
 }
