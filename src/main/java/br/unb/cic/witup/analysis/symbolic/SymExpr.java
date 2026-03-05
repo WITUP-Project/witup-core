@@ -68,7 +68,7 @@ public abstract class SymExpr {
       case JNewArrayExpr e -> fromNewArray(e);
       case JCastExpr e -> fromCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
-      default -> new SymVar(value.toString());
+      default -> new SymVar(value.toString(), symKindFromType(value.getType()));
     };
   }
 

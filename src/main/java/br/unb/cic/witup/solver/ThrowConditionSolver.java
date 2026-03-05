@@ -8,6 +8,7 @@ import com.microsoft.z3.Model;
 import com.microsoft.z3.SeqExpr;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
+import com.microsoft.z3.enumerations.Z3_sort_kind;
 
 import java.util.HashMap;
 import java.util.List;
@@ -31,38 +32,26 @@ public final class ThrowConditionSolver {
       solver.add(translator.translateConstraint(c));
     }
     Status status = solver.check();
-    Map<String, String> model = status == Status.SATISFIABLE
+    Map<String, ModelValue> model = status == Status.SATISFIABLE
             ? extractModel(solver.getModel())
             : Map.of();
     solver.pop();
     return new SolverResult(pathId, status, model);
   }
 
-  private Map<String, String> extractModel(final Model model) {
-    Map<String, String> result = new HashMap<>();
+  private Map<String, ModelValue> extractModel(final Model model) {
+    Map<String, ModelValue> result = new HashMap<>();
+
     for (FuncDecl<?> decl : model.getDecls()) {
       String name = decl.getName().toString();
+      Expr<?> expr = model.getConstInterp(decl);
 
-      Expr<?> valueExpr = model.getConstInterp(decl);
-
-      if (valueExpr == null) {
-        continue;
-      }
-
-      String value;
-
-      if (valueExpr instanceof SeqExpr<?> seq) {
-        value = seq.getString();
-      }
-      else if (valueExpr.isIntNum()) {
-        value = valueExpr.toString();
-      }
-      else if (valueExpr.isBool()) {
-        value = valueExpr.toString();
-      }
-      else {
-        // fallback
-        value = valueExpr.toString();
+      ModelValue value;
+      switch (expr.getSort().getSortKind()) {
+        case Z3_BOOL_SORT -> value = new ModelValue.BoolValue(model.eval(expr, false).isTrue());
+        case Z3_INT_SORT  -> value = new ModelValue.IntValue(Integer.parseInt(expr.toString()));
+        case Z3_SEQ_SORT -> value = new ModelValue.StringValue(expr.getString());
+        default -> throw new IllegalStateException("Unsupported sort: " + expr.getSort());
       }
       result.put(name, value);
     }

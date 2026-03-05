@@ -7,12 +7,14 @@ import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.WITUpNode;
+import br.unb.cic.witup.solver.ModelValue;
 import br.unb.cic.witup.solver.SolverInvoker;
 import br.unb.cic.witup.solver.SolverResponse;
 import br.unb.cic.witup.solver.SolverResponseAssertions;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SolverSerialiser;
 import br.unb.cic.witup.solver.ThrowConditionSolver;
+import ch.qos.logback.core.model.Model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -72,7 +74,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals("abc", sol0.getModel().get("s"));
+    assertEquals(new ModelValue.StringValue("abc"), sol0.getModel().get("s"));
   }
 
   @Test
@@ -101,7 +103,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(0, Integer.parseInt(sol0.getModel().get("s.length")));
+    assertEquals(new ModelValue.IntValue(0), sol0.getModel().get("s.length"));
   }
 
   @Test
@@ -130,7 +132,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertTrue(Boolean.parseBoolean(sol0.getModel().get("s.isEmpty")));
+    assertEquals(new ModelValue.BoolValue(true), sol0.getModel().get("s.isEmpty"));
   }
 
   @Test
@@ -159,6 +161,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertFalse(Boolean.parseBoolean(sol0.getModel().get("s_instanceof_java_lang_String")));
+    assertEquals(new ModelValue.BoolValue(false),
+            sol0.getBool("s_instanceof_java_lang_String"));
   }
 }

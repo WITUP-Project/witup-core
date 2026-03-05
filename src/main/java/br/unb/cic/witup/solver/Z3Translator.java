@@ -16,10 +16,12 @@ import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import com.microsoft.z3.ArithExpr;
 import com.microsoft.z3.BoolExpr;
+import com.microsoft.z3.CharSort;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.IntSort;
+import com.microsoft.z3.SeqExpr;
 import com.microsoft.z3.Sort;
 
 import java.util.HashMap;
@@ -167,7 +169,9 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitInstanceOf(final SymInstanceOf i) {
-    String key = i.toString();
-    return cache.computeIfAbsent(key, context::mkIntConst);
+    Expr<?> opExpr = i.getOp().accept(this);
+
+    String boolName = i.toString(); // e.g., "s_instanceof_java_lang_String"
+    return context.mkBoolConst(boolName);
   }
 }
