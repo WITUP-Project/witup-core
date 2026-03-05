@@ -4,7 +4,6 @@ import com.microsoft.z3.Context;
 import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Status;
-
 import java.util.Map;
 
 public final class SolverResult {
@@ -16,11 +15,7 @@ public final class SolverResult {
   private final Model z3Model;
 
   public SolverResult(
-          String pathId,
-          Status status,
-          Map<String, ModelValue> model,
-          Context context,
-          Model z3Model) {
+      String pathId, Status status, Map<String, ModelValue> model, Context context, Model z3Model) {
 
     this.pathId = pathId;
     this.status = status;
@@ -79,18 +74,21 @@ public final class SolverResult {
     ModelValue value = model.get(name);
 
     if (!(value instanceof ModelValue.ArrayValue av)) {
-      throw new IllegalStateException("Expected ArrayValue for " + name + ", got " +
-              (value == null ? "null" : value.getClass()));
+      throw new IllegalStateException(
+          "Expected ArrayValue for "
+              + name
+              + ", got "
+              + (value == null ? "null" : value.getClass()));
     }
     return av;
   }
 
-//  public ModelValue.ObjectValue getObject(String name) {
-//    Expr<?> val = context.mkConst(name, context.mkUninterpretedSort(name + "_obj"));
-//    Expr<?> eval = z3Model.eval(val, true);
-//
-//    return new ModelValue.ObjectValue(eval, z3Model, context);
-//  }
+  //  public ModelValue.ObjectValue getObject(String name) {
+  //    Expr<?> val = context.mkConst(name, context.mkUninterpretedSort(name + "_obj"));
+  //    Expr<?> eval = z3Model.eval(val, true);
+  //
+  //    return new ModelValue.ObjectValue(eval, z3Model, context);
+  //  }
 
   public IntExpr getIntExpr(String name) {
     return context.mkIntConst(name);

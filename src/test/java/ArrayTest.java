@@ -12,13 +12,12 @@ import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.solver.ModelValue;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.ThrowConditionSolver;
+import com.microsoft.z3.IntExpr;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import com.microsoft.z3.IntExpr;
 import org.jgrapht.GraphPath;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -109,7 +108,6 @@ public class ArrayTest {
       results.add(result);
     }
 
-
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
     assertEquals(0, sol0.getInt("arr.length"));
@@ -143,7 +141,6 @@ public class ArrayTest {
       results.add(result);
     }
 
-
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("n") < 0, "Expected n < 0");
@@ -151,7 +148,8 @@ public class ArrayTest {
 
   @Test
   public void getStringElement() {
-    String methodSignature = "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
+    String methodSignature =
+        "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -159,11 +157,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -189,7 +187,8 @@ public class ArrayTest {
 
   @Test
   public void getObjectElement() {
-    String methodSignature = "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
+    String methodSignature =
+        "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -197,11 +196,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -227,7 +226,8 @@ public class ArrayTest {
 
   @Test
   public void getObjectFromArray() {
-    String methodSignature = "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
+    String methodSignature =
+        "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -235,11 +235,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 

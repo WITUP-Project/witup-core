@@ -1,5 +1,7 @@
 package br.unb.cic.witup.solver;
 
+import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
+
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.Context;
@@ -13,11 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
-
-
 public final class ThrowConditionSolver {
-    public SolverResult check(final String pathId, final List<SymbolicConstraint> constraints) {
+  public SolverResult check(final String pathId, final List<SymbolicConstraint> constraints) {
     Context ctx = new Context();
     Solver solver = ctx.mkSolver();
     Z3Translator translator = new Z3Translator(ctx);
@@ -38,7 +37,8 @@ public final class ThrowConditionSolver {
     return new SolverResult(pathId, status, modelValues, ctx, z3Model);
   }
 
-  private Map<String, ModelValue> extractModel(final Model model, final Z3Translator translator, final Context ctx) {
+  private Map<String, ModelValue> extractModel(
+      final Model model, final Z3Translator translator, final Context ctx) {
     Map<String, ModelValue> result = new HashMap<>();
 
     // Evaluate every expression the translator declared, by the exact name it used.
@@ -52,8 +52,7 @@ public final class ThrowConditionSolver {
           // Store under the Z3 constant name (e.g. "arr"), not the cache key
           String modelKey = name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
           System.out.println("extractModel array: name=" + name + " modelKey=" + modelKey);
-          result.put(modelKey, new ModelValue.ArrayValue(
-                  (ArrayExpr<IntSort, ?>) expr, model, ctx));
+          result.put(modelKey, new ModelValue.ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
         } else {
           Expr<?> evaluated = model.eval(expr, true);
           result.put(name, ModelValue.fromExpr(evaluated, model, ctx));
@@ -78,7 +77,8 @@ public final class ThrowConditionSolver {
         String key = baseArg + "." + fieldName;
         try {
           result.put(key, ModelValue.fromExpr(e.getValue(), model, ctx));
-        } catch (IllegalStateException ignored) {}
+        } catch (IllegalStateException ignored) {
+        }
       }
     }
 

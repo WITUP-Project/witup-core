@@ -2,7 +2,6 @@ package br.unb.cic.witup.solver;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymObjectType;
 import com.microsoft.z3.Sort;
-
 import java.util.HashMap;
 import java.util.Map;
 

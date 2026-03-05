@@ -61,7 +61,6 @@ public class TextTest {
       results.add(result);
     }
 
-
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
     assertEquals(new ModelValue.StringValue("abc"), sol0.getModel().get("s"));
@@ -89,7 +88,6 @@ public class TextTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
@@ -119,7 +117,6 @@ public class TextTest {
       results.add(result);
     }
 
-
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
     assertEquals(new ModelValue.BoolValue(true), sol0.getModel().get("s.isEmpty"));
@@ -147,7 +144,6 @@ public class TextTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());

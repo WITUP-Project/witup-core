@@ -1,5 +1,7 @@
 package br.unb.cic.witup.solver;
 
+import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_SEQ_SORT;
+
 import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.ArraySort;
 import com.microsoft.z3.Context;
@@ -12,11 +14,12 @@ import com.microsoft.z3.Model;
 import com.microsoft.z3.Sort;
 import com.microsoft.z3.enumerations.Z3_sort_kind;
 
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_SEQ_SORT;
-
-
 public sealed interface ModelValue
-    permits ModelValue.IntValue, ModelValue.BoolValue, ModelValue.StringValue, ModelValue.ArrayValue, ModelValue.ObjectValue {
+    permits ModelValue.IntValue,
+        ModelValue.BoolValue,
+        ModelValue.StringValue,
+        ModelValue.ArrayValue,
+        ModelValue.ObjectValue {
 
   default ModelValue getField(String fieldName) {
     throw new IllegalStateException("Not an object: " + this.getClass());
@@ -66,19 +69,21 @@ public sealed interface ModelValue
       case Z3_ARRAY_SORT:
         return new ArrayValue((ArrayExpr<IntSort, ?>) val, model, ctx);
 
-      case Z3_UNINTERPRETED_SORT: {
-        String s = val.toString();
-        // symbolic int detection
-        try {
-          int v = Integer.parseInt(s);
-          return new IntValue(v);
-        } catch (NumberFormatException ignored) {}
-        // symbolic boolean detection
-        if ("true".equals(s)) return new BoolValue(true);
-        if ("false".equals(s)) return new BoolValue(false);
-        // fallback: treat as object
-        return new ObjectValue(val, model, ctx);
-      }
+      case Z3_UNINTERPRETED_SORT:
+        {
+          String s = val.toString();
+          // symbolic int detection
+          try {
+            int v = Integer.parseInt(s);
+            return new IntValue(v);
+          } catch (NumberFormatException ignored) {
+          }
+          // symbolic boolean detection
+          if ("true".equals(s)) return new BoolValue(true);
+          if ("false".equals(s)) return new BoolValue(false);
+          // fallback: treat as object
+          return new ObjectValue(val, model, ctx);
+        }
 
       default:
         throw new IllegalStateException("Unsupported sort: " + kind);
@@ -92,14 +97,19 @@ public sealed interface ModelValue
   record StringValue(String value) implements ModelValue {}
 
   public record ArrayValue(ArrayExpr<IntSort, ?> arrayExpr, Model model, Context ctx)
-          implements ModelValue {
+      implements ModelValue {
 
     public ModelValue get(IntExpr indexExpr) {
       Expr<?> val = model.eval(ctx.mkSelect(arrayExpr, indexExpr), true);
       Sort rangeSort = ((ArraySort) arrayExpr.getSort()).getRange();
 
-      System.out.println("ArrayValue.get: arrayExpr=" + arrayExpr +
-              " rangeSort=" + rangeSort + " kind=" + rangeSort.getSortKind());
+      System.out.println(
+          "ArrayValue.get: arrayExpr="
+              + arrayExpr
+              + " rangeSort="
+              + rangeSort
+              + " kind="
+              + rangeSort.getSortKind());
 
       return switch (rangeSort.getSortKind()) {
         case Z3_INT_SORT -> {
@@ -116,8 +126,7 @@ public sealed interface ModelValue
           String asStrKey = selectExpr.toString() + "_as_str";
           Expr<?> strConst = ctx.mkConst(asStrKey, ctx.getStringSort());
           Expr<?> strVal = model.eval(strConst, true);
-          if (strVal.getSort().getSortKind() == Z3_SEQ_SORT
-                  && !strVal.getString().isEmpty()) {
+          if (strVal.getSort().getSortKind() == Z3_SEQ_SORT && !strVal.getString().isEmpty()) {
             yield new StringValue(strVal.getString());
           }
           yield new ObjectValue(val, model, ctx);
@@ -131,13 +140,14 @@ public sealed interface ModelValue
     private final Expr<?> objExpr;
     private final Model model;
     private final Context ctx;
-//    private final SymObjectType symType;
+
+    //    private final SymObjectType symType;
 
     public ObjectValue(Expr<?> objExpr, Model model, Context ctx) {
       this.objExpr = objExpr;
       this.model = model;
       this.ctx = ctx;
-//      this.symType = symType;
+      //      this.symType = symType;
     }
 
     @Override
@@ -147,8 +157,8 @@ public sealed interface ModelValue
         if (decl.getName().toString().equals("field_" + fieldName) && decl.getArity() == 1) {
           Expr<?> applied = ctx.mkApp(decl, objExpr);
           Expr<?> evaluated = model.eval(applied, true);
-          System.out.println("getField " + fieldName + ": objExpr=" + objExpr +
-                  " evaluated=" + evaluated);
+          System.out.println(
+              "getField " + fieldName + ": objExpr=" + objExpr + " evaluated=" + evaluated);
           return fromExpr(evaluated, model, ctx);
         }
       }

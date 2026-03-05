@@ -9,13 +9,13 @@ import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymNewArray;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import com.microsoft.z3.ArithExpr;
 import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.ArraySort;
@@ -27,7 +27,6 @@ import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Sort;
 import com.microsoft.z3.UninterpretedSort;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -74,24 +73,26 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       if (!leftSort.equals(rightSort)) {
         UninterpretedSort objSort = context.mkUninterpretedSort("java.lang.Object");
 
-        if (leftSort instanceof ArraySort ls &&
-                ls.getRange().equals(objSort) &&
-                rightSort.equals(context.getStringSort())) {
+        if (leftSort instanceof ArraySort ls
+            && ls.getRange().equals(objSort)
+            && rightSort.equals(context.getStringSort())) {
           left = context.mkSelect((ArrayExpr<IntSort, Sort>) left, context.mkInt(0));
 
-        } else if (rightSort instanceof ArraySort rs &&
-                rs.getRange().equals(objSort) &&
-                leftSort.equals(context.getStringSort())) {
+        } else if (rightSort instanceof ArraySort rs
+            && rs.getRange().equals(objSort)
+            && leftSort.equals(context.getStringSort())) {
           right = context.mkSelect((ArrayExpr<IntSort, Sort>) right, context.mkInt(0));
 
         } else if (leftSort.equals(objSort) && rightSort.equals(context.getStringSort())) {
           System.out.println("coercion key: " + left.toString() + "_as_str");
-          left = cache.computeIfAbsent(left.toString() + "_as_str",
-                  k -> context.mkConst(k, context.getStringSort()));
+          left =
+              cache.computeIfAbsent(
+                  left.toString() + "_as_str", k -> context.mkConst(k, context.getStringSort()));
 
         } else if (rightSort.equals(objSort) && leftSort.equals(context.getStringSort())) {
-          right = cache.computeIfAbsent(right.toString() + "_as_str",
-                  k -> context.mkConst(k, context.getStringSort()));
+          right =
+              cache.computeIfAbsent(
+                  right.toString() + "_as_str", k -> context.mkConst(k, context.getStringSort()));
 
         } else {
           throw new IllegalStateException("Cannot compare sorts: " + leftSort + " vs " + rightSort);
@@ -207,10 +208,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
     Expr<?> arrayExpr = ref.getArray().accept(this);
     Expr<?> indexExpr = ref.getIndex().accept(this);
-    Expr<?> result = context.mkSelect(
-            (ArrayExpr<IntSort, Sort>) arrayExpr,
-            (IntExpr) indexExpr
-    );
+    Expr<?> result = context.mkSelect((ArrayExpr<IntSort, Sort>) arrayExpr, (IntExpr) indexExpr);
     cache.put(key, result);
     return result;
   }
@@ -241,14 +239,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   private Expr<?> translateFieldAccess(Expr<?> base, String fieldName) {
 
-    FuncDecl<?> fieldDecl = fieldFunctions.computeIfAbsent(
+    FuncDecl<?> fieldDecl =
+        fieldFunctions.computeIfAbsent(
             fieldName,
-            f -> context.mkFuncDecl(
-                    "field_" + f,
-                    new Sort[]{ base.getSort() },
-                    context.getIntSort()
-            )
-    );
+            f ->
+                context.mkFuncDecl(
+                    "field_" + f, new Sort[] {base.getSort()}, context.getIntSort()));
 
     return context.mkApp(fieldDecl, base);
   }

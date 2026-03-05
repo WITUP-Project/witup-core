@@ -69,7 +69,6 @@ public class IntTest {
       results.add(result);
     }
 
-
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
     int a = solution.getInt("a");
@@ -106,7 +105,6 @@ public class IntTest {
       results.add(result);
     }
 
-
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
     assertTrue(solution.getInt("a") < 0, "a < 0");
@@ -139,7 +137,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -174,7 +171,6 @@ public class IntTest {
       results.add(result);
     }
 
-
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
     assertEquals(0, solution.getInt("a"), "Expected a == 0");
@@ -207,7 +203,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
@@ -242,7 +237,6 @@ public class IntTest {
       results.add(result);
     }
 
-
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
     assertTrue(solution.getInt("a") <= 0, "Expected a <= 0");
@@ -276,7 +270,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     // path 0 is unsat as
     // {"condition":"(a >= 0)","truthValue":true},{"condition":"(0 == 0)","truthValue":false}
@@ -317,7 +310,6 @@ public class IntTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());

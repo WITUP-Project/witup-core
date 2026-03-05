@@ -1,7 +1,7 @@
 package br.unb.cic.witup.solver;
 
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;

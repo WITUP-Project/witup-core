@@ -8,12 +8,12 @@ import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymNewArray;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import com.microsoft.z3.ArraySort;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Sort;
@@ -69,7 +69,8 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
     // Return the element sort of the underlying array
     Sort arraySort = r.getArray().accept(this);
     if (!(arraySort instanceof ArraySort arrSort)) {
-      throw new IllegalStateException("Expected ArraySort for array base, got " + arraySort.getClass());
+      throw new IllegalStateException(
+          "Expected ArraySort for array base, got " + arraySort.getClass());
     }
     return arrSort.getRange(); // arr[i]
   }
@@ -97,18 +98,23 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitArray(final SymArray symArray) {
-    System.out.println("visitArray: " + symArray.getName() +
-            " elementKind=" + symArray.getElementKind() +
-            " typeStr=" + symArray.getObjectType());
+    System.out.println(
+        "visitArray: "
+            + symArray.getName()
+            + " elementKind="
+            + symArray.getElementKind()
+            + " typeStr="
+            + symArray.getObjectType());
     // Declare array sort based on element type
-    Sort elemSort = switch (symArray.getElementKind()) {
-      case INT -> context.getIntSort();
-      case STRING -> context.getStringSort();
-      case REAL -> context.getRealSort();
-      case BOOLEAN -> context.getBoolSort();
-      case OBJECT -> context.mkUninterpretedSort("java.lang.Object");
-      default -> context.getIntSort();
-    };
+    Sort elemSort =
+        switch (symArray.getElementKind()) {
+          case INT -> context.getIntSort();
+          case STRING -> context.getStringSort();
+          case REAL -> context.getRealSort();
+          case BOOLEAN -> context.getBoolSort();
+          case OBJECT -> context.mkUninterpretedSort("java.lang.Object");
+          default -> context.getIntSort();
+        };
     // array indices are always ints
     return context.mkArraySort(context.getIntSort(), elemSort);
   }

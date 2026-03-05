@@ -69,7 +69,6 @@ public class MathTest {
       results.add(result);
     }
 
-
     SolverResult sol = results.getFirst();
     assertTrue(sol.isSat());
     assertTrue(sol.getInt("this.radius") < 0, "Expected radius <= 0");
@@ -103,7 +102,6 @@ public class MathTest {
       results.add(result);
     }
 
-
     SolverResult sol = results.getFirst();
     assertTrue(sol.isSat());
     assertEquals(0, sol.getInt("y"), "Expected y == 0");
@@ -136,7 +134,6 @@ public class MathTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
@@ -174,7 +171,6 @@ public class MathTest {
       results.add(result);
     }
 
-
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("truncated") < 0, "Expected truncated < 0");
@@ -206,7 +202,6 @@ public class MathTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
