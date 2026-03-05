@@ -7,7 +7,6 @@ import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.IntNum;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
-import com.microsoft.z3.Sort;
 import com.microsoft.z3.enumerations.Z3_sort_kind;
 
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_SEQ_SORT;
@@ -49,7 +48,6 @@ public sealed interface ModelValue
       Expr<?> val = model.eval(ctx.mkSelect(arrayExpr, indexExpr), true);
       Z3_sort_kind sortKind = val.getSort().getSortKind();
 
-      Sort sort = val.getSort();
       if (val.isIntNum()) {
         return new ModelValue.IntValue(((IntNum) val).getInt());
       }

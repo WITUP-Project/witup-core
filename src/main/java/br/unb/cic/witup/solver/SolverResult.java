@@ -1,9 +1,7 @@
 package br.unb.cic.witup.solver;
 
 import com.microsoft.z3.Context;
-import com.microsoft.z3.Expr;
 import com.microsoft.z3.IntExpr;
-import com.microsoft.z3.IntNum;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Status;
 import java.util.Map;
@@ -120,29 +118,5 @@ public final class SolverResult {
           "Expected " + cls.getSimpleName() + " for " + name + ", got " + val.getClass());
     }
     return (T) primitive;
-  }
-
-  public ModelValue evalExpr(Expr<?> expr) {
-
-    // I wonder if we can assume it always exists
-    if (z3Model == null) {
-      throw new IllegalStateException("Cannot evaluate expression: model is null (UNSAT result)");
-    }
-
-    Expr<?> value = z3Model.eval(expr, true);
-
-    if (value.isIntNum()) {
-      return new ModelValue.IntValue(((IntNum) value).getInt());
-    }
-
-    if (value.isBool()) {
-      return new ModelValue.BoolValue(value.isTrue());
-    }
-
-    if (value.isString()) {
-      return new ModelValue.StringValue(value.getString());
-    }
-
-    throw new IllegalStateException("Unsupported model value: " + value);
   }
 }
