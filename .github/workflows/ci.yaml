@@ -13,6 +13,11 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/src/main/resources/native/linux
 
     steps:
+      - name: Show repo structure
+        run: |
+          pwd
+          ls -R
+          
       - name: Checkout code
         uses: actions/checkout@v3
 
