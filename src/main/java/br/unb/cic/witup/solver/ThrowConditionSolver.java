@@ -1,6 +1,8 @@
 package br.unb.cic.witup.solver;
 
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import com.microsoft.z3.BoolExpr;
+import com.microsoft.z3.CharSort;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.FuncDecl;
@@ -48,7 +50,7 @@ public final class ThrowConditionSolver {
 
       ModelValue value;
       switch (expr.getSort().getSortKind()) {
-        case Z3_BOOL_SORT -> value = new ModelValue.BoolValue(model.eval(expr, false).isTrue());
+        case Z3_BOOL_SORT -> value = new ModelValue.BoolValue(expr.isTrue());
         case Z3_INT_SORT  -> value = new ModelValue.IntValue(Integer.parseInt(expr.toString()));
         case Z3_SEQ_SORT -> value = new ModelValue.StringValue(expr.getString());
         default -> throw new IllegalStateException("Unsupported sort: " + expr.getSort());
