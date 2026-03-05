@@ -81,8 +81,8 @@ public class IntTest {
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
-    int a = Integer.parseInt(solution.getModel().get("a"));
-    int b = Integer.parseInt(solution.getModel().get("b"));
+    int a = solution.getInt("a");
+    int b = solution.getInt("b");
     assertTrue(a + b > 256, "Expected a + b > 256");
   }
 
@@ -118,7 +118,7 @@ public class IntTest {
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
-    assertTrue(Integer.parseInt(solution.getModel().get("a")) < 0, "a < 0");
+    assertTrue(solution.getInt("a") < 0, "a < 0");
   }
 
   @Test
@@ -152,7 +152,7 @@ public class IntTest {
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
-    assertTrue(Integer.parseInt(solution.getModel().get("a")) < 0, "Expected a < 0");
+    assertTrue(solution.getInt("a") < 0, "Expected a < 0");
   }
 
   @Test
@@ -186,7 +186,7 @@ public class IntTest {
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
-    assertEquals(0, Integer.parseInt(solution.getModel().get("a")), "Expected a == 0");
+    assertEquals(0, solution.getInt("a"), "Expected a == 0");
   }
 
   @Test
@@ -220,7 +220,7 @@ public class IntTest {
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
-    assertEquals(0, Integer.parseInt(solution.getModel().get("a")), "Expected a == 0");
+    assertEquals(0, solution.getInt("a"), "Expected a == 0");
   }
 
   @Test
@@ -254,7 +254,7 @@ public class IntTest {
 
     SolverResult solution = results.getFirst();
     assertTrue(solution.isSat());
-    assertTrue(Integer.parseInt(solution.getModel().get("a")) <= 0, "Expected a <= 0");
+    assertTrue(solution.getInt("a") <= 0, "Expected a <= 0");
   }
 
   @Test
@@ -295,7 +295,7 @@ public class IntTest {
 
     SolverResult sol1 = results.get(1);
     assertTrue(sol1.isSat());
-    assertTrue(Integer.parseInt(sol1.getModel().get("a")) < 0, "Expected a < 0");
+    assertTrue(sol1.getInt("a") < 0, "Expected a < 0");
   }
 
   @Test
@@ -330,7 +330,7 @@ public class IntTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertTrue(Integer.parseInt(sol0.getModel().get("a")) >= 0, "Expected a >= 0");
+    assertTrue(sol0.getInt("a") >= 0, "Expected a >= 0");
 
     // path 1 is unsat as
     // {"condition":"(a >= 0)","truthValue":false},{"condition":"(1 != 0)","truthValue":false}

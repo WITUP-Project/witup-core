@@ -80,7 +80,7 @@ public class ArrayTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(0, Integer.parseInt(sol0.getModel().get("arr[i]")));
+    assertEquals(0, sol0.getInt("arr[i]"));
   }
 
   @Test
@@ -114,7 +114,7 @@ public class ArrayTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(0, Integer.parseInt(sol0.getModel().get("arr.length")));
+    assertEquals(0, sol0.getInt("arr.length"));
   }
 
   @Test
@@ -148,6 +148,6 @@ public class ArrayTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertTrue(Integer.parseInt(sol0.getModel().get("n")) < 0, "Expected n < 0");
+    assertTrue(sol0.getInt("n") < 0, "Expected n < 0");
   }
 }

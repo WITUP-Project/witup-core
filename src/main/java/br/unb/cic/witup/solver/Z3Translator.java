@@ -167,7 +167,9 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitInstanceOf(final SymInstanceOf i) {
-    String key = i.toString();
-    return cache.computeIfAbsent(key, context::mkIntConst);
+    // for all we know so far, we only need a boolean in our tests
+    return context.mkBoolConst(
+            i.getOp().toString() + "_instanceof_" + i.getType().replace(".", "_")
+    );
   }
 }
