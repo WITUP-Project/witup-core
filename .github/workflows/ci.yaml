@@ -10,7 +10,7 @@ jobs:
 
     env:
       Z3_VERSION: z3-4.17.0
-      LD_LIBRARY_PATH: ${{ github.workspace }}/src/main/java/resources/native/linux
+      LD_LIBRARY_PATH: ${{ github.workspace }}/src/main/resources/native/linux
 
     steps:
       - name: Checkout code
