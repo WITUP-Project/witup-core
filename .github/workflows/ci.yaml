@@ -23,6 +23,17 @@ jobs:
           java-version: 21
           cache: maven
 
+      - name: Install local Z3 Maven artifact
+        run: |
+          if [ ! -f ~/.m2/repository/com/microsoft/z3/z3/4.17.0/z3-4.17.0.jar ]; then
+            mvn install:install-file \
+              -Dfile=src/main/resources/native/linux/com.microsoft.z3.jar \
+              -DgroupId=com.microsoft.z3 \
+              -DartifactId=z3 \
+              -Dversion=4.17.0 \
+              -Dpackaging=jar
+          fi
+
       - name: Verify native z3 libraries exist
         run: |
           echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
