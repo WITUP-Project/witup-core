@@ -17,7 +17,7 @@ jobs:
         run: |
           pwd
           ls -R
-          
+
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -32,7 +32,7 @@ jobs:
         run: |
           if [ ! -f ~/.m2/repository/com/microsoft/z3/z3/4.17.0/z3-4.17.0.jar ]; then
             mvn install:install-file \
-              -Dfile=src/main/resources/native/linux/com.microsoft.z3.jar \
+              -Dfile=src/main/resources/native/linux/z3-4.17.0.jar \
               -DgroupId=com.microsoft.z3 \
               -DartifactId=z3 \
               -Dversion=4.17.0 \
