@@ -1,19 +1,12 @@
 package br.unb.cic.witup.solver;
 
-import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.IntExpr;
-import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Status;
-import com.microsoft.z3.Expr;
-import com.microsoft.z3.enumerations.Z3_sort_kind;
 
 import java.util.Map;
 
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_UNINTERPRETED_SORT;
-
-// (String pathId, Status status, Map<String, ModelValue> model)
 public final class SolverResult {
   private final String pathId;
   private final Status status;

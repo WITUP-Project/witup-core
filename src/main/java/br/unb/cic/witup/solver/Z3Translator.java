@@ -36,13 +36,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private final Context context;
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> cache = new HashMap<>();
-  private final UninterpretedSort objectSort;
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
 
   public Z3Translator(final Context context) {
     this.context = context;
     this.sortInferrer = new Z3SortDetector(context);
-    this.objectSort = context.mkUninterpretedSort("java.lang.Object");
   }
 
   public Map<String, Expr<?>> getDeclarations() {

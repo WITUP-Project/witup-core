@@ -5,19 +5,14 @@ import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.FuncDecl;
-import com.microsoft.z3.FuncInterp;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
-import com.microsoft.z3.enumerations.Z3_sort_kind;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_BOOL_SORT;
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_INT_SORT;
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_SEQ_SORT;
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
 
 

@@ -127,7 +127,7 @@ public abstract class SymExpr {
   private static SymExpr fromArrayRef(final JArrayRef r) {
     SymArray base = (SymArray) fromValue(r.getBase());
     SymExpr indexExpr = fromValue(r.getIndex());
-    return new SymArrayRef(base, indexExpr, SymKind.OBJECT);
+    return new SymArrayRef(base, indexExpr);
   }
 
   private static SymExpr fromLength(final JLengthExpr r) {

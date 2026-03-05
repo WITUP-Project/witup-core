@@ -1,7 +1,5 @@
 package br.unb.cic.witup.solver;
 
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import br.unb.cic.witup.analysis.symbolic.types.SymObjectType;
 import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.ArraySort;
 import com.microsoft.z3.Context;
@@ -14,11 +12,8 @@ import com.microsoft.z3.Model;
 import com.microsoft.z3.Sort;
 import com.microsoft.z3.enumerations.Z3_sort_kind;
 
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_BOOL_SORT;
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_INT_SORT;
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_SEQ_SORT;
-import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_UNINTERPRETED_SORT;
+
 
 public sealed interface ModelValue
     permits ModelValue.IntValue, ModelValue.BoolValue, ModelValue.StringValue, ModelValue.ArrayValue, ModelValue.ObjectValue {
@@ -48,7 +43,7 @@ public sealed interface ModelValue
     throw new IllegalStateException("Expected StringValue, got " + getClass());
   }
 
-  public static ModelValue fromExpr(Expr<?> val, Model model, Context ctx) {
+  static ModelValue fromExpr(Expr<?> val, Model model, Context ctx) {
     if (val == null) throw new IllegalStateException("Cannot convert null Z3 Expr");
 
     Z3_sort_kind kind = val.getSort().getSortKind();
@@ -127,12 +122,12 @@ public sealed interface ModelValue
           }
           yield new ObjectValue(val, model, ctx);
         }
-        default -> ModelValue.fromExpr(val, model, ctx);
+        default -> fromExpr(val, model, ctx);
       };
     }
   }
 
-  public final class ObjectValue implements ModelValue {
+  final class ObjectValue implements ModelValue {
     private final Expr<?> objExpr;
     private final Model model;
     private final Context ctx;
@@ -154,7 +149,7 @@ public sealed interface ModelValue
           Expr<?> evaluated = model.eval(applied, true);
           System.out.println("getField " + fieldName + ": objExpr=" + objExpr +
                   " evaluated=" + evaluated);
-          return ModelValue.fromExpr(evaluated, model, ctx);
+          return fromExpr(evaluated, model, ctx);
         }
       }
       throw new IllegalStateException("No field function for: " + fieldName);
