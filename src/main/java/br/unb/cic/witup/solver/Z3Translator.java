@@ -1,5 +1,6 @@
 package br.unb.cic.witup.solver;
 
+import br.unb.cic.witup.analysis.symbolic.SymArray;
 import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymCast;
@@ -15,13 +16,14 @@ import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import com.microsoft.z3.ArithExpr;
+import com.microsoft.z3.ArrayExpr;
+import com.microsoft.z3.ArraySort;
 import com.microsoft.z3.BoolExpr;
-import com.microsoft.z3.Expr;
 import com.microsoft.z3.Context;
+import com.microsoft.z3.Expr;
 import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Sort;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,41 +61,40 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Expr<?> left = b.getLeft().accept(this);
     Expr<?> right = b.getRight().accept(this);
 
-//    Sort sort = b.getLeft().accept(sortInferrer);
+    //    Sort sort = b.getLeft().accept(sortInferrer);
 
-//    if (sort.equals(ctx.getRealSort())) {
-//      ArithExpr<RealSort> lReal = (ArithExpr<RealSort>) left;
-//      ArithExpr<RealSort> rReal = (ArithExpr<RealSort>) right;
-//      return switch (b.getOp()) {
-//        case LT  -> ctx.mkLt(lReal, rReal);
-//        case ADD -> ctx.mkAdd(lReal, rReal);
-//        // ...
-//        default  -> ctx.mkEq(left, right);
-//      };
-//    }
+    //    if (sort.equals(context.getRealSort())) {
+    //      ArithExpr<RealSort> lReal = (ArithExpr<RealSort>) left;
+    //      ArithExpr<RealSort> rReal = (ArithExpr<RealSort>) right;
+    //      return switch (b.getOp()) {
+    //        case LT  -> context.mkLt(lReal, rReal);
+    //        case ADD -> context.mkAdd(lReal, rReal);
+    //        // ...
+    //        default  -> context.mkEq(left, right);
+    //      };
+    //    }
 
     // default: integer path
-//    ArithExpr<IntSort> lInt = (ArithExpr<IntSort>) left;
-//    ArithExpr<IntSort> rInt = (ArithExpr<IntSort>) right;
+    //    ArithExpr<IntSort> lInt = (ArithExpr<IntSort>) left;
+    //    ArithExpr<IntSort> rInt = (ArithExpr<IntSort>) right;
 
     return switch (b.getOp()) {
-      // comparison — produce BoolExpr
-      case EQ   -> context.mkEq(left, right);
-      case NE   -> context.mkNot(context.mkEq(left, right));
-      case LT   -> context.mkLt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case LE   -> context.mkLe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case GT   -> context.mkGt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case GE   -> context.mkGe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      // arithmetic — produce ArithExpr
-      case ADD  -> context.mkAdd((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case SUB  -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case MUL  -> context.mkMul((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case DIV  -> context.mkDiv((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case MOD  -> context.mkMod((IntExpr) left, (IntExpr) right);
-      // cmp patterns already simplified by simplifyCmpPatterns
-      // these should not reach here in normal operation
-      case CMP, CMPG, CMPL -> context.mkSub(
-              (ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+        // comparison — produce BoolExpr
+      case EQ -> context.mkEq(left, right);
+      case NE -> context.mkNot(context.mkEq(left, right));
+      case LT -> context.mkLt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      case LE -> context.mkLe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      case GT -> context.mkGt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      case GE -> context.mkGe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+        // arithmetic — produce ArithExpr
+      case ADD -> context.mkAdd((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      case SUB -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      case MUL -> context.mkMul((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      case DIV -> context.mkDiv((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      case MOD -> context.mkMod((IntExpr) left, (IntExpr) right);
+        // cmp patterns already simplified by simplifyCmpPatterns
+        // these should not reach here in normal operation
+      case CMP, CMPG, CMPL -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
     };
   }
 
@@ -101,10 +102,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitVar(final SymVar v) {
-    return cache.computeIfAbsent(v.getName(), name -> {
-      Sort sort = v.accept(sortInferrer);
-      return context.mkConst(name, sort);
-    });
+    return cache.computeIfAbsent(
+        v.getName(),
+        name -> {
+          Sort sort = v.accept(sortInferrer);
+          return context.mkConst(name, sort);
+        });
   }
 
   @Override
@@ -115,10 +118,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     }
     return switch (c.getValue()) {
       case Integer i -> context.mkInt(i);
-      case Long l    -> context.mkInt(l);
-      case Double d  -> context.mkReal(d.toString());
-      case Float f   -> context.mkReal(f.toString());
-      default        -> context.mkInt(c.getValue().toString());
+      case Long l -> context.mkInt(l);
+      case Double d -> context.mkReal(d.toString());
+      case Float f -> context.mkReal(f.toString());
+      default -> context.mkInt(c.getValue().toString());
     };
   }
 
@@ -136,16 +139,36 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitVirtualInvoke(final SymVirtualInvoke inv) {
-    return cache.computeIfAbsent(inv.toString(), k ->
-            inv.kind() == SymKind.BOOLEAN_METHOD
-                    ? context.mkBoolConst(k)
-                    : context.mkIntConst(k));
+    return cache.computeIfAbsent(
+        inv.toString(),
+        k -> inv.kind() == SymKind.BOOLEAN_METHOD ? context.mkBoolConst(k) : context.mkIntConst(k));
   }
 
   @Override
-  public Expr<?> visitArrayRef(final SymArrayRef r) {
-    String key = r.toString();
-    return cache.computeIfAbsent(key, context::mkIntConst);
+  public Expr<?> visitArray(SymArray arr) {
+    ArraySort arraySort = (ArraySort) arr.accept(sortInferrer);
+    return context.mkConst(arr.getName(), arraySort);
+  }
+
+  @Override
+  public Expr<?> visitArrayRef(SymArrayRef ref) {
+    Expr<?> arrayExprRaw = ref.getArray().accept(this);
+    Expr<?> indexExprRaw = ref.getIndex().accept(this);
+
+    if (!(arrayExprRaw instanceof ArrayExpr<?, ?> arrayExpr)) {
+      throw new IllegalStateException(
+              "Expected ArrayExpr for array base, got " + arrayExprRaw.getClass()
+      );
+    }
+    if (!(indexExprRaw instanceof IntExpr indexExpr)) {
+      throw new IllegalStateException(
+              "Expected IntExpr for array index, got " + indexExprRaw.getClass()
+      );
+    }
+    // array index is always sort
+    ArrayExpr<IntSort, Sort> safeArray = (ArrayExpr<IntSort, Sort>) arrayExpr;
+
+    return context.mkSelect(safeArray, indexExpr);
   }
 
   @Override
@@ -169,7 +192,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public Expr<?> visitInstanceOf(final SymInstanceOf i) {
     // for all we know so far, we only need a boolean in our tests
     return context.mkBoolConst(
-            i.getOp().toString() + "_instanceof_" + i.getType().replace(".", "_")
-    );
+        i.getOp().toString() + "_instanceof_" + i.getType().replace(".", "_"));
   }
 }

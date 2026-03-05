@@ -3,29 +3,27 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
-import br.unb.cic.witup.analysis.symbolic.SymKind;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
-import br.unb.cic.witup.solver.SolverInvoker;
-import br.unb.cic.witup.solver.SolverResponse;
-import br.unb.cic.witup.solver.SolverResponseAssertions;
+import br.unb.cic.witup.solver.ModelValue;
 import br.unb.cic.witup.solver.SolverResult;
-import br.unb.cic.witup.solver.SolverSerialiser;
 import br.unb.cic.witup.solver.ThrowConditionSolver;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import com.microsoft.z3.ArrayExpr;
+import com.microsoft.z3.Context;
+import com.microsoft.z3.Expr;
+import com.microsoft.z3.IntExpr;
+import com.microsoft.z3.IntSort;
 import org.jgrapht.GraphPath;
-import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -76,11 +74,16 @@ public class ArrayTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-    solver.close();
+//    solver.close();
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(0, sol0.getInt("arr[i]"));
+
+    ModelValue.ArrayValue arrArray = sol0.getArray("arr"); // helper in SolverResult
+    IntExpr indexExpr = sol0.getIntExpr("i");            // helper in SolverResult
+
+    ModelValue elementValue = arrArray.get(indexExpr);
+    assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
 
   @Test

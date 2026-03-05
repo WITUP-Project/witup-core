@@ -1,5 +1,6 @@
 package br.unb.cic.witup.solver;
 
+import br.unb.cic.witup.analysis.symbolic.SymArray;
 import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymCast;
@@ -13,7 +14,9 @@ import br.unb.cic.witup.analysis.symbolic.SymNewArray;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
+import com.microsoft.z3.ArraySort;
 import com.microsoft.z3.Context;
+import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Sort;
 
 public final class Z3SortDetector implements SymExprVisitor<Sort> {
@@ -59,14 +62,17 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitVirtualInvoke(final SymVirtualInvoke v) {
-    return v.kind() == SymKind.BOOLEAN_METHOD
-            ? context.getBoolSort()
-            : context.getIntSort();
+    return v.kind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
   }
 
   @Override
   public Sort visitArrayRef(final SymArrayRef r) {
-    return context.getIntSort();
+    // Return the element sort of the underlying array
+    Sort arraySort = r.getArray().accept(this);
+    if (!(arraySort instanceof ArraySort arrSort)) {
+      throw new IllegalStateException("Expected ArraySort for array base, got " + arraySort.getClass());
+    }
+    return arrSort.getRange(); // arr[i]
   }
 
   @Override
@@ -76,7 +82,8 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitNewArray(final SymNewArray r) {
-    return context.getIntSort();
+    // only int
+    return context.mkArraySort(context.getIntSort(), context.getIntSort());
   }
 
   @Override
@@ -87,5 +94,18 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   @Override
   public Sort visitInstanceOf(final SymInstanceOf r) {
     return context.getBoolSort();
+  }
+
+  @Override
+  public Sort visitArray(final SymArray r) {
+    // Declare array sort based on element type
+    IntSort indexSort = context.getIntSort(); // array indices are ints always
+    Sort elemSort = switch (r.getElementKind()) {
+      case INT -> context.getIntSort();
+      case STRING -> context.getStringSort();
+      case BOOLEAN -> context.getBoolSort();
+      default -> context.getIntSort();
+    };
+    return context.mkArraySort(indexSort, elemSort);
   }
 }

@@ -27,13 +27,14 @@ public final class WITUpAnalyser {
           Body body = m.getBody();
           StmtGraph<?> graph = body.getStmtGraph();
 
-//          PropertyGraph g = sootUpAnalyser.buildCPG(m);
-//          String dot = g.toDotGraph();
-//          try {
-//            Graphviz.fromString(dot).render(Format.SVG).toFile(new File(m.getSignature() + ".svg"));
-//          } catch (IOException e) {
-//            throw new RuntimeException(e);
-//          }
+          //          PropertyGraph g = sootUpAnalyser.buildCPG(m);
+          //          String dot = g.toDotGraph();
+          //          try {
+          //            Graphviz.fromString(dot).render(Format.SVG).toFile(new File(m.getSignature()
+          // + ".svg"));
+          //          } catch (IOException e) {
+          //            throw new RuntimeException(e);
+          //          }
 
           for (Stmt s : graph) {
             if (s instanceof JThrowStmt) {

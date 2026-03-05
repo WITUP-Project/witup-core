@@ -1,16 +1,20 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 public final class SymArrayRef extends SymExpr {
-  private final SymExpr base;
-  private final String index;
+  private final SymExpr array;
+  private final SymExpr index;
 
-  public SymArrayRef(final SymExpr base, final String index) {
-    this.base = base;
+  public SymArrayRef(SymExpr array, SymExpr index) {
+    this.array = array;
     this.index = index;
   }
 
-  public SymExpr getBase() {
-    return base;
+  public SymExpr getArray() {
+    return array;
+  }
+
+  public SymExpr getIndex() {
+    return index;
   }
 
   @Override
@@ -20,21 +24,17 @@ public final class SymArrayRef extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    SymExpr newBase = base.substitute(varName, replacement);
-    if (newBase != base) {
-      return new SymArrayRef(newBase, index);
-    }
     return this;
   }
 
   @Override
   public String toString() {
-    return base.toString() + "[" + index + "]";
+    return array.toString() + "[" + index + "]";
   }
 
   @Override
   public boolean contains(final String varName) {
-    return base.contains(varName);
+    return array.toString().contains(varName);
   }
 
   @Override

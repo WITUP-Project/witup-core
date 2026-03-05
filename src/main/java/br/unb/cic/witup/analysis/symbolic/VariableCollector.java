@@ -48,7 +48,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
 
   @Override
   public Void visitArrayRef(final SymArrayRef r) {
-    r.getBase().accept(this);
+    r.getArray().accept(this);
+    variables.add(r.toString());
+    r.getIndex().accept(this);
     return null;
   }
 
@@ -70,6 +72,11 @@ public final class VariableCollector implements SymExprVisitor<Void> {
 
   @Override
   public Void visitInstanceOf(final SymInstanceOf r) {
+    return null;
+  }
+
+  @Override
+  public Void visitArray(SymArray r) {
     return null;
   }
 }
