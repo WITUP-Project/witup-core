@@ -239,6 +239,7 @@ def contains_string_literal(expr_str: str) -> bool:
 #         return build_numeric_constraint(expr_str, truth_value)
 
 # This is becoming a monster and it's gonna need a monster refactor some time
+# DEPRECATED
 def main():
     try:
         raw = sys.stdin.read()

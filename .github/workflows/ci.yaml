@@ -12,6 +12,12 @@ jobs:
       PYTHON_VENV: .venv
 
     steps:
+      - name: Debug compiler versions
+        run: |
+          python3 --version
+          g++ --version
+          make --version
+          
       - name: Checkout code
         uses: actions/checkout@v3
 
