@@ -25,8 +25,9 @@ jobs:
 
       - name: Verify native z3 libraries exist
         run: |
-          ls -la src/main/java/resources/native/linux
-          ldd src/main/java/resources/native/linux/libz3java.so
+          echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+          ls -la "$LD_LIBRARY_PATH"
+          ldd "$LD_LIBRARY_PATH/libz3java.so"
 
       - name: Run Maven verify
         run: mvn clean verify
