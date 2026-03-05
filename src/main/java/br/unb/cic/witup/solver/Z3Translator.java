@@ -16,12 +16,10 @@ import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import com.microsoft.z3.ArithExpr;
 import com.microsoft.z3.BoolExpr;
-import com.microsoft.z3.CharSort;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.IntExpr;
 import com.microsoft.z3.IntSort;
-import com.microsoft.z3.SeqExpr;
 import com.microsoft.z3.Sort;
 
 import java.util.HashMap;

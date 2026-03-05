@@ -1,16 +1,13 @@
 package br.unb.cic.witup.solver;
 
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
-import com.microsoft.z3.BoolExpr;
-import com.microsoft.z3.CharSort;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.FuncDecl;
 import com.microsoft.z3.Model;
-import com.microsoft.z3.SeqExpr;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
-import com.microsoft.z3.enumerations.Z3_sort_kind;
+
 
 import java.util.HashMap;
 import java.util.List;
