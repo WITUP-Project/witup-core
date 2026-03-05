@@ -13,11 +13,14 @@ import br.unb.cic.witup.graph.node.WITUpNode;
 import br.unb.cic.witup.solver.SolverInvoker;
 import br.unb.cic.witup.solver.SolverResponse;
 import br.unb.cic.witup.solver.SolverResponseAssertions;
+import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SolverSerialiser;
+import br.unb.cic.witup.solver.ThrowConditionSolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,37 +67,20 @@ public class ArrayTest {
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<SymbolicConstraint>> symbolicConstraints = sg.generateSymbolicConstraintPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraints, symbolTypes);
-
-    String pythonScript =
-        Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/solver/solver.py")
-            .toAbsolutePath()
-            .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String jsonString = si.callSolver(request);
-      System.out.println(jsonString);
-      ObjectMapper mapper = new ObjectMapper();
-
-      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
-
-      SolverResponse.SolverPathResult p0 =
-          SolverResponseAssertions.path(response, methodSignature + "#0");
-
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-
-      int arrayElementValue = SolverResponseAssertions.intValue(p0, "arr[i]");
-
-      assertEquals(0, arrayElementValue, "Expected arr[i] == 0");
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
     }
+    solver.close();
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    assertEquals(0, Integer.parseInt(sol0.getModel().get("arr[i]")));
   }
 
   @Test
@@ -115,37 +101,20 @@ public class ArrayTest {
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
-    List<List<SymbolicConstraint>> symbolicConstraints = sg.generateSymbolicConstraintPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolTypes = sg.getSymbolKindTable();
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraints, symbolTypes);
-
-    String pythonScript =
-        Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/solver/solver.py")
-            .toAbsolutePath()
-            .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String jsonString = si.callSolver(request);
-      System.out.println(jsonString);
-      ObjectMapper mapper = new ObjectMapper();
-
-      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
-
-      SolverResponse.SolverPathResult p0 =
-          SolverResponseAssertions.path(response, methodSignature + "#0");
-
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-
-      int arrayElementValue = SolverResponseAssertions.intValue(p0, "arr.length");
-
-      assertEquals(0, arrayElementValue, "Expected arr.length == 0");
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
     }
+    solver.close();
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    assertEquals(0, Integer.parseInt(sol0.getModel().get("arr.length")));
   }
 
   @Test
@@ -168,34 +137,17 @@ public class ArrayTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    Map<String, SymKind> symbolKinds = sg.getSymbolKindTable();
-
-    SolverSerialiser serialiser = new SolverSerialiser(methodSignature);
-    JSONObject request = serialiser.serializeResolvedPaths(symbolicConstraintPaths, symbolKinds);
-
-    String pythonScript =
-        Paths.get(System.getProperty("user.dir"))
-            .resolve("src/main/solver/solver.py")
-            .toAbsolutePath()
-            .toString();
-    SolverInvoker si = new SolverInvoker(pythonScript);
-    try {
-      String jsonString = si.callSolver(request);
-      System.out.println(jsonString);
-      ObjectMapper mapper = new ObjectMapper();
-
-      SolverResponse response = mapper.readValue(jsonString, SolverResponse.class);
-
-      SolverResponse.SolverPathResult p0 =
-          SolverResponseAssertions.path(response, methodSignature + "#0");
-
-      assertEquals(SolverResponse.Status.SAT, p0.getStatus());
-
-      int sizeValue = SolverResponseAssertions.intValue(p0, "n");
-
-      assertTrue(sizeValue < 0, "Expected n < 0");
-    } catch (IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
     }
+    solver.close();
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(Integer.parseInt(sol0.getModel().get("n")) < 0, "Expected n < 0");
   }
 }

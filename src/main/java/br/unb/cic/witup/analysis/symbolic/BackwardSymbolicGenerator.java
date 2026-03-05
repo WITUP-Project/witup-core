@@ -7,10 +7,8 @@ import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.SimpleNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.jgrapht.GraphPath;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
@@ -29,14 +27,12 @@ import sootup.core.jimple.common.stmt.Stmt;
  */
 public final class BackwardSymbolicGenerator {
   private final WITUpGraph cpg;
-  private final Map<String, SymKind> symbolKindTable;
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
 
   public BackwardSymbolicGenerator(
       final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
     this.cpg = cpg;
-    symbolKindTable = new HashMap<>();
     this.constraintPaths = constraintPaths;
   }
 
@@ -85,7 +81,6 @@ public final class BackwardSymbolicGenerator {
 
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.stripBooleanEncoding(symExpr);
-    collectSymbolKinds(symExpr);
 
     return symExpr;
   }
@@ -172,14 +167,6 @@ public final class BackwardSymbolicGenerator {
 
   private GraphPath<WITUpNode, WITUpEdge> getCurrentPath() {
     return this.currentPath;
-  }
-
-  public Map<String, SymKind> getSymbolKindTable() {
-    return symbolKindTable;
-  }
-
-  private void collectSymbolKinds(final SymExpr expr) {
-    symbolKindTable.putAll(new SymbolKindCollector().collect(expr));
   }
 
   private boolean isStackVariable(final LValue value) {

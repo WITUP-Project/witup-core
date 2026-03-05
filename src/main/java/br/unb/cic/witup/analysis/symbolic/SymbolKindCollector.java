@@ -3,6 +3,7 @@ package br.unb.cic.witup.analysis.symbolic;
 import java.util.HashMap;
 import java.util.Map;
 
+// DEPRECATED
 public final class SymbolKindCollector implements SymExprVisitor<Void> {
   private final Map<String, SymKind> symbolKindTable = new HashMap<>();
 

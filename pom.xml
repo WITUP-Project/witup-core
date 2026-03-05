@@ -110,6 +110,20 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.21.0</version>
         </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.microsoft.z3/java-jar -->
+        <dependency>
+            <groupId>com.microsoft.z3</groupId>
+            <artifactId>z3</artifactId>
+            <version>4.17.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.puppycrawl.tools/checkstyle -->
+        <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>13.2.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -170,7 +184,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${checkstyle.maven.plugin.version}</version>
+                <version>3.3.0</version>
+                <dependencies>
+                    <!-- Override the bundled (old) Checkstyle engine -->
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>13.2.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <configLocation>checkstyle.xml</configLocation>
                     <consoleOutput>true</consoleOutput>
@@ -178,15 +200,6 @@
                     <violationSeverity>warning</violationSeverity>
                     <linkXRef>false</linkXRef>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <!-- PMD Source Code Analyzer -->
