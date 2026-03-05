@@ -46,4 +46,4 @@ jobs:
           ldd "$LD_LIBRARY_PATH/libz3java.so"
 
       - name: Run Maven verify
-        run: mvn clean verify
+        run: mvn -B -nsu clean verify
