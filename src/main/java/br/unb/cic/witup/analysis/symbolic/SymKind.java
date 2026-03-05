@@ -7,5 +7,6 @@ public enum SymKind {
   INT,
   REAL,
   CAST,
+  OBJECT,
   OTHER,
 }

@@ -51,7 +51,7 @@ public abstract class SymExpr {
   public static SymExpr fromValue(final Value value) {
     return switch (value) {
       case Local l when l.getType() instanceof ArrayType at ->
-          new SymArray(l.toString(), symKindFromType(at.getElementType()));
+          new SymArray(l.toString(), symKindFromType(at.getElementType()), l.getType().toString());
 
       case Local l -> new SymVar(l.toString(), symKindFromType(l.getType()));
       case IntConstant c -> new SymConst(c.getValue());
@@ -74,6 +74,10 @@ public abstract class SymExpr {
   }
 
   private static SymKind symKindFromType(final Type type) {
+    if (type instanceof ArrayType at) {
+      return symKindFromType(at.getElementType());
+    }
+
     return switch (type) {
       case PrimitiveType.ShortType ignored -> SymKind.INT;
       case PrimitiveType.ByteType ignored -> SymKind.INT;
@@ -84,6 +88,7 @@ public abstract class SymExpr {
       case PrimitiveType.DoubleType ignored -> SymKind.REAL;
       case ClassType ct when ct.getFullyQualifiedName().equals("java.lang.String") ->
           SymKind.STRING;
+      case ClassType ignore -> SymKind.OBJECT;
       default -> SymKind.OTHER;
     };
   }
@@ -131,7 +136,7 @@ public abstract class SymExpr {
 
   private static SymExpr fromNewArray(final JNewArrayExpr r) {
     String name = r.toString();
-    return new SymArray(name, symKindFromType(r.getType()));
+    return new SymArray(name, symKindFromType(r.getType()), r.getType().toString());
   }
 
   private static SymExpr fromCast(final JCastExpr r) {

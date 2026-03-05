@@ -97,15 +97,17 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   }
 
   @Override
-  public Sort visitArray(final SymArray r) {
+  public Sort visitArray(final SymArray symArray) {
     // Declare array sort based on element type
-    IntSort indexSort = context.getIntSort(); // array indices are ints always
-    Sort elemSort = switch (r.getElementKind()) {
+    Sort elemSort = switch (symArray.getElementKind()) {
       case INT -> context.getIntSort();
       case STRING -> context.getStringSort();
+      case REAL -> context.getRealSort();
       case BOOLEAN -> context.getBoolSort();
+      case OBJECT -> context.getStringSort();
       default -> context.getIntSort();
     };
-    return context.mkArraySort(indexSort, elemSort);
+    // array indices are always ints
+    return context.mkArraySort(context.getIntSort(), elemSort);
   }
 }

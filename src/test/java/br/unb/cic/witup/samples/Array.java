@@ -21,4 +21,18 @@ public class Array {
     }
     return new int[n];
   }
+
+  public String getStringElement(String[] arr, int i) {
+    if (arr[0] == "abc") {
+      throw new IllegalArgumentException("string is empty");
+    }
+    return arr[i];
+  }
+
+  public Object getObjectElement(Object[] arr, int i) {
+    if (arr[0] == "abc") {
+      throw new IllegalArgumentException("string is empty");
+    }
+    return arr[i];
+  }
 }

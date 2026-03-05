@@ -3,10 +3,12 @@ package br.unb.cic.witup.analysis.symbolic;
 public final class SymArray extends SymExpr {
   private final String name;
   private final SymKind elemKind;
+  private final String objectType;
 
-  public SymArray(String name, SymKind elemKind) {
+  public SymArray(String name, SymKind elemKind,  String objectType) {
     this.name = name;
     this.elemKind = elemKind;
+    this.objectType = objectType;
   }
 
   public String getName() {
@@ -16,6 +18,8 @@ public final class SymArray extends SymExpr {
   public SymKind getElementKind() {
     return elemKind;
   }
+
+  public String getObjectType() { return objectType; }
 
   @Override
   public <T> T accept(SymExprVisitor<T> visitor) {
@@ -39,6 +43,6 @@ public final class SymArray extends SymExpr {
 
   @Override
   public SymKind kind() {
-    return SymKind.OTHER;
+    return elemKind;
   }
 }

@@ -44,7 +44,7 @@ public class ArrayTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     assertNotNull(witupGraphs);
-    assertEquals(3, witupGraphs.size());
+    assertEquals(5, witupGraphs.size());
   }
 
   @Test
@@ -74,13 +74,12 @@ public class ArrayTest {
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-//    solver.close();
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
 
-    ModelValue.ArrayValue arrArray = sol0.getArray("arr"); // helper in SolverResult
-    IntExpr indexExpr = sol0.getIntExpr("i");            // helper in SolverResult
+    ModelValue.ArrayValue arrArray = sol0.getArray("arr");
+    IntExpr indexExpr = sol0.getIntExpr("i");
 
     ModelValue elementValue = arrArray.get(indexExpr);
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
@@ -152,5 +151,81 @@ public class ArrayTest {
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("n") < 0, "Expected n < 0");
+  }
+
+  @Test
+  public void getStringElement() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
+
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+            cpg.getConstraintPaths(throwNodes.get(0));
+
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
+
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
+    }
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+
+    ModelValue.ArrayValue arrArray = sol0.getArray("arr");
+    IntExpr indexExpr = sol0.getIntExpr("i");
+
+    ModelValue elementValue = arrArray.get(indexExpr);
+    assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
+  }
+
+  @Test
+  public void getObjectElement() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
+
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+            cpg.getConstraintPaths(throwNodes.get(0));
+
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
+
+    ThrowConditionSolver solver = new ThrowConditionSolver();
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
+    }
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+
+    ModelValue.ArrayValue arrArray = sol0.getArray("arr");
+    IntExpr indexExpr = sol0.getIntExpr("i");
+
+    ModelValue elementValue = arrArray.get(indexExpr);
+    assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
   }
 }

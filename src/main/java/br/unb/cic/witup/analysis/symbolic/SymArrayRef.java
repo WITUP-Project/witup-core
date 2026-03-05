@@ -39,6 +39,9 @@ public final class SymArrayRef extends SymExpr {
 
   @Override
   public SymKind kind() {
+    if (array instanceof SymArray arr) {
+      return arr.getElementKind();
+    }
     return SymKind.OTHER;
   }
 }
