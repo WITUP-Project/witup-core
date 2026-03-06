@@ -16,7 +16,7 @@ public record ArrayValue(ArrayExpr<IntSort, ?> arrayExpr, Model model, Context c
 
   public ModelValue get(final IntExpr indexExpr) {
     Expr<?> val = model.eval(ctx.mkSelect(arrayExpr, indexExpr), true);
-    Sort rangeSort = ((ArraySort) arrayExpr.getSort()).getRange();
+    Sort rangeSort = ((ArraySort<?, ?>) arrayExpr.getSort()).getRange();
 
     System.out.println(
         "ArrayValue.get: arrayExpr="
@@ -27,26 +27,32 @@ public record ArrayValue(ArrayExpr<IntSort, ?> arrayExpr, Model model, Context c
             + rangeSort.getSortKind());
 
     return switch (rangeSort.getSortKind()) {
-      case Z3_INT_SORT -> {
-        try {
-          yield new IntValue(Integer.parseInt(val.toString()));
-        } catch (NumberFormatException e) {
-          yield new IntValue(0); // unconstrained — Z3 picked an arbitrary value
-        }
-      }
+      case Z3_INT_SORT -> parseIntValue(val);
       case Z3_SEQ_SORT -> new StringValue(val.getString());
       case Z3_BOOL_SORT -> new BoolValue(val.isTrue());
-      case Z3_UNINTERPRETED_SORT -> {
-        Expr<?> selectExpr = ctx.mkSelect(arrayExpr, indexExpr);
-        String asStrKey = selectExpr + "_as_str";
-        Expr<?> strConst = ctx.mkConst(asStrKey, ctx.getStringSort());
-        Expr<?> strVal = model.eval(strConst, true);
-        if (strVal.getSort().getSortKind() == Z3_SEQ_SORT && !strVal.getString().isEmpty()) {
-          yield new StringValue(strVal.getString());
-        }
-        yield new ObjectValue(val, model, ctx);
-      }
+      case Z3_UNINTERPRETED_SORT -> resolveUninterpreted(arrayExpr, indexExpr, val);
       default -> ModelValue.fromExpr(val, model, ctx);
     };
+  }
+
+  private IntValue parseIntValue(final Expr<?> val) {
+    try {
+      return new IntValue(Integer.parseInt(val.toString()));
+    } catch (NumberFormatException e) {
+      return new IntValue(0); // unconstrained — Z3 picked an arbitrary value
+    }
+  }
+
+  private ModelValue resolveUninterpreted(
+      final ArrayExpr<IntSort, ?> arrExpr, final IntExpr indexExpr, final Expr<?> val) {
+    Expr<?> selectExpr = ctx.mkSelect(arrExpr, indexExpr);
+    // strengthen me
+    String asStrKey = selectExpr + "_as_str";
+    Expr<?> strConst = ctx.mkConst(asStrKey, ctx.getStringSort());
+    Expr<?> strVal = model.eval(strConst, true);
+    if (strVal.getSort().getSortKind() == Z3_SEQ_SORT && !strVal.getString().isEmpty()) {
+      return new StringValue(strVal.getString());
+    }
+    return new ObjectValue(val, model, ctx);
   }
 }
