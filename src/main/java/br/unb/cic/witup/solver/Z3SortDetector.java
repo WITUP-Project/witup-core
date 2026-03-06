@@ -112,6 +112,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
           case STRING -> context.getStringSort();
           case REAL -> context.getRealSort();
           case BOOLEAN -> context.getBoolSort();
+            // we cannot anticipate user types so lift them all to objects
           case OBJECT -> context.mkUninterpretedSort("java.lang.Object");
           default -> context.getIntSort();
         };

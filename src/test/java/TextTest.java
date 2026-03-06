@@ -65,7 +65,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new StringValue("abc"), sol0.getModel().get("s"));
+    assertEquals(new StringValue("abc"), sol0.modelValueMap().get("s"));
   }
 
   @Test
@@ -93,7 +93,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new IntValue(0), sol0.getModel().get("s.length"));
+    assertEquals(new IntValue(0), sol0.modelValueMap().get("s.length"));
   }
 
   @Test
@@ -121,7 +121,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new BoolValue(true), sol0.getModel().get("s.isEmpty"));
+    assertEquals(new BoolValue(true), sol0.modelValueMap().get("s.isEmpty"));
   }
 
   @Test

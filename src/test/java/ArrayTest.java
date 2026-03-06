@@ -219,7 +219,7 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getContext().mkInt(0);
+    IntExpr indexExpr = sol0.context().mkInt(0);
 
     ModelValue elementValue = arrArray.get(indexExpr);
     assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
