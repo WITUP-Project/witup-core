@@ -5,7 +5,7 @@ public interface SymExprVisitor<T> {
 
   T visitConst(SymConst c);
 
-  T visitField(SymFieldAccess f);
+  T visitFieldAccess(SymFieldAccess f);
 
   T visitStringConst(SymStringConst s);
 
@@ -13,15 +13,15 @@ public interface SymExprVisitor<T> {
 
   T visitVirtualInvoke(SymVirtualInvoke v);
 
+  T visitNewArray(SymNewArray r);
+
+  T visitArray(SymArray r);
+
   T visitArrayRef(SymArrayRef r);
 
   T visitLength(SymLength l);
 
-  T visitNewArray(SymNewArray r);
-
   T visitCast(SymCast c);
 
   T visitInstanceOf(SymInstanceOf r);
-
-  T visitArray(SymArray r);
 }

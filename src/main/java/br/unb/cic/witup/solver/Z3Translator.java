@@ -135,16 +135,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  public Expr<?> visitVar(final SymVar v) {
-    return exprMap.computeIfAbsent(
-        v.getName(),
-        name -> {
-          Sort sort = v.accept(sortInferrer);
-          return context.mkConst(name, sort);
-        });
-  }
-
-  @Override
   public Expr<?> visitConst(final SymConst c) {
     if (c.getValue() == null) {
       // null as opaque integer 0 — for null comparisons. Revisit if necessary
@@ -160,12 +150,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  public Expr<?> visitStringConst(final SymStringConst c) {
-    return context.mkString(c.getValue());
-  }
-
-  @Override
-  public Expr<?> visitField(final SymFieldAccess f) {
+  public Expr<?> visitFieldAccess(final SymFieldAccess f) {
     Expr<?> base = f.getBase().accept(this);
     String key = toFieldKEy(f, base);
     Expr<?> cached = exprMap.get(key);
@@ -178,6 +163,21 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return result;
   }
 
+  @Override
+  public Expr<?> visitStringConst(final SymStringConst c) {
+    return context.mkString(c.getValue());
+  }
+
+  @Override
+  public Expr<?> visitVar(final SymVar v) {
+    return exprMap.computeIfAbsent(
+        v.getName(),
+        name -> {
+          Sort sort = v.accept(sortInferrer);
+          return context.mkConst(name, sort);
+        });
+  }
+
   private static String toFieldKEy(final SymFieldAccess f, final Expr<?> base) {
     return base.toString() + "." + f.getFieldName();
   }
@@ -187,6 +187,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return exprMap.computeIfAbsent(
         inv.toString(),
         k -> inv.kind() == SymKind.BOOLEAN_METHOD ? context.mkBoolConst(k) : context.mkIntConst(k));
+  }
+
+  @Override
+  public Expr<?> visitNewArray(final SymNewArray r) {
+    String key = r.toString();
+    return exprMap.computeIfAbsent(key, context::mkIntConst);
   }
 
   @Override
@@ -229,12 +235,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitLength(final SymLength l) {
     String key = l.toString();
-    return exprMap.computeIfAbsent(key, context::mkIntConst);
-  }
-
-  @Override
-  public Expr<?> visitNewArray(final SymNewArray r) {
-    String key = r.toString();
     return exprMap.computeIfAbsent(key, context::mkIntConst);
   }
 

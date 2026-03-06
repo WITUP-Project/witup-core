@@ -12,13 +12,21 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
-  public Void visitVar(final SymVar v) {
-    variables.add(v.getName());
+  public Void visitBinOp(final SymBinOp b) {
+    b.getLeft().accept(this);
+    b.getRight().accept(this);
     return null;
   }
 
   @Override
   public Void visitConst(final SymConst c) {
+    return null;
+  }
+
+
+  @Override
+  public Void visitFieldAccess(final SymFieldAccess f) {
+    f.getBase().accept(this);
     return null;
   }
 
@@ -28,21 +36,24 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
-  public Void visitBinOp(final SymBinOp b) {
-    b.getLeft().accept(this);
-    b.getRight().accept(this);
-    return null;
-  }
-
-  @Override
-  public Void visitField(final SymFieldAccess f) {
-    f.getBase().accept(this);
+  public Void visitVar(final SymVar v) {
+    variables.add(v.getName());
     return null;
   }
 
   @Override
   public Void visitVirtualInvoke(final SymVirtualInvoke inv) {
     inv.getBase().accept(this);
+    return null;
+  }
+
+  @Override
+  public Void visitNewArray(final SymNewArray r) {
+    return null;
+  }
+
+  @Override
+  public Void visitArray(final SymArray r) {
     return null;
   }
 
@@ -61,22 +72,12 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
-  public Void visitNewArray(final SymNewArray r) {
-    return null;
-  }
-
-  @Override
   public Void visitCast(final SymCast c) {
     return null;
   }
 
   @Override
   public Void visitInstanceOf(final SymInstanceOf r) {
-    return null;
-  }
-
-  @Override
-  public Void visitArray(final SymArray r) {
     return null;
   }
 }
