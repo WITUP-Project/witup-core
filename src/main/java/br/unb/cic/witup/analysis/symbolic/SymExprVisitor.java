@@ -24,4 +24,6 @@ public interface SymExprVisitor<T> {
   T visitCast(SymCast c);
 
   T visitInstanceOf(SymInstanceOf r);
+
+  T visitParamRef(SymParam p);
 }

@@ -11,6 +11,7 @@ import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymNewArray;
+import br.unb.cic.witup.analysis.symbolic.SymParam;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
@@ -260,5 +261,15 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
                     FIELD_DECL_PREFIX + f, new Sort[] {base.getSort()}, context.getIntSort()));
 
     return context.mkApp(fieldDecl, base);
+  }
+
+  @Override
+  public Expr<?> visitParamRef(final SymParam r) {
+    return exprMap.computeIfAbsent(
+            r.toString(),
+            name -> {
+              Sort sort = r.accept(sortInferrer);
+              return context.mkConst(name, sort);
+            });
   }
 }
