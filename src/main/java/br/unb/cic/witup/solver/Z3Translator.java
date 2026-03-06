@@ -32,9 +32,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class Z3Translator implements SymExprVisitor<Expr<?>> {
+  public static final String JAVA_LANG_OBJECT = "java.lang.Object";
+  public static final String AS_STR_SUFFIX = "_as_str";
+  public static final String INSTANCEOF = "_instanceof_";
+  public static final String FIELD_DECL_PREFIX = "field_";
+  public static final String ARRAY_SELECT = "select:";
   private final Context context;
   private final Z3SortDetector sortInferrer;
-  private final Map<String, Expr<?>> cache = new HashMap<>();
+  private final Map<String, Expr<?>> exprMap = new HashMap<>();
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
 
   public Z3Translator(final Context context) {
@@ -43,7 +48,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   public Map<String, Expr<?>> getDeclarations() {
-    return Collections.unmodifiableMap(cache);
+    return Collections.unmodifiableMap(exprMap);
   }
 
   // entry point — translates a full constraint including truth value
@@ -61,92 +66,72 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Expr<?> visitBinOp(final SymBinOp b) {
     Expr<?> left = b.getLeft().accept(this);
     Expr<?> right = b.getRight().accept(this);
 
     if (b.getOp() == BinOp.EQ || b.getOp() == BinOp.NE) {
-      Sort leftSort = left.getSort();
-      Sort rightSort = right.getSort();
+      return buildEqualityExpr(b.getOp(), left, right);
+    }
+    return buildArithExpr(b.getOp(), left, right);
+  }
 
-      if (!leftSort.equals(rightSort)) {
-        UninterpretedSort objSort = context.mkUninterpretedSort("java.lang.Object");
+  private BoolExpr buildEqualityExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
+    var coerced = coerceForEquality(left, right);
+    BoolExpr eq = context.mkEq(coerced.lhs(), coerced.rhs);
+    return op == BinOp.EQ ? eq : context.mkNot(eq);
+  }
 
-        if (leftSort instanceof ArraySort ls
-            && ls.getRange().equals(objSort)
-            && rightSort.equals(context.getStringSort())) {
-          left = context.mkSelect((ArrayExpr<IntSort, Sort>) left, context.mkInt(0));
+  private record ExprPair(Expr<?> lhs, Expr<?> rhs) {}
 
-        } else if (rightSort instanceof ArraySort rs
-            && rs.getRange().equals(objSort)
-            && leftSort.equals(context.getStringSort())) {
-          right = context.mkSelect((ArrayExpr<IntSort, Sort>) right, context.mkInt(0));
-
-        } else if (leftSort.equals(objSort) && rightSort.equals(context.getStringSort())) {
-          System.out.println("coercion key: " + left.toString() + "_as_str");
-          left =
-              cache.computeIfAbsent(
-                  left.toString() + "_as_str", k -> context.mkConst(k, context.getStringSort()));
-
-        } else if (rightSort.equals(objSort) && leftSort.equals(context.getStringSort())) {
-          right =
-              cache.computeIfAbsent(
-                  right.toString() + "_as_str", k -> context.mkConst(k, context.getStringSort()));
-
-        } else {
-          throw new IllegalStateException("Cannot compare sorts: " + leftSort + " vs " + rightSort);
-        }
-      }
-      BoolExpr eq = context.mkEq(left, right);
-      return b.getOp() == BinOp.EQ ? eq : context.mkNot(eq);
+  private ExprPair coerceForEquality(final Expr<?> lhs, final Expr<?> rhs) {
+    Sort leftSort = lhs.getSort();
+    Sort rightSort = rhs.getSort();
+    if (leftSort.equals(rightSort)) {
+      return new ExprPair(lhs, rhs);
     }
 
-    //    Sort sort = b.getLeft().accept(sortInferrer);
+    UninterpretedSort objSort = context.mkUninterpretedSort(JAVA_LANG_OBJECT);
+    Sort strSort = context.getStringSort();
 
-    //    if (sort.equals(context.getRealSort())) {
-    //      ArithExpr<RealSort> lReal = (ArithExpr<RealSort>) left;
-    //      ArithExpr<RealSort> rReal = (ArithExpr<RealSort>) right;
-    //      return switch (b.getOp()) {
-    //        case LT  -> context.mkLt(lReal, rReal);
-    //        case ADD -> context.mkAdd(lReal, rReal);
-    //        // ...
-    //        default  -> context.mkEq(left, right);
-    //      };
-    //    }
+    if (leftSort instanceof ArraySort<?, ?> ls
+            && ls.getRange().equals(objSort)
+            && rightSort.equals(strSort)) {
+      return new ExprPair(context.mkSelect((ArrayExpr<IntSort, Sort>) lhs, context.mkInt(0)), rhs);
+    }
+    if (rightSort instanceof ArraySort<?, ?> rs
+            && rs.getRange().equals(objSort)
+            && leftSort.equals(strSort)) {
+      return new ExprPair(lhs, context.mkSelect((ArrayExpr<IntSort, Sort>) rhs, context.mkInt(0)));
+    }
+    if (leftSort.equals(objSort) && rightSort.equals(strSort)) {
+      return new ExprPair(coerceToString(lhs), rhs);
+    }
+    if (rightSort.equals(objSort) && leftSort.equals(strSort)) {
+      return new ExprPair(lhs, coerceToString(rhs));
+    }
+    throw new IllegalStateException("Cannot compare sorts: " + leftSort + " vs " + rightSort);
+  }
 
-    // default: integer path
-    //    ArithExpr<IntSort> lInt = (ArithExpr<IntSort>) left;
-    //    ArithExpr<IntSort> rInt = (ArithExpr<IntSort>) right;
+  private Expr<?> coerceToString(final Expr<?> expr) {
+    return exprMap.computeIfAbsent(
+            expr + AS_STR_SUFFIX, k -> context.mkConst(k, context.getStringSort()));
+  }
 
-    return switch (b.getOp()) {
-        // comparison — produce BoolExpr
-      case EQ -> context.mkEq(left, right);
-      case NE -> context.mkNot(context.mkEq(left, right));
+  private Expr<?> buildArithExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
+    return switch (op) {
       case LT -> context.mkLt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case LE -> context.mkLe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case GT -> context.mkGt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case GE -> context.mkGe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-        // arithmetic — produce ArithExpr
       case ADD -> context.mkAdd((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case SUB -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case MUL -> context.mkMul((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case DIV -> context.mkDiv((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case MOD -> context.mkMod((IntExpr) left, (IntExpr) right);
-        // cmp patterns already simplified by simplifyCmpPatterns
-        // these should not reach here in normal operation
       case CMP, CMPG, CMPL -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      default -> throw new IllegalStateException("Unhandled op in arith path: " + op);
     };
-  }
-
-  @Override
-  public Expr<?> visitVar(final SymVar v) {
-    return cache.computeIfAbsent(
-        v.getName(),
-        name -> {
-          Sort sort = v.accept(sortInferrer);
-          return context.mkConst(name, sort);
-        });
   }
 
   @Override
@@ -165,86 +150,114 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
+  public Expr<?> visitFieldAccess(final SymFieldAccess f) {
+    Expr<?> base = f.getBase().accept(this);
+    String key = toFieldKEy(f, base);
+    Expr<?> cached = exprMap.get(key);
+    if (cached != null) {
+      return cached;
+    }
+
+    Expr<?> result = translateFieldAccess(base, f.getFieldName());
+    exprMap.put(key, result);
+    return result;
+  }
+
+  @Override
   public Expr<?> visitStringConst(final SymStringConst c) {
     return context.mkString(c.getValue());
   }
 
   @Override
-  public Expr<?> visitField(final SymFieldAccess f) {
-    Expr<?> base = f.getBase().accept(this);
-    String key = base.toString() + "." + f.getFieldName();
-    Expr<?> cached = cache.get(key);
-    if (cached != null) return cached;
+  public Expr<?> visitVar(final SymVar v) {
+    return exprMap.computeIfAbsent(
+        v.getName(),
+        name -> {
+          Sort sort = v.accept(sortInferrer);
+          return context.mkConst(name, sort);
+        });
+  }
 
-    Expr<?> result = translateFieldAccess(base, f.getFieldName());
-    cache.put(key, result);
-    return result;
+  private static String toFieldKEy(final SymFieldAccess f, final Expr<?> base) {
+    return base.toString() + "." + f.getFieldName();
   }
 
   @Override
   public Expr<?> visitVirtualInvoke(final SymVirtualInvoke inv) {
-    return cache.computeIfAbsent(
+    return exprMap.computeIfAbsent(
         inv.toString(),
         k -> inv.kind() == SymKind.BOOLEAN_METHOD ? context.mkBoolConst(k) : context.mkIntConst(k));
   }
 
   @Override
-  public Expr<?> visitArray(SymArray arr) {
-    String cacheKey = arr.getName() + ":" + arr.getObjectType();
-    Expr<?> cached = cache.get(cacheKey);
-    if (cached != null) return cached;
-
-    ArraySort arraySort = (ArraySort) arr.accept(sortInferrer);
-    Expr<?> result = context.mkConst(cacheKey, arraySort);
-    cache.put(cacheKey, result);
-    return result;
+  public Expr<?> visitNewArray(final SymNewArray r) {
+    String key = r.toString();
+    return exprMap.computeIfAbsent(key, context::mkIntConst);
   }
 
   @Override
-  public Expr<?> visitArrayRef(SymArrayRef ref) {
-    String key = "select:" + ref.toString();
-    Expr<?> cached = cache.get(key);
-    if (cached != null) return cached;
+  public Expr<?> visitArray(final SymArray arr) {
+    String cacheKey = toArrayKey(arr);
+    Expr<?> cached = exprMap.get(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+
+    ArraySort arraySort = (ArraySort) arr.accept(sortInferrer);
+    Expr<?> result = context.mkConst(cacheKey, arraySort);
+    exprMap.put(cacheKey, result);
+    return result;
+  }
+
+  private static String toArrayKey(final SymArray arr) {
+    return arr.getName() + ":" + arr.getObjectType();
+  }
+
+  @Override
+  public Expr<?> visitArrayRef(final SymArrayRef ref) {
+    String key = toArrayRefKey(ref);
+    Expr<?> cached = exprMap.get(key);
+    if (cached != null) {
+      return cached;
+    }
 
     Expr<?> arrayExpr = ref.getArray().accept(this);
     Expr<?> indexExpr = ref.getIndex().accept(this);
     Expr<?> result = context.mkSelect((ArrayExpr<IntSort, Sort>) arrayExpr, (IntExpr) indexExpr);
-    cache.put(key, result);
+    exprMap.put(key, result);
     return result;
+  }
+
+  private static String toArrayRefKey(final SymArrayRef ref) {
+    return ARRAY_SELECT + ref.toString();
   }
 
   @Override
   public Expr<?> visitLength(final SymLength l) {
     String key = l.toString();
-    return cache.computeIfAbsent(key, context::mkIntConst);
-  }
-
-  @Override
-  public Expr<?> visitNewArray(final SymNewArray r) {
-    String key = r.toString();
-    return cache.computeIfAbsent(key, context::mkIntConst);
+    return exprMap.computeIfAbsent(key, context::mkIntConst);
   }
 
   @Override
   public Expr<?> visitCast(final SymCast c) {
-    return cache.computeIfAbsent(c.toString(), context::mkIntConst);
+    return exprMap.computeIfAbsent(c.toString(), context::mkIntConst);
   }
 
   @Override
   public Expr<?> visitInstanceOf(final SymInstanceOf i) {
     // for all we know so far, we only need a boolean in our tests
-    String key = i.getOp().toString() + "_instanceof_" + i.getType().replace(".", "_");
-    return cache.computeIfAbsent(key, context::mkBoolConst);
+    String key = i.getOp().toString() + INSTANCEOF + i.getType().replace(".", "_");
+    return exprMap.computeIfAbsent(key, context::mkBoolConst);
   }
 
-  private Expr<?> translateFieldAccess(Expr<?> base, String fieldName) {
+  private Expr<?> translateFieldAccess(final Expr<?> base, final String fieldName) {
 
     FuncDecl<?> fieldDecl =
         fieldFunctions.computeIfAbsent(
             fieldName,
             f ->
                 context.mkFuncDecl(
-                    "field_" + f, new Sort[] {base.getSort()}, context.getIntSort()));
+                    FIELD_DECL_PREFIX + f, new Sort[] {base.getSort()}, context.getIntSort()));
 
     return context.mkApp(fieldDecl, base);
   }

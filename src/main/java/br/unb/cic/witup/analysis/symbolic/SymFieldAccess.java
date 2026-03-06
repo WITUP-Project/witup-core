@@ -15,7 +15,7 @@ public final class SymFieldAccess extends SymExpr {
 
   @Override
   public <T> T accept(final SymExprVisitor<T> visitor) {
-    return visitor.visitField(this);
+    return visitor.visitFieldAccess(this);
   }
 
   public SymExpr getBase() {

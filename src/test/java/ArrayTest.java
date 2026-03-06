@@ -9,9 +9,10 @@ import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.graph.node.WITUpNode;
-import br.unb.cic.witup.solver.ModelValue;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.ThrowConditionSolver;
+import br.unb.cic.witup.solver.model.ArrayValue;
+import br.unb.cic.witup.solver.model.ModelValue;
 import com.microsoft.z3.IntExpr;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -73,7 +74,7 @@ public class ArrayTest {
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
 
-    ModelValue.ArrayValue arrArray = sol0.getArray("arr");
+    ArrayValue arrArray = sol0.getArray("arr");
     IntExpr indexExpr = sol0.getIntExpr("i");
 
     ModelValue elementValue = arrArray.get(indexExpr);
@@ -178,7 +179,7 @@ public class ArrayTest {
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
 
-    ModelValue.ArrayValue arrArray = sol0.getArray("arr");
+    ArrayValue arrArray = sol0.getArray("arr");
     IntExpr indexExpr = sol0.getIntExpr("i");
 
     ModelValue elementValue = arrArray.get(indexExpr);
@@ -217,8 +218,8 @@ public class ArrayTest {
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
 
-    ModelValue.ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getContext().mkInt(0);
+    ArrayValue arrArray = sol0.getArray("arr");
+    IntExpr indexExpr = sol0.context().mkInt(0);
 
     ModelValue elementValue = arrArray.get(indexExpr);
     assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
@@ -256,7 +257,7 @@ public class ArrayTest {
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
 
-    ModelValue.ArrayValue arrArray = sol0.getArray("arr");
+    ArrayValue arrArray = sol0.getArray("arr");
     IntExpr indexExpr = sol0.getIntExpr("i");
 
     ModelValue element = arrArray.get(indexExpr);

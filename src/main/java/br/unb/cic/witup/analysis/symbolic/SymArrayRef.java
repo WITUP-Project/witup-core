@@ -6,7 +6,7 @@ public final class SymArrayRef extends SymExpr {
   private final SymExpr array;
   private final SymExpr index;
 
-  public SymArrayRef(SymExpr array, SymExpr index) {
+  public SymArrayRef(final SymExpr array, final SymExpr index) {
     this.array = array;
     this.index = index;
   }

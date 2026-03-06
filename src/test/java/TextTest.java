@@ -6,9 +6,11 @@ import br.unb.cic.witup.graph.WITUpAnalyser;
 import br.unb.cic.witup.graph.WITUpGraph;
 import br.unb.cic.witup.graph.edge.WITUpEdge;
 import br.unb.cic.witup.graph.node.WITUpNode;
-import br.unb.cic.witup.solver.ModelValue;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.ThrowConditionSolver;
+import br.unb.cic.witup.solver.model.BoolValue;
+import br.unb.cic.witup.solver.model.IntValue;
+import br.unb.cic.witup.solver.model.StringValue;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -63,7 +65,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new ModelValue.StringValue("abc"), sol0.getModel().get("s"));
+    assertEquals(new StringValue("abc"), sol0.modelValueMap().get("s"));
   }
 
   @Test
@@ -91,7 +93,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new ModelValue.IntValue(0), sol0.getModel().get("s.length"));
+    assertEquals(new IntValue(0), sol0.modelValueMap().get("s.length"));
   }
 
   @Test
@@ -119,7 +121,7 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new ModelValue.BoolValue(true), sol0.getModel().get("s.isEmpty"));
+    assertEquals(new BoolValue(true), sol0.modelValueMap().get("s.isEmpty"));
   }
 
   @Test
