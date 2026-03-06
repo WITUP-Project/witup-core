@@ -7,7 +7,7 @@ public final class SymArray extends SymExpr {
   private final SymKind elemKind;
   private final String objectType;
 
-  public SymArray(String name, SymKind elemKind, String objectType) {
+  public SymArray(final String name, final SymKind elemKind, final String objectType) {
     this.name = name;
     this.elemKind = elemKind;
     this.objectType = objectType;
@@ -26,12 +26,12 @@ public final class SymArray extends SymExpr {
   }
 
   @Override
-  public <T> T accept(SymExprVisitor<T> visitor) {
+  public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitArray(this);
   }
 
   @Override
-  public SymExpr substitute(String varName, SymExpr replacement) {
+  public SymExpr substitute(final String varName, final SymExpr replacement) {
     return this;
   }
 
@@ -41,7 +41,7 @@ public final class SymArray extends SymExpr {
   }
 
   @Override
-  public boolean contains(String varName) {
+  public boolean contains(final String varName) {
     return name.equals(varName);
   }
 

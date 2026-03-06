@@ -3,6 +3,8 @@ package br.unb.cic.witup.solver;
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
 
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.solver.model.ArrayValue;
+import br.unb.cic.witup.solver.model.ModelValue;
 import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
@@ -52,7 +54,7 @@ public final class ThrowConditionSolver {
           // Store under the Z3 constant name (e.g. "arr"), not the cache key
           String modelKey = name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
           System.out.println("extractModel array: name=" + name + " modelKey=" + modelKey);
-          result.put(modelKey, new ModelValue.ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
+          result.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
         } else {
           Expr<?> evaluated = model.eval(expr, true);
           result.put(name, ModelValue.fromExpr(evaluated, model, ctx));
@@ -64,13 +66,20 @@ public final class ThrowConditionSolver {
 
     // Also extract field functions (arity-1 decls named "field_*")
     for (FuncDecl<?> decl : model.getDecls()) {
-      if (decl.getArity() != 1) continue;
+      if (decl.getArity() != 1) {
+        continue;
+      }
       String declName = decl.getName().toString();
-      if (!declName.startsWith("field_")) continue;
+      // need to strengthen this contract
+      if (!declName.startsWith("field_")) {
+        continue;
+      }
 
       String fieldName = declName.substring("field_".length());
       com.microsoft.z3.FuncInterp<?> interp = model.getFuncInterp(decl);
-      if (interp == null) continue;
+      if (interp == null) {
+        continue;
+      }
 
       for (com.microsoft.z3.FuncInterp.Entry<?> e : interp.getEntries()) {
         String baseArg = e.getArgs()[0].toString();

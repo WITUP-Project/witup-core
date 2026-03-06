@@ -174,7 +174,9 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Expr<?> base = f.getBase().accept(this);
     String key = base.toString() + "." + f.getFieldName();
     Expr<?> cached = cache.get(key);
-    if (cached != null) return cached;
+    if (cached != null) {
+      return cached;
+    }
 
     Expr<?> result = translateFieldAccess(base, f.getFieldName());
     cache.put(key, result);
@@ -189,10 +191,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  public Expr<?> visitArray(SymArray arr) {
+  public Expr<?> visitArray(final SymArray arr) {
     String cacheKey = arr.getName() + ":" + arr.getObjectType();
     Expr<?> cached = cache.get(cacheKey);
-    if (cached != null) return cached;
+    if (cached != null) {
+      return cached;
+    }
 
     ArraySort arraySort = (ArraySort) arr.accept(sortInferrer);
     Expr<?> result = context.mkConst(cacheKey, arraySort);
@@ -201,10 +205,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  public Expr<?> visitArrayRef(SymArrayRef ref) {
+  public Expr<?> visitArrayRef(final SymArrayRef ref) {
     String key = "select:" + ref.toString();
     Expr<?> cached = cache.get(key);
-    if (cached != null) return cached;
+    if (cached != null) {
+      return cached;
+    }
 
     Expr<?> arrayExpr = ref.getArray().accept(this);
     Expr<?> indexExpr = ref.getIndex().accept(this);
@@ -237,7 +243,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return cache.computeIfAbsent(key, context::mkBoolConst);
   }
 
-  private Expr<?> translateFieldAccess(Expr<?> base, String fieldName) {
+  private Expr<?> translateFieldAccess(final Expr<?> base, final String fieldName) {
 
     FuncDecl<?> fieldDecl =
         fieldFunctions.computeIfAbsent(
