@@ -32,6 +32,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class Z3Translator implements SymExprVisitor<Expr<?>> {
+  public static final String JAVA_LANG_OBJECT = "java.lang.Object";
+  public static final String AS_STR_SUFFIX = "_as_str";
+  public static final String INSTANCEOF = "_instanceof_";
+  public static final String FIELD_DECL_PREFIX = "field_";
+  public static final String ARRAY_SELECT = "select:";
   private final Context context;
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
@@ -61,64 +66,71 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Expr<?> visitBinOp(final SymBinOp b) {
     Expr<?> left = b.getLeft().accept(this);
     Expr<?> right = b.getRight().accept(this);
 
     if (b.getOp() == BinOp.EQ || b.getOp() == BinOp.NE) {
-      Sort leftSort = left.getSort();
-      Sort rightSort = right.getSort();
+      return buildEqualityExpr(b.getOp(), left, right);
+    }
+    return buildArithExpr(b.getOp(), left, right);
+  }
 
-      if (!leftSort.equals(rightSort)) {
-        UninterpretedSort objSort = context.mkUninterpretedSort("java.lang.Object");
+  private BoolExpr buildEqualityExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
+    var coerced = coerceForEquality(left, right);
+    BoolExpr eq = context.mkEq(coerced.lhs(), coerced.rhs);
+    return op == BinOp.EQ ? eq : context.mkNot(eq);
+  }
 
-        if (leftSort instanceof ArraySort ls
-            && ls.getRange().equals(objSort)
-            && rightSort.equals(context.getStringSort())) {
-          left = context.mkSelect((ArrayExpr<IntSort, Sort>) left, context.mkInt(0));
+  private record ExprPair(Expr<?> lhs, Expr<?> rhs) {}
 
-        } else if (rightSort instanceof ArraySort rs
-            && rs.getRange().equals(objSort)
-            && leftSort.equals(context.getStringSort())) {
-          right = context.mkSelect((ArrayExpr<IntSort, Sort>) right, context.mkInt(0));
-
-        } else if (leftSort.equals(objSort) && rightSort.equals(context.getStringSort())) {
-          System.out.println("coercion key: " + left.toString() + "_as_str");
-          left =
-              exprMap.computeIfAbsent(
-                  left.toString() + "_as_str", k -> context.mkConst(k, context.getStringSort()));
-
-        } else if (rightSort.equals(objSort) && leftSort.equals(context.getStringSort())) {
-          right =
-              exprMap.computeIfAbsent(
-                  right.toString() + "_as_str", k -> context.mkConst(k, context.getStringSort()));
-
-        } else {
-          throw new IllegalStateException("Cannot compare sorts: " + leftSort + " vs " + rightSort);
-        }
-      }
-      BoolExpr eq = context.mkEq(left, right);
-      return b.getOp() == BinOp.EQ ? eq : context.mkNot(eq);
+  private ExprPair coerceForEquality(final Expr<?> lhs, final Expr<?> rhs) {
+    Sort leftSort = lhs.getSort();
+    Sort rightSort = rhs.getSort();
+    if (leftSort.equals(rightSort)) {
+      return new ExprPair(lhs, rhs);
     }
 
-    return switch (b.getOp()) {
-        // comparison — produce BoolExpr
-      case EQ -> context.mkEq(left, right);
-      case NE -> context.mkNot(context.mkEq(left, right));
+    UninterpretedSort objSort = context.mkUninterpretedSort(JAVA_LANG_OBJECT);
+    Sort strSort = context.getStringSort();
+
+    if (leftSort instanceof ArraySort<?, ?> ls
+            && ls.getRange().equals(objSort)
+            && rightSort.equals(strSort)) {
+      return new ExprPair(context.mkSelect((ArrayExpr<IntSort, Sort>) lhs, context.mkInt(0)), rhs);
+    }
+    if (rightSort instanceof ArraySort<?, ?> rs
+            && rs.getRange().equals(objSort)
+            && leftSort.equals(strSort)) {
+      return new ExprPair(lhs, context.mkSelect((ArrayExpr<IntSort, Sort>) rhs, context.mkInt(0)));
+    }
+    if (leftSort.equals(objSort) && rightSort.equals(strSort)) {
+      return new ExprPair(coerceToString(lhs), rhs);
+    }
+    if (rightSort.equals(objSort) && leftSort.equals(strSort)) {
+      return new ExprPair(lhs, coerceToString(rhs));
+    }
+    throw new IllegalStateException("Cannot compare sorts: " + leftSort + " vs " + rightSort);
+  }
+
+  private Expr<?> coerceToString(final Expr<?> expr) {
+    return exprMap.computeIfAbsent(
+            expr + AS_STR_SUFFIX, k -> context.mkConst(k, context.getStringSort()));
+  }
+
+  private Expr<?> buildArithExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
+    return switch (op) {
       case LT -> context.mkLt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case LE -> context.mkLe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case GT -> context.mkGt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case GE -> context.mkGe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-        // arithmetic — produce ArithExpr
       case ADD -> context.mkAdd((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case SUB -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case MUL -> context.mkMul((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case DIV -> context.mkDiv((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
       case MOD -> context.mkMod((IntExpr) left, (IntExpr) right);
-        // cmp patterns already simplified by simplifyCmpPatterns
-        // these should not reach here in normal operation
       case CMP, CMPG, CMPL -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
+      default -> throw new IllegalStateException("Unhandled op in arith path: " + op);
     };
   }
 
@@ -155,7 +167,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitField(final SymFieldAccess f) {
     Expr<?> base = f.getBase().accept(this);
-    String key = base.toString() + "." + f.getFieldName();
+    String key = toFieldKEy(f, base);
     Expr<?> cached = exprMap.get(key);
     if (cached != null) {
       return cached;
@@ -164,6 +176,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Expr<?> result = translateFieldAccess(base, f.getFieldName());
     exprMap.put(key, result);
     return result;
+  }
+
+  private static String toFieldKEy(final SymFieldAccess f, final Expr<?> base) {
+    return base.toString() + "." + f.getFieldName();
   }
 
   @Override
@@ -175,7 +191,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitArray(final SymArray arr) {
-    String cacheKey = arr.getName() + ":" + arr.getObjectType();
+    String cacheKey = toArrayKey(arr);
     Expr<?> cached = exprMap.get(cacheKey);
     if (cached != null) {
       return cached;
@@ -187,9 +203,13 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return result;
   }
 
+  private static String toArrayKey(final SymArray arr) {
+    return arr.getName() + ":" + arr.getObjectType();
+  }
+
   @Override
   public Expr<?> visitArrayRef(final SymArrayRef ref) {
-    String key = "select:" + ref.toString();
+    String key = toArrayRefKey(ref);
     Expr<?> cached = exprMap.get(key);
     if (cached != null) {
       return cached;
@@ -200,6 +220,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Expr<?> result = context.mkSelect((ArrayExpr<IntSort, Sort>) arrayExpr, (IntExpr) indexExpr);
     exprMap.put(key, result);
     return result;
+  }
+
+  private static String toArrayRefKey(final SymArrayRef ref) {
+    return ARRAY_SELECT + ref.toString();
   }
 
   @Override
@@ -222,7 +246,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitInstanceOf(final SymInstanceOf i) {
     // for all we know so far, we only need a boolean in our tests
-    String key = i.getOp().toString() + "_instanceof_" + i.getType().replace(".", "_");
+    String key = i.getOp().toString() + INSTANCEOF + i.getType().replace(".", "_");
     return exprMap.computeIfAbsent(key, context::mkBoolConst);
   }
 
@@ -233,7 +257,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
             fieldName,
             f ->
                 context.mkFuncDecl(
-                    "field_" + f, new Sort[] {base.getSort()}, context.getIntSort()));
+                    FIELD_DECL_PREFIX + f, new Sort[] {base.getSort()}, context.getIntSort()));
 
     return context.mkApp(fieldDecl, base);
   }
