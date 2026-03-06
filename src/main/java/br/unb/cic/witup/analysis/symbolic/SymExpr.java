@@ -33,6 +33,7 @@ import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
+import sootup.core.jimple.common.ref.JParameterRef;
 import sootup.core.types.ArrayType;
 import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
@@ -42,6 +43,17 @@ public abstract class SymExpr {
   public abstract <T> T accept(SymExprVisitor<T> visitor);
 
   public abstract SymExpr substitute(String varName, SymExpr replacement);
+
+  /***
+   * Ignored for most types, useful for SymParam
+   *
+   * @param idx index of the param
+   * @param actual index to compare
+   * @return new index
+   */
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    return this; // default: no substitution
+  }
 
   public abstract String toString();
 
@@ -70,6 +82,7 @@ public abstract class SymExpr {
       case JNewArrayExpr e -> fromNewArray(e);
       case JCastExpr e -> fromCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
+      case JParameterRef r -> fromParamRef(r);
       default -> new SymVar(value.toString(), symKindFromType(value.getType()));
     };
   }
@@ -150,6 +163,12 @@ public abstract class SymExpr {
     SymExpr op = fromValue(r.getOp());
     String type = r.getCheckType().toString();
     return new SymInstanceOf(op, type);
+  }
+
+  private static SymExpr fromParamRef(final JParameterRef r) {
+    int index = r.getIndex();
+    SymKind kind =  symKindFromType(r.getType());
+    return new SymParam(index, kind);
   }
 
   private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {
