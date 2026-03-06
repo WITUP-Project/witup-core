@@ -59,6 +59,7 @@ public sealed interface ModelValue
         return new StringValue(val.getString());
 
       case Z3_ARRAY_SORT:
+        // cast is safe as we have already verified the sort
         return new ArrayValue((ArrayExpr<IntSort, ?>) val, model, ctx);
 
       case Z3_UNINTERPRETED_SORT:

@@ -16,6 +16,17 @@ public final class ObjectValue implements ModelValue {
     this.ctx = ctx;
   }
 
+  /**
+   * Example:
+   * (declare-fun field_value (java.lang.Object) Int)
+   * is a declaration. Object field mappings are function declarations
+   * In the case of Array.getObjectFromArray, the mapping becomes
+   * java.lang.Object (all custom objects e.g MyObject become Object)
+   * and since we are comparing with an int, the function range is Int.
+   *
+   * @param fieldName the name of the field we are trying to get
+   * @return ModelValue of the respective type
+   */
   @Override
   public ModelValue getField(final String fieldName) {
     // Find the field_<name> function in the model and apply it to this object
