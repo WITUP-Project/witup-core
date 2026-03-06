@@ -39,6 +39,12 @@ import sootup.core.jimple.common.stmt.JThrowStmt;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
+  private String methodSignature;
+
+  public String getMethodSignature() {
+    return methodSignature;
+  }
+
   private WITUpGraph() {
     super(WITUpEdge.class);
   }
@@ -56,8 +62,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   we are going to need to decide whether to couple the Java frontend to SootUp or to add a
   serialisation layer before creating the WITUpGraph
    */
-  public static WITUpGraph fromPropertyGraph(final PropertyGraph pg) {
+  public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final String methodSignature) {
     WITUpGraph graph = new WITUpGraph();
+    graph.methodSignature = methodSignature;
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
       // we are creating the same node multiple times here and it

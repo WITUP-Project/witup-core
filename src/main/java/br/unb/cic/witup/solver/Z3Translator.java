@@ -96,13 +96,13 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Sort strSort = context.getStringSort();
 
     if (leftSort instanceof ArraySort<?, ?> ls
-            && ls.getRange().equals(objSort)
-            && rightSort.equals(strSort)) {
+        && ls.getRange().equals(objSort)
+        && rightSort.equals(strSort)) {
       return new ExprPair(context.mkSelect((ArrayExpr<IntSort, Sort>) lhs, context.mkInt(0)), rhs);
     }
     if (rightSort instanceof ArraySort<?, ?> rs
-            && rs.getRange().equals(objSort)
-            && leftSort.equals(strSort)) {
+        && rs.getRange().equals(objSort)
+        && leftSort.equals(strSort)) {
       return new ExprPair(lhs, context.mkSelect((ArrayExpr<IntSort, Sort>) rhs, context.mkInt(0)));
     }
     if (leftSort.equals(objSort) && rightSort.equals(strSort)) {
@@ -116,7 +116,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   private Expr<?> coerceToString(final Expr<?> expr) {
     return exprMap.computeIfAbsent(
-            expr + AS_STR_SUFFIX, k -> context.mkConst(k, context.getStringSort()));
+        expr + AS_STR_SUFFIX, k -> context.mkConst(k, context.getStringSort()));
   }
 
   private Expr<?> buildArithExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
@@ -266,10 +266,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitParamRef(final SymParam r) {
     return exprMap.computeIfAbsent(
-            r.toString(),
-            name -> {
-              Sort sort = r.accept(sortInferrer);
-              return context.mkConst(name, sort);
-            });
+        r.toString(),
+        name -> {
+          Sort sort = r.accept(sortInferrer);
+          return context.mkConst(name, sort);
+        });
   }
 }

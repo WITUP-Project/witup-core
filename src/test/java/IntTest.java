@@ -1,7 +1,12 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import br.unb.cic.witup.analysis.MethodAnalysis;
+import br.unb.cic.witup.analysis.summary.MethodSummary;
+import br.unb.cic.witup.analysis.summary.SummaryCache;
+import br.unb.cic.witup.analysis.summary.SummaryGenerator;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.graph.WITUpAnalyser;
@@ -46,19 +51,13 @@ public class IntTest {
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
+    MethodAnalysis analysis = new MethodAnalysis(cpg);
+
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
-    assertEquals(1, conditionNodes.size());
-
-    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-        cpg.getConstraintPaths(throwNodes.get(0));
-
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
-
-    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
+    List<List<SymbolicConstraint>> symbolicConstraintPaths =
+            analysis.getSymbolicConstraintPaths(throwNodes.get(0));
 
     ThrowConditionSolver solver = new ThrowConditionSolver();
 
@@ -74,6 +73,15 @@ public class IntTest {
     int a = solution.getInt("a");
     int b = solution.getInt("b");
     assertTrue(a + b > 256, "Expected a + b > 256");
+
+    SummaryGenerator sumGen = new SummaryGenerator(new SummaryCache());
+    MethodSummary summary = sumGen.summarise(analysis);
+
+    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(1, summary.getThrowCases().size());
+
+    MethodSummary cachedSummary = sumGen.summarise(analysis);
+    assertSame(summary, cachedSummary);
   }
 
   @Test
