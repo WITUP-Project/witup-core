@@ -1,11 +1,11 @@
 import static org.junit.jupiter.api.Assertions.*;
 
-import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.ThrowConditionSolver;
 import br.unb.cic.witup.solver.model.BoolValue;
