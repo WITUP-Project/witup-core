@@ -1,4 +1,4 @@
-package br.unb.cic.witup.graph.node;
+package br.unb.cic.witup.analysis.graph.node;
 
 import java.util.Objects;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;

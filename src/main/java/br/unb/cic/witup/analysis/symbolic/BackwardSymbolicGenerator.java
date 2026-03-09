@@ -2,11 +2,11 @@ package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import br.unb.cic.witup.graph.WITUpGraph;
-import br.unb.cic.witup.graph.edge.DataDependencyEdge;
-import br.unb.cic.witup.graph.edge.WITUpEdge;
-import br.unb.cic.witup.graph.node.SimpleNode;
-import br.unb.cic.witup.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
+import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
+import br.unb.cic.witup.analysis.graph.node.SimpleNode;
+import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

@@ -2,6 +2,7 @@ package br.unb.cic.witup;
 
 import java.nio.file.Path;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.core.inputlocation.AnalysisInputLocation;
@@ -25,5 +26,12 @@ public final class ProjectAnalyser {
     List<JavaSootClass> classes = view.getClasses().toList();
     log.info("Found {} classes", classes.size());
     log.info(classes.toString());
+
+    // for each class, analyse each method and
+    // add get the method summaries. in intraprocedural
+    // we do not need to share the CPGs yet.
+//    classes.forEach(c -> {
+//      new ClassAnalyser(c).analyseClass();
+//    });
   }
 }

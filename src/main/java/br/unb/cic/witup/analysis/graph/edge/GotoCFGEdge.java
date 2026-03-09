@@ -1,6 +1,6 @@
-package br.unb.cic.witup.graph.edge;
+package br.unb.cic.witup.analysis.graph.edge;
 
-import br.unb.cic.witup.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 
 public class GotoCFGEdge extends CFGEdge {

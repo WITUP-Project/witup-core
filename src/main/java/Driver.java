@@ -21,10 +21,11 @@ public final class Driver {
       log.error("Jar file not found: {}", jarPath);
       System.exit(1);
     }
-    
+
     log.info("Starting analysis for {}", jarPath);
 
     ProjectAnalyser analyser = new ProjectAnalyser(jarPath);
+    analyser.analyseProject();
 
     log.info("Analysis completed");
   }
