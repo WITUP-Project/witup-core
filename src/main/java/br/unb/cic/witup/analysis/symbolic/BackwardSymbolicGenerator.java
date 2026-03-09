@@ -74,7 +74,7 @@ public final class BackwardSymbolicGenerator {
   public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
     StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
-    SymExpr symExpr = SymExpr.fromValue(ifStmt.getCondition());
+    SymExpr symExpr = SymExpr.fromJimple(ifStmt.getCondition());
 
     // traverse backward and substitute temporaries so that each SymbolicConstraint
     // element has all the information it needs to pass to a solver
@@ -108,7 +108,6 @@ public final class BackwardSymbolicGenerator {
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
 
-      // do not resolve data dependency edges that are not in the current path.
       if (!isNodeInPath(sourceNode)) {
         continue;
       }
@@ -141,7 +140,7 @@ public final class BackwardSymbolicGenerator {
         continue;
       }
 
-      SymExpr rhsSymExpr = SymExpr.fromValue(assign.getRightOp());
+      SymExpr rhsSymExpr = SymExpr.fromJimple(assign.getRightOp());
       symExpr = symExpr.substitute(definedVar, rhsSymExpr);
       symExpr = backwardSubstitute(symExpr, sourceNode, visited);
     }
