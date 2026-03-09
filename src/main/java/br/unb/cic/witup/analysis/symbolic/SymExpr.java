@@ -87,7 +87,7 @@ public abstract class SymExpr {
     };
   }
 
-  private static SymKind symKindFromType(final Type type) {
+  public static SymKind symKindFromType(final Type type) {
     if (type instanceof ArrayType at) {
       return symKindFromType(at.getElementType());
     }
@@ -167,7 +167,7 @@ public abstract class SymExpr {
 
   private static SymExpr fromParamRef(final JParameterRef r) {
     int index = r.getIndex();
-    SymKind kind =  symKindFromType(r.getType());
+    SymKind kind = symKindFromType(r.getType());
     return new SymParam(index, kind);
   }
 

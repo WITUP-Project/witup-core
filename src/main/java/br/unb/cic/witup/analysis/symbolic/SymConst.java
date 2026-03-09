@@ -3,7 +3,9 @@ package br.unb.cic.witup.analysis.symbolic;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymConst extends SymExpr {
-  // Can be Integer, Double, String, etc. We may need to keep track of types somewhere
+  public static final SymConst TRUE = new SymConst(1);
+  public static final SymConst FALSE = new SymConst(0);
+
   private final Object value;
 
   public SymConst(final Object value) {

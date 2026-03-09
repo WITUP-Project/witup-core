@@ -40,7 +40,8 @@ public final class WITUpAnalyser {
             if (s instanceof JThrowStmt) {
               witUpGraphs.put(
                   m.getSignature().toString(),
-                  WITUpGraph.fromPropertyGraph(sootUpAnalyser.buildCPG(m)));
+                  WITUpGraph.fromPropertyGraph(
+                      sootUpAnalyser.buildCPG(m), m.getSignature().toString()));
               break;
             }
           }
