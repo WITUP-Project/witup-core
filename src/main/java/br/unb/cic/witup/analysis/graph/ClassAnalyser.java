@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis;
+package br.unb.cic.witup.analysis.graph;
 
 import sootup.codepropertygraph.cdg.CdgCreator;
 import sootup.codepropertygraph.cfg.CfgCreator;
@@ -16,11 +16,11 @@ import sootup.java.core.views.JavaView;
  * Entry point of the analysis pipeline. Analyses a class given its location and name. For each
  * method to be analysed, build the individual graphs and the resulting Code Property Graph (CPG)
  */
-public final class SootUpClassAnalyser {
+public final class ClassAnalyser {
   private final String location;
   private final String className;
 
-  public SootUpClassAnalyser(final String location, final String className) {
+  public ClassAnalyser(final String location, final String className) {
     this.location = location;
     this.className = className;
   }

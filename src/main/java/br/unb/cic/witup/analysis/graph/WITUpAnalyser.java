@@ -1,6 +1,5 @@
 package br.unb.cic.witup.analysis.graph;
 
-import br.unb.cic.witup.analysis.SootUpClassAnalyser;
 import java.util.HashMap;
 import java.util.Set;
 import sootup.core.graph.StmtGraph;
@@ -11,16 +10,16 @@ import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootMethod;
 
 public final class WITUpAnalyser {
-  private final SootUpClassAnalyser sootUpClassAnalyser;
+  private final ClassAnalyser classAnalyser;
 
   public WITUpAnalyser(final String location, final String className) {
-    this.sootUpClassAnalyser = new SootUpClassAnalyser(location, className);
+    this.classAnalyser = new ClassAnalyser(location, className);
   }
 
   public HashMap<String, WITUpGraph> buildWitUpGraphs() {
     HashMap<String, WITUpGraph> witUpGraphs = new HashMap<>();
 
-    JavaSootClass sootClass = sootUpClassAnalyser.getSootClass();
+    JavaSootClass sootClass = classAnalyser.getSootClass();
     Set<JavaSootMethod> methods = sootClass.getMethods();
     methods.forEach(
         m -> {
@@ -41,7 +40,7 @@ public final class WITUpAnalyser {
               witUpGraphs.put(
                   m.getSignature().toString(),
                   WITUpGraph.fromPropertyGraph(
-                      sootUpClassAnalyser.buildCPG(m), m.getSignature().toString()));
+                      classAnalyser.buildCPG(m), m.getSignature().toString()));
               break;
             }
           }

@@ -1,6 +1,6 @@
 import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
 import br.unb.cic.witup.analysis.MethodSummary;
-import br.unb.cic.witup.analysis.ProjectAnalyser;
+import br.unb.cic.witup.analysis.graph.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
