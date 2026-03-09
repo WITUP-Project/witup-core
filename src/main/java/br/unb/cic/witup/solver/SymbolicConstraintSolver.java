@@ -52,7 +52,6 @@ public final class SymbolicConstraintSolver {
   public Map<String, List<SolverResult>> solveConstraints() {
     Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
 
-    // here I want to have SymbolicConstraint and Solution side by side
     for (MethodSummary methodSummary : methodSummaries.values()) {
       List<SolverResult> results = new ArrayList<>();
       List<List<SymbolicConstraint>> constraintPaths = methodSummary.getSymbolicConstraintPaths();
