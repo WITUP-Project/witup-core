@@ -1,6 +1,5 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.BinOp;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
@@ -61,6 +60,7 @@ public abstract class SymExpr {
 
   public abstract SymKind kind();
 
+  // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromValue(final Value value) {
     return switch (value) {
       case Local l when l.getType() instanceof ArrayType at ->

@@ -1,5 +1,6 @@
 package br.unb.cic.witup.analysis;
 
+import br.unb.cic.witup.analysis.graph.CPGBuilder;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import java.nio.file.Path;
 import java.util.List;
