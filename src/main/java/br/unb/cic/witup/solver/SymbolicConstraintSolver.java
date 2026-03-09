@@ -15,7 +15,6 @@ import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,18 +27,9 @@ import java.util.Map;
 public final class SymbolicConstraintSolver {
 
   public static final String FIELD_FUNC_PREFIX = "field_";
-  private List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>> symbolicConstraintPaths;
   private Map<String, MethodSummary> methodSummaries = new HashMap<>();
 
-  public List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>>
-      symbolicConstraintPaths() {
-    return symbolicConstraintPaths;
-  }
-
-  public SymbolicConstraintSolver(
-      final List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>>
-          symbolicConstraintPaths) {
-    this.symbolicConstraintPaths = symbolicConstraintPaths;
+  public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {
   }
 
   // the method that receives method summaries needs to, for each set
@@ -65,9 +55,7 @@ public final class SymbolicConstraintSolver {
     return methodSolutions;
   }
 
-  public SolverResult checkPath(
-      final String pathId,
-      final List<SymbolicConstraint> constraints) {
+  public SolverResult checkPath(final String pathId, final List<SymbolicConstraint> constraints) {
     Context ctx = new Context();
     Solver solver = ctx.mkSolver();
     Z3Translator translator = new Z3Translator(ctx);
