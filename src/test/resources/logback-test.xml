@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
-    <Loggers>
-        <Logger name="sootup" level="warn" additivity="false"/>
-        <Logger name="org.sootup" level="warn" additivity="false"/>
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
 
-        <Root level="error">
-            <AppenderRef ref="Console"/>
-        </Root>
-    </Loggers>
+    <!-- Suppress noisy SootUp logs -->
+    <logger name="sootup" level="WARN" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
 
-    <Appenders>
-        <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%msg%n"/>
-        </Console>
-    </Appenders>
-</Configuration>
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

@@ -2,6 +2,7 @@ package br.unb.cic.witup.solver;
 
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
 
+import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.model.ArrayValue;
 import br.unb.cic.witup.solver.model.ModelValue;
@@ -14,15 +15,59 @@ import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class ThrowConditionSolver {
+/**
+ * Translates SymbolicConstraints into Z3, evaluates and returns a model if the constraints are
+ * satisfiable.
+ */
+public final class SymbolicConstraintSolver {
 
   public static final String FIELD_FUNC_PREFIX = "field_";
+  private List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>> symbolicConstraintPaths;
+  private Map<String, MethodSummary> methodSummaries = new HashMap<>();
 
-  public SolverResult check(final String pathId, final List<SymbolicConstraint> constraints) {
+  public List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>>
+      symbolicConstraintPaths() {
+    return symbolicConstraintPaths;
+  }
+
+  public SymbolicConstraintSolver(
+      final List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>>
+          symbolicConstraintPaths) {
+    this.symbolicConstraintPaths = symbolicConstraintPaths;
+  }
+
+  // the method that receives method summaries needs to, for each set
+  // of symbolic constraints, translate them to z3, solve
+  // we produce MethodSolutions, that map method name to solutions
+  public SymbolicConstraintSolver(final Map<String, MethodSummary> methodSummaries) {
+    this.methodSummaries = methodSummaries;
+  }
+
+  public Map<String, List<SolverResult>> solveConstraints() {
+    Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
+
+    for (MethodSummary methodSummary : methodSummaries.values()) {
+      List<SolverResult> results = new ArrayList<>();
+      List<List<SymbolicConstraint>> constraintPaths = methodSummary.getSymbolicConstraintPaths();
+      for (int i = 0; i < constraintPaths.size(); i++) {
+        String pathId = methodSummary.getMethodSignature() + "#" + i;
+        SolverResult result = checkPath(pathId, constraintPaths.get(i));
+        results.add(result);
+      }
+      methodSolutions.put(methodSummary.getMethodSignature(), results);
+    }
+    return methodSolutions;
+  }
+
+  public SolverResult checkPath(
+      final String pathId,
+      final List<SymbolicConstraint> constraints) {
     Context ctx = new Context();
     Solver solver = ctx.mkSolver();
     Z3Translator translator = new Z3Translator(ctx);
@@ -110,4 +155,14 @@ public final class ThrowConditionSolver {
   private String toModelKey(final String name) {
     return name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
   }
+
+  //  public List<SolverResult> solveConstraints(final List<SymbolicConstraint> constraints) {
+  //    List<SolverResult> results = new ArrayList<>();
+  //    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+  //      String pathId = methodSignature + "#" + i;
+  //      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+  //      results.add(result);
+  //    }
+  //    return results;
+  //  }
 }
