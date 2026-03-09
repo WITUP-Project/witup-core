@@ -32,9 +32,9 @@ public class ArrayTest {
   @BeforeAll
   void setUp() {
     Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
-    witupGraphs = ProjectAnalyser.buildGraphsForClass(
-            new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Array").load()
-    );
+    witupGraphs =
+        ProjectAnalyser.buildGraphsForClass(
+            new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Array").load());
   }
 
   @Test

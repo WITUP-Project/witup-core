@@ -63,11 +63,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     graph.methodSignature = methodSignature;
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
-      // we are creating the same node multiple times here and it
-      // may hurt comparisons down the line.
-
-      WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(),
-              WITUpGraph::createNode);
+      WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(), WITUpGraph::createNode);
       WITUpNode target = cachedNodes.computeIfAbsent(edge.getDestination(), WITUpGraph::createNode);
 
       graph.addVertex(source);

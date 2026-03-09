@@ -24,6 +24,6 @@ public final class ClassAnalyser {
     JavaView view = new JavaView(inputLocation);
     JavaClassType classType = view.getIdentifierFactory().getClassType(className);
     return view.getClass(classType)
-            .orElseThrow(() -> new RuntimeException("Soot class not found: " + classType));
+        .orElseThrow(() -> new RuntimeException("Soot class not found: " + classType));
   }
 }

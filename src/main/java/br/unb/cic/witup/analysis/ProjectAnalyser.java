@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.core.inputlocation.AnalysisInputLocation;
 import sootup.core.jimple.common.stmt.JThrowStmt;
-
 import sootup.java.bytecode.frontend.inputlocation.JavaClassPathAnalysisInputLocation;
 import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootMethod;
@@ -18,7 +17,7 @@ import sootup.java.core.views.JavaView;
 public final class ProjectAnalyser {
   // assumes jar ia witup-core/project-jars
   private final Path jarPath;
-    private static final Logger log = LoggerFactory.getLogger("ProjectAnalyser");
+  private static final Logger log = LoggerFactory.getLogger("ProjectAnalyser");
 
   public ProjectAnalyser(final Path jarPath) {
     this.jarPath = jarPath;
@@ -48,17 +47,14 @@ public final class ProjectAnalyser {
 
   public static Map<String, WITUpGraph> buildGraphsForClass(final JavaSootClass sootClass) {
     return sootClass.getMethods().stream()
-            .filter(JavaSootMethod::hasBody)
-            .filter(ProjectAnalyser::methodHasThrow)
-            .collect(Collectors.toMap(
-                    m -> m.getSignature().toString(),
-                    CPGBuilder::buildForMethod
-            ));
+        .filter(JavaSootMethod::hasBody)
+        .filter(ProjectAnalyser::methodHasThrow)
+        .collect(Collectors.toMap(m -> m.getSignature().toString(), CPGBuilder::buildForMethod));
   }
 
   private static boolean methodHasThrow(final JavaSootMethod method) {
     return method.getBody().getStmtGraph().getNodes().stream()
-            .anyMatch(s -> s instanceof JThrowStmt);
+        .anyMatch(s -> s instanceof JThrowStmt);
   }
 
   public Map<String, MethodSummary> summariseAll(final Map<String, WITUpGraph> methodGraphs) {

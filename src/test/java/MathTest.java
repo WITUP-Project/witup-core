@@ -17,7 +17,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.jgrapht.GraphPath;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,9 +29,9 @@ public class MathTest {
   @BeforeAll
   void setUp() {
     Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
-    witupGraphs = ProjectAnalyser.buildGraphsForClass(
-            new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Math").load()
-    );
+    witupGraphs =
+        ProjectAnalyser.buildGraphsForClass(
+            new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Math").load());
   }
 
   @Test
