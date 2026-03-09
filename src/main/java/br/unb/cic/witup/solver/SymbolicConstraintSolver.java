@@ -3,6 +3,7 @@ package br.unb.cic.witup.solver;
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
 
 import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.model.ArrayValue;
 import br.unb.cic.witup.solver.model.ModelValue;
 import com.microsoft.z3.ArrayExpr;
@@ -46,7 +47,11 @@ public final class SymbolicConstraintSolver {
     this.methodSummaries = methodSummaries;
   }
 
-//  public void solveThrowConstraintSet() {
+//  public void solveZZZ() {
+//    List<String, MethodSolution>
+//    for (MethodSummary ms : methodSummaries.values()) {
+//
+//    }
 //    List<SolverResult> results = new ArrayList<>();
 //    for (MethodSummary methodSummary : methodSummaries.values()) {
 //      SolverResult result = checkPath(methodSummary.getSymbolicThrowConstraints());
@@ -68,12 +73,12 @@ public final class SymbolicConstraintSolver {
 
   public SolverResult checkPath(
       final String pathId,
-      final List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint> constraints) {
+      final List<SymbolicConstraint> constraints) {
     Context ctx = new Context();
     Solver solver = ctx.mkSolver();
     Z3Translator translator = new Z3Translator(ctx);
 
-    for (br.unb.cic.witup.analysis.symbolic.SymbolicConstraint c : constraints) {
+    for (SymbolicConstraint c : constraints) {
       solver.add(translator.translateConstraint(c));
     }
     Status status = solver.check();

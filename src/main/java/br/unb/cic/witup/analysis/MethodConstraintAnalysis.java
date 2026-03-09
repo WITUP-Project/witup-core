@@ -5,23 +5,23 @@ import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class MethodConstraintAnalysis {
   private final WITUpGraph cpg;
   private final Map<WITUpNode, List<List<SymbolicConstraint>>>
-      symbolicConstraintPaths = new HashMap<>();
+          symbolicThrowConstraints = new HashMap<>();
 
   public MethodConstraintAnalysis(final WITUpGraph cpg) {
     this.cpg = cpg;
   }
 
-  public List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>>
+  public List<List<SymbolicConstraint>>
       getSymbolicConstraintPaths(final WITUpNode throwNode) {
-    return symbolicConstraintPaths.computeIfAbsent(
+    return symbolicThrowConstraints.computeIfAbsent(
         throwNode,
         node -> {
           var constraintPaths = cpg.getConstraintPaths(node);
@@ -43,19 +43,11 @@ public final class MethodConstraintAnalysis {
   }
 
   public MethodSummary summarise(final MethodConstraintAnalysis analysis) {
-    String sig = analysis.getMethodSignature();
+    List<SymbolicConstraint> constraints = analysis.getThrowNodes().stream()
+            .flatMap(node -> analysis.getSymbolicConstraintPaths(node).stream())
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
 
-    List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
-    for (WITUpNode throwNode : analysis.getThrowNodes()) {
-      for (List<SymbolicConstraint> path
-              : analysis.getSymbolicConstraintPaths(throwNode)) {
-        for (SymbolicConstraint sc : path) {
-          symbolicConstraints.add(
-              new SymbolicConstraint(sc.getSymExpr(), sc.getTruthValue()));
-        }
-      }
-    }
-
-    return new MethodSummary(sig, symbolicConstraints);
+    return new MethodSummary(analysis.getMethodSignature(), constraints);
   }
 }
