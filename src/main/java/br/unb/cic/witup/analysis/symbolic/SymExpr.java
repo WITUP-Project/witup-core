@@ -1,6 +1,5 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.BinOp;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
@@ -61,7 +60,8 @@ public abstract class SymExpr {
 
   public abstract SymKind kind();
 
-  public static SymExpr fromValue(final Value value) {
+  // inspect each Jimple type and collect as much info as possible
+  public static SymExpr fromJimple(final Value value) {
     return switch (value) {
       case Local l when l.getType() instanceof ArrayType at ->
           new SymArray(l.toString(), symKindFromType(at.getElementType()), l.getType().toString());
@@ -83,7 +83,7 @@ public abstract class SymExpr {
       case JCastExpr e -> fromCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
       case JParameterRef r -> fromParamRef(r);
-      default -> new SymVar(value.toString(), symKindFromType(value.getType()));
+      default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }
 
@@ -109,27 +109,27 @@ public abstract class SymExpr {
 
   private static SymExpr fromFieldRef(final JInstanceFieldRef r) {
     // this.<ClassName: type fieldName>
-    SymExpr base = fromValue(r.getBase());
+    SymExpr base = fromJimple(r.getBase());
     String fieldName = r.getFieldSignature().getName();
     return new SymFieldAccess(base, fieldName, symKindFromType(r.getType()));
   }
 
   private static SymExpr fromAbstractCondExpr(final AbstractConditionExpr e) {
-    SymExpr left = fromValue(e.getOp1());
-    SymExpr right = fromValue(e.getOp2());
+    SymExpr left = fromJimple(e.getOp1());
+    SymExpr right = fromJimple(e.getOp2());
     BinOp op = jimpleOpToBinOp(e);
     return new SymBinOp(op, left, right);
   }
 
   private static SymExpr fromAbstractBinOpExpr(final AbstractBinopExpr e) {
-    SymExpr left = fromValue(e.getOp1());
-    SymExpr right = fromValue(e.getOp2());
+    SymExpr left = fromJimple(e.getOp1());
+    SymExpr right = fromJimple(e.getOp2());
     BinOp op = jimpleBinopToBinOp(e);
     return new SymBinOp(op, left, right);
   }
 
   private static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
-    SymExpr base = fromValue(e.getBase());
+    SymExpr base = fromJimple(e.getBase());
     String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
     boolean returnsBoolean =
         e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
@@ -138,13 +138,13 @@ public abstract class SymExpr {
   }
 
   private static SymExpr fromArrayRef(final JArrayRef r) {
-    SymArray base = (SymArray) fromValue(r.getBase());
-    SymExpr indexExpr = fromValue(r.getIndex());
+    SymArray base = (SymArray) fromJimple(r.getBase());
+    SymExpr indexExpr = fromJimple(r.getIndex());
     return new SymArrayRef(base, indexExpr);
   }
 
   private static SymExpr fromLength(final JLengthExpr r) {
-    SymExpr op = fromValue(r.getOp());
+    SymExpr op = fromJimple(r.getOp());
     return new SymLength(op);
   }
 
@@ -154,13 +154,13 @@ public abstract class SymExpr {
   }
 
   private static SymExpr fromCast(final JCastExpr r) {
-    SymExpr op = fromValue(r.getOp());
+    SymExpr op = fromJimple(r.getOp());
     String type = r.getType().toString();
     return new SymCast(op, type);
   }
 
   private static SymExpr fromInstanceOf(final JInstanceOfExpr r) {
-    SymExpr op = fromValue(r.getOp());
+    SymExpr op = fromJimple(r.getOp());
     String type = r.getCheckType().toString();
     return new SymInstanceOf(op, type);
   }

@@ -12,9 +12,11 @@ import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jgrapht.GraphPath;
@@ -50,27 +52,20 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   /**
-   * Creates a WITUpGraph from <a
-   * href="https://soot-oss.github.io/SootUp/v2.0.0/codepropertygraphs/">SootUp's</a> PropertyGraph
-   * type.
+   * Creates a WITUpGraph from PropertyGraph from SootUp
    *
    * @param pg the PropertyGraph to convert
    * @return the converted WITUpGraph
    */
-  /*
-  This couples WITUpGraph with SootUp. If we are ever going to process multiple languages, then
-  we are going to need to decide whether to couple the Java frontend to SootUp or to add a
-  serialisation layer before creating the WITUpGraph
-   */
   public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final String methodSignature) {
     WITUpGraph graph = new WITUpGraph();
+    Map<PropertyGraphNode, WITUpNode> cachedNodes = new HashMap<>();
     graph.methodSignature = methodSignature;
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
-      // we are creating the same node multiple times here and it
-      // may hurt comparisons down the line.
-      WITUpNode source = createNode(edge.getSource());
-      WITUpNode target = createNode(edge.getDestination());
+      WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(), WITUpGraph::createNode);
+      WITUpNode target = cachedNodes.computeIfAbsent(edge.getDestination(), WITUpGraph::createNode);
+
       graph.addVertex(source);
       graph.addVertex(target);
 

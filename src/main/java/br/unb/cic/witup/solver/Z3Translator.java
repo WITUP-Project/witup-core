@@ -1,6 +1,6 @@
 package br.unb.cic.witup.solver;
 
-import br.unb.cic.witup.analysis.BinOp;
+import br.unb.cic.witup.analysis.symbolic.BinOp;
 import br.unb.cic.witup.analysis.symbolic.SymArray;
 import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.SymBinOp;

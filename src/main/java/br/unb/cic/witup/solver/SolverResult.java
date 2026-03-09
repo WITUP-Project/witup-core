@@ -18,6 +18,18 @@ public record SolverResult(
     Context context,
     Model model) {
 
+  public Status getStatus() {
+    return status;
+  }
+
+  public String getPathId() {
+    return pathId;
+  }
+
+  public Map<String, ModelValue> getModelValueMap() {
+    return modelValueMap;
+  }
+
   public boolean isSat() {
     return status == Status.SATISFIABLE;
   }
