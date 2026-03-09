@@ -9,9 +9,9 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
-import br.unb.cic.witup.analysis.summary.MethodSummary;
-import br.unb.cic.witup.analysis.summary.SummaryCache;
-import br.unb.cic.witup.analysis.summary.SummaryGenerator;
+import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.SummaryCache;
+import br.unb.cic.witup.analysis.SummaryGenerator;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.SolverResult;
@@ -74,7 +74,7 @@ public class IntTest {
     int b = solution.getInt("b");
     assertTrue(a + b > 256, "Expected a + b > 256");
 
-    SummaryGenerator sumGen = new SummaryGenerator(new SummaryCache());
+    SummaryGenerator sumGen = new SummaryGenerator();
     MethodSummary summary = sumGen.summarise(analysis);
 
     assertEquals(methodSignature, summary.getMethodSignature());

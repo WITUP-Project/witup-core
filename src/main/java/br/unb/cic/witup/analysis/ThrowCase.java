@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis.summary;
+package br.unb.cic.witup.analysis;
 
 import br.unb.cic.witup.analysis.symbolic.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.SymParam;

@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis.summary;
+package br.unb.cic.witup.analysis;
 
 import java.util.List;
 

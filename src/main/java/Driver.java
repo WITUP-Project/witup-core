@@ -1,6 +1,13 @@
 import br.unb.cic.witup.ProjectAnalyser;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+
+import br.unb.cic.witup.analysis.MethodAnalysis;
+import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.SummaryGenerator;
+import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +32,16 @@ public final class Driver {
     log.info("Starting analysis for {}", jarPath);
 
     ProjectAnalyser analyser = new ProjectAnalyser(jarPath);
-    analyser.analyseProject();
+    Map<String, WITUpGraph> methodGraphs = analyser.analyseProject();
+    Map<String, MethodSummary> methodSummaries = new HashMap<>();
+    for  (Map.Entry<String, WITUpGraph> methodGraph : methodGraphs.entrySet()) {
+      MethodAnalysis analysis = new MethodAnalysis(methodGraph.getValue());
+      SummaryGenerator summaryGenerator = new SummaryGenerator();
+      MethodSummary summary = summaryGenerator.summarise(analysis);
+      methodSummaries.put(methodGraph.getKey(), summary);
+    }
+
+    System.out.println(methodSummaries);
 
     log.info("Analysis completed");
   }

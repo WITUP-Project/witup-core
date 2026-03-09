@@ -1,6 +1,5 @@
-package br.unb.cic.witup.analysis.summary;
+package br.unb.cic.witup.analysis;
 
-import br.unb.cic.witup.analysis.MethodAnalysis;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
@@ -8,23 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class SummaryGenerator {
-  private final SummaryCache cache;
-
-  public SummaryGenerator(final SummaryCache cache) {
-    this.cache = cache;
-  }
+  public SummaryGenerator() {};
 
   public MethodSummary summarise(final MethodAnalysis analysis) {
     String sig = analysis.getMethodSignature();
-
-    if (cache.get(sig).isPresent()) {
-      return cache.get(sig).get();
-    }
-    if (cache.isInProgress(sig)) {
-      return conservativeSummary(sig);
-    }
-
-    cache.markInProgress(sig);
 
     List<ThrowCase> throwCases = new ArrayList<>();
     for (WITUpNode throwNode : analysis.getThrowNodes()) {
@@ -35,9 +21,7 @@ public final class SummaryGenerator {
       }
     }
 
-    MethodSummary summary = new MethodSummary(sig, throwCases);
-    cache.put(sig, summary);
-    return summary;
+    return new MethodSummary(sig, throwCases);
   }
 
   private MethodSummary conservativeSummary(final String sig) {

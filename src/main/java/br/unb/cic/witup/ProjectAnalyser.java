@@ -31,7 +31,7 @@ public final class ProjectAnalyser {
     this.jarPath = jarPath;
   }
 
-  public void analyseProject() {
+  public Map<String, WITUpGraph> analyseProject() {
     AnalysisInputLocation inputLocation =
         new JavaClassPathAnalysisInputLocation(jarPath.toAbsolutePath().toString());
     JavaView view = new JavaView(inputLocation);
@@ -39,12 +39,14 @@ public final class ProjectAnalyser {
     log.info("Found {} classes", classes.size());
     log.info(classes.toString());
 
-    Map<String, Map<String, WITUpGraph>> classGraphs = analyseClasses(classes);
-    log.info(classGraphs.toString());
+    return analyseClasses(classes);
   }
 
-  private Map<String, Map<String, WITUpGraph>> analyseClasses(final List<JavaSootClass> classes) {
-    return classes.stream().collect(Collectors.toMap(JavaSootClass::getName, this::analyseClass));
+  private Map<String, WITUpGraph> analyseClasses(final List<JavaSootClass> classes) {
+    return classes.stream()
+            .map(this::analyseClass)
+            .flatMap(m -> m.entrySet().stream())
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public Map<String, WITUpGraph> analyseClass(final JavaSootClass sootClass) {
