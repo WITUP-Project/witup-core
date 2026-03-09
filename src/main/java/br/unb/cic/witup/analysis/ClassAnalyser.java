@@ -1,14 +1,8 @@
 package br.unb.cic.witup.analysis;
 
-import sootup.codepropertygraph.cdg.CdgCreator;
-import sootup.codepropertygraph.cfg.CfgCreator;
-import sootup.codepropertygraph.ddg.DdgCreator;
-import sootup.codepropertygraph.propertygraph.PropertyGraph;
-import sootup.codepropertygraph.propertygraph.util.PropertyGraphsMerger;
 import sootup.core.inputlocation.AnalysisInputLocation;
 import sootup.java.bytecode.frontend.inputlocation.JavaClassPathAnalysisInputLocation;
 import sootup.java.core.JavaSootClass;
-import sootup.java.core.JavaSootMethod;
 import sootup.java.core.types.JavaClassType;
 import sootup.java.core.views.JavaView;
 
@@ -25,30 +19,11 @@ public final class ClassAnalyser {
     this.className = className;
   }
 
-  public JavaSootClass getSootClass() {
+  public JavaSootClass load() {
     AnalysisInputLocation inputLocation = new JavaClassPathAnalysisInputLocation(location);
     JavaView view = new JavaView(inputLocation);
     JavaClassType classType = view.getIdentifierFactory().getClassType(className);
-
-    JavaSootClass sootClass =
-        view.getClass(classType)
+    return view.getClass(classType)
             .orElseThrow(() -> new RuntimeException("Soot class not found: " + classType));
-
-    return sootClass;
-  }
-
-  public PropertyGraph buildCPG(final JavaSootMethod m) {
-    CfgCreator cfgCreator = new CfgCreator();
-    CdgCreator cdgCreator = new CdgCreator();
-    DdgCreator ddgCreator = new DdgCreator();
-
-    PropertyGraph cfg = cfgCreator.createGraph(m);
-    PropertyGraph cdg = cdgCreator.createGraph(m);
-    PropertyGraph ddg = ddgCreator.createGraph(m);
-
-    PropertyGraph cpg = cfg;
-    cpg = PropertyGraphsMerger.mergeGraphs(cpg, cdg);
-    cpg = PropertyGraphsMerger.mergeGraphs(cpg, ddg);
-    return cpg;
   }
 }

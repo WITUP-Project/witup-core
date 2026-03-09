@@ -2,9 +2,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import br.unb.cic.witup.analysis.ClassAnalyser;
 import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
 import br.unb.cic.witup.analysis.MethodSummary;
-import br.unb.cic.witup.analysis.graph.WITUpAnalyser;
+import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
@@ -16,8 +17,9 @@ import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.jgrapht.GraphPath;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,15 +27,14 @@ import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IntTest {
-  HashMap<String, WITUpGraph> witupGraphs;
+  Map<String, WITUpGraph> witupGraphs;
 
   @BeforeAll
   void setUp() {
-    Path projectRoot = Paths.get(System.getProperty("user.dir"));
-    Path testClassesDir = projectRoot.resolve("target/test-classes");
-    WITUpAnalyser witUpAnalyser =
-        new WITUpAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Int");
-    witupGraphs = witUpAnalyser.buildWitUpGraphs();
+    Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
+    witupGraphs = ProjectAnalyser.buildGraphsForClass(
+            new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Int").load()
+    );
   }
 
   @Test
