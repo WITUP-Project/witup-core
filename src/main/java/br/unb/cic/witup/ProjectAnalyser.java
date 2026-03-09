@@ -44,15 +44,15 @@ public final class ProjectAnalyser {
 
   private Map<String, WITUpGraph> analyseClasses(final List<JavaSootClass> classes) {
     return classes.stream()
-            .map(this::analyseClass)
-            .flatMap(m -> m.entrySet().stream())
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        .map(this::analyseClass)
+        .flatMap(m -> m.entrySet().stream())
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public Map<String, WITUpGraph> analyseClass(final JavaSootClass sootClass) {
     return sootClass.getMethods().stream()
         .filter(JavaSootMethod::hasBody)
-        .filter(this::methodHasThrow)// filter only throwing methods here
+        .filter(this::methodHasThrow) // filter only throwing methods here
         .collect(
             Collectors.toMap(
                 method -> method.getSignature().toString(), this::analyseThrowingMethod));

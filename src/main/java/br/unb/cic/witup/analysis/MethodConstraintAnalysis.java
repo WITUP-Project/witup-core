@@ -12,14 +12,15 @@ import java.util.Map;
 
 public final class MethodConstraintAnalysis {
   private final WITUpGraph cpg;
-  private final Map<WITUpNode, List<List<SymbolicConstraint>>> symbolicConstraintPaths =
-      new HashMap<>();
+  private final Map<WITUpNode, List<List<SymbolicConstraint>>>
+      symbolicConstraintPaths = new HashMap<>();
 
   public MethodConstraintAnalysis(final WITUpGraph cpg) {
     this.cpg = cpg;
   }
 
-  public List<List<SymbolicConstraint>> getSymbolicConstraintPaths(final WITUpNode throwNode) {
+  public List<List<br.unb.cic.witup.analysis.symbolic.SymbolicConstraint>>
+      getSymbolicConstraintPaths(final WITUpNode throwNode) {
     return symbolicConstraintPaths.computeIfAbsent(
         throwNode,
         node -> {
@@ -44,15 +45,17 @@ public final class MethodConstraintAnalysis {
   public MethodSummary summarise(final MethodConstraintAnalysis analysis) {
     String sig = analysis.getMethodSignature();
 
-    List<ThrowCase> throwCases = new ArrayList<>();
+    List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
     for (WITUpNode throwNode : analysis.getThrowNodes()) {
-      for (List<SymbolicConstraint> path : analysis.getSymbolicConstraintPaths(throwNode)) {
+      for (List<SymbolicConstraint> path
+              : analysis.getSymbolicConstraintPaths(throwNode)) {
         for (SymbolicConstraint sc : path) {
-          throwCases.add(new ThrowCase(sc.getSymExpr(), null, sc.getTruthValue()));
+          symbolicConstraints.add(
+              new SymbolicConstraint(sc.getSymExpr(), sc.getTruthValue()));
         }
       }
     }
 
-    return new MethodSummary(sig, throwCases);
+    return new MethodSummary(sig, symbolicConstraints);
   }
 }

@@ -59,7 +59,7 @@ public class TextTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -87,7 +87,7 @@ public class TextTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -115,7 +115,7 @@ public class TextTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -143,7 +143,7 @@ public class TextTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 

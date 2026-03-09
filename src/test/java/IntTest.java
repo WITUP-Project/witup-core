@@ -1,15 +1,14 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
+import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.graph.WITUpAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
-import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.SolverResult;
@@ -61,7 +60,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
     SolverResult solution = results.getFirst();
@@ -71,12 +70,10 @@ public class IntTest {
     int b = solution.getInt("b");
     assertTrue(a + b > 256, "Expected a + b > 256");
 
-
     MethodSummary summary = analysis.summarise(analysis);
 
     assertEquals(methodSignature, summary.getMethodSignature());
-    assertEquals(1, summary.getThrowCases().size());
-
+    assertEquals(1, summary.getSymbolicConstraints().size());
   }
 
   @Test
@@ -104,7 +101,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -137,7 +134,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -170,7 +167,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -203,7 +200,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -236,7 +233,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -270,7 +267,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
@@ -310,7 +307,7 @@ public class IntTest {
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
 
