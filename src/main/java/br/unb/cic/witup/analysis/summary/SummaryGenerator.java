@@ -4,7 +4,6 @@ import br.unb.cic.witup.analysis.MethodAnalysis;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.graph.node.WITUpNode;
-
 import java.util.ArrayList;
 import java.util.List;
 

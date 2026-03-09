@@ -57,7 +57,7 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths =
-            analysis.getSymbolicConstraintPaths(throwNodes.get(0));
+        analysis.getSymbolicConstraintPaths(throwNodes.get(0));
 
     ThrowConditionSolver solver = new ThrowConditionSolver();
 

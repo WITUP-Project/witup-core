@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-
 public final class SummaryCache {
   private final Map<String, MethodSummary> cache = new HashMap<>();
   private final Set<String> inProgress = new HashSet<>();

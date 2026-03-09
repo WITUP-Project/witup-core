@@ -14,6 +14,7 @@ public final class MethodSummary {
   public String getMethodSignature() {
     return methodSignature;
   }
+
   public List<ThrowCase> getThrowCases() {
     return throwCases;
   }
