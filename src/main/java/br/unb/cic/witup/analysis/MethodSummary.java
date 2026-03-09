@@ -6,19 +6,19 @@ import java.util.List;
 
 public final class MethodSummary {
   private final String methodSignature;
-  private final List<SymbolicConstraint> symbolicConstraints;
+  private final List<List<SymbolicConstraint>> symbolicConstraintPaths;
 
   public MethodSummary(
-      final String methodSignature, final List<SymbolicConstraint> symbolicConstraints) {
+      final String methodSignature, final List<List<SymbolicConstraint>> symbolicConstraints) {
     this.methodSignature = methodSignature;
-    this.symbolicConstraints = List.copyOf(symbolicConstraints);
+    this.symbolicConstraintPaths = symbolicConstraints;
   }
 
   public String getMethodSignature() {
     return methodSignature;
   }
 
-  public List<SymbolicConstraint> getSymbolicConstraints() {
-    return symbolicConstraints;
+  public List<List<SymbolicConstraint>> getSymbolicConstraintPaths() {
+    return symbolicConstraintPaths;
   }
 }

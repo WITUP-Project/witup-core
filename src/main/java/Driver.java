@@ -2,10 +2,12 @@ import br.unb.cic.witup.ProjectAnalyser;
 import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +37,14 @@ public final class Driver {
     Map<String, MethodSummary> methodSummaries = new HashMap<>();
     for (Map.Entry<String, WITUpGraph> methodGraph : methodGraphs.entrySet()) {
       MethodConstraintAnalysis analysis = new MethodConstraintAnalysis(methodGraph.getValue());
-      MethodSummary summary = analysis.summarise(analysis);
+      MethodSummary summary = analysis.summarise();
       methodSummaries.put(methodGraph.getKey(), summary);
     }
-
-    System.out.println(methodSummaries);
     // soot land stops here. From now on only SymbolicConstraints feed into the
     // solver
     SymbolicConstraintSolver s = new SymbolicConstraintSolver(methodSummaries);
+    Map<String, List<SolverResult>> methodSolutions = s.solveConstraints();
+    System.out.println(methodSolutions);
 
     log.info("Analysis completed");
   }

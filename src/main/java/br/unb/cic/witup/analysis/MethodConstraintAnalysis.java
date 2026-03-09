@@ -42,12 +42,11 @@ public final class MethodConstraintAnalysis {
     return cpg;
   }
 
-  public MethodSummary summarise(final MethodConstraintAnalysis analysis) {
-    List<SymbolicConstraint> constraints = analysis.getThrowNodes().stream()
-            .flatMap(node -> analysis.getSymbolicConstraintPaths(node).stream())
-            .flatMap(List::stream)
+  public MethodSummary summarise() {
+    List<List<SymbolicConstraint>> paths = getThrowNodes().stream()
+            .flatMap(node -> getSymbolicConstraintPaths(node).stream())
             .collect(Collectors.toList());
 
-    return new MethodSummary(analysis.getMethodSignature(), constraints);
+    return new MethodSummary(getMethodSignature(), paths);
   }
 }

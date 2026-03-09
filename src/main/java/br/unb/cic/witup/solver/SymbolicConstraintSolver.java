@@ -15,6 +15,8 @@ import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,29 +49,22 @@ public final class SymbolicConstraintSolver {
     this.methodSummaries = methodSummaries;
   }
 
-//  public void solveZZZ() {
-//    List<String, MethodSolution>
-//    for (MethodSummary ms : methodSummaries.values()) {
-//
-//    }
-//    List<SolverResult> results = new ArrayList<>();
-//    for (MethodSummary methodSummary : methodSummaries.values()) {
-//      SolverResult result = checkPath(methodSummary.getSymbolicThrowConstraints());
-//      results.add(result);
-//    }
-//    System.out.println(results);
-//  }
+  public Map<String, List<SolverResult>> solveConstraints() {
+    Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
 
-//  private SolverResult checkPath(final List<SymbolicConstraint> symbolicConstraints) {
-//    return;
-//  }
-
-  //  List<SolverResult> results = new ArrayList<>();
-  //    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
-  //    String pathId = methodSignature + "#" + i;
-  //    SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
-  //    results.add(result);
-  //  }
+    // here I want to have SymbolicConstraint and Solution side by side
+    for (MethodSummary methodSummary : methodSummaries.values()) {
+      List<SolverResult> results = new ArrayList<>();
+      List<List<SymbolicConstraint>> constraintPaths = methodSummary.getSymbolicConstraintPaths();
+      for (int i = 0; i < constraintPaths.size(); i++) {
+        String pathId = methodSummary.getMethodSignature() + "#" + i;
+        SolverResult result = checkPath(pathId, constraintPaths.get(i));
+        results.add(result);
+      }
+      methodSolutions.put(methodSummary.getMethodSignature(), results);
+    }
+    return methodSolutions;
+  }
 
   public SolverResult checkPath(
       final String pathId,

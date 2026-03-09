@@ -70,10 +70,10 @@ public class IntTest {
     int b = solution.getInt("b");
     assertTrue(a + b > 256, "Expected a + b > 256");
 
-    MethodSummary summary = analysis.summarise(analysis);
+    MethodSummary summary = analysis.summarise();
 
     assertEquals(methodSignature, summary.getMethodSignature());
-    assertEquals(1, summary.getSymbolicConstraints().size());
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
   }
 
   @Test
