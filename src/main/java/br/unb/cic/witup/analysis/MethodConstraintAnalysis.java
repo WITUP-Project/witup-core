@@ -17,6 +17,16 @@ public final class MethodConstraintAnalysis {
   private final Map<WITUpNode, List<List<SymbolicConstraint>>> symbolicThrowConstraints =
       new HashMap<>();
 
+  public static Map<String, MethodSummary> summariseAll(
+      final Map<String, WITUpGraph> methodGraphs) {
+    return methodGraphs.entrySet().stream()
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                entry ->
+                    new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths()));
+  }
+
   public MethodConstraintAnalysis(final WITUpGraph cpg) {
     this.cpg = cpg;
   }
@@ -46,15 +56,5 @@ public final class MethodConstraintAnalysis {
             .collect(Collectors.toList());
 
     return new MethodSummary(getMethodSignature(), paths);
-  }
-
-  public static Map<String, MethodSummary> summariseAll(
-      final Map<String, WITUpGraph> methodGraphs) {
-    return methodGraphs.entrySet().stream()
-        .collect(
-            Collectors.toMap(
-                Map.Entry::getKey,
-                entry ->
-                    new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths()));
   }
 }

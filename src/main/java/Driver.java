@@ -1,6 +1,5 @@
-import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
 import br.unb.cic.witup.analysis.MethodSummary;
-import br.unb.cic.witup.analysis.graph.ProjectAnalyser;
+import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
@@ -33,9 +32,7 @@ public final class Driver {
 
     ProjectAnalyser analyser = new ProjectAnalyser(jarPath);
     Map<String, WITUpGraph> methodGraphs = analyser.analyseProject();
-    // with all the CPGs, we can now build summaries for each
-    Map<String, MethodSummary> methodSummaries =
-        MethodConstraintAnalysis.summariseAll(methodGraphs);
+    Map<String, MethodSummary> methodSummaries = analyser.summariseAll(methodGraphs);
     // soot land stops here. From now on only SymbolicConstraints feed into the
     // solver
     SymbolicConstraintSolver s = new SymbolicConstraintSolver(methodSummaries);

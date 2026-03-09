@@ -29,8 +29,7 @@ public final class SymbolicConstraintSolver {
   public static final String FIELD_FUNC_PREFIX = "field_";
   private Map<String, MethodSummary> methodSummaries = new HashMap<>();
 
-  public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {
-  }
+  public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {}
 
   // the method that receives method summaries needs to, for each set
   // of symbolic constraints, translate them to z3, solve

@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis.graph;
 
 import java.util.HashMap;
 import java.util.Set;
+
+import br.unb.cic.witup.analysis.ClassAnalyser;
 import sootup.core.graph.StmtGraph;
 import sootup.core.jimple.common.stmt.JThrowStmt;
 import sootup.core.jimple.common.stmt.Stmt;

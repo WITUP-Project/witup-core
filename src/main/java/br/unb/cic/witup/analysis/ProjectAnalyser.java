@@ -1,9 +1,11 @@
-package br.unb.cic.witup.analysis.graph;
+package br.unb.cic.witup.analysis;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.cdg.CdgCreator;
@@ -87,5 +89,14 @@ public final class ProjectAnalyser {
     cpg = PropertyGraphsMerger.mergeGraphs(cpg, cdg);
     cpg = PropertyGraphsMerger.mergeGraphs(cpg, ddg);
     return cpg;
+  }
+
+  public Map<String, MethodSummary> summariseAll(final Map<String, WITUpGraph> methodGraphs) {
+    return methodGraphs.entrySet().stream()
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                entry ->
+                    new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths()));
   }
 }

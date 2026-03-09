@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis.graph;
+package br.unb.cic.witup.analysis;
 
 import sootup.codepropertygraph.cdg.CdgCreator;
 import sootup.codepropertygraph.cfg.CfgCreator;
