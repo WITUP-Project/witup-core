@@ -83,7 +83,7 @@ public abstract class SymExpr {
       case JCastExpr e -> fromCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
       case JParameterRef r -> fromParamRef(r);
-      default -> new SymVar(value.toString(), symKindFromType(value.getType()));
+      default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }
 
