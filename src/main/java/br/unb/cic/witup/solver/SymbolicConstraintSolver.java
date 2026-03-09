@@ -18,9 +18,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class ThrowConditionSolver {
+/**
+ * Translates SymbolicConstraints into Z3, evaluates and returns
+ * a model if the constraints are satisfiable.
+ */
+public final class SymbolicConstraintSolver {
 
   public static final String FIELD_FUNC_PREFIX = "field_";
+  private final List<List<SymbolicConstraint>> symbolicConstraintPaths;
+
+  public List<List<SymbolicConstraint>> symbolicConstraintPaths() {
+    return symbolicConstraintPaths;
+  }
+
+  public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {
+    this.symbolicConstraintPaths = symbolicConstraintPaths;
+  }
 
   public SolverResult check(final String pathId, final List<SymbolicConstraint> constraints) {
     Context ctx = new Context();

@@ -13,7 +13,7 @@ import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.SolverResult;
-import br.unb.cic.witup.solver.ThrowConditionSolver;
+import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -57,16 +57,15 @@ public class IntTest {
     List<List<SymbolicConstraint>> symbolicConstraintPaths =
         analysis.getSymbolicConstraintPaths(throwNodes.get(0));
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
-
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
       SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
       results.add(result);
     }
-
     SolverResult solution = results.getFirst();
+
     assertTrue(solution.isSat());
     int a = solution.getInt("a");
     int b = solution.getInt("b");
@@ -100,7 +99,7 @@ public class IntTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
 
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
@@ -133,7 +132,7 @@ public class IntTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
 
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
@@ -166,7 +165,7 @@ public class IntTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
 
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
@@ -199,7 +198,7 @@ public class IntTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
 
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
@@ -232,7 +231,7 @@ public class IntTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
 
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
@@ -266,7 +265,7 @@ public class IntTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
 
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
@@ -306,7 +305,7 @@ public class IntTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
 
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {

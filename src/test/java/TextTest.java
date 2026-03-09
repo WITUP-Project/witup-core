@@ -7,7 +7,7 @@ import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.SolverResult;
-import br.unb.cic.witup.solver.ThrowConditionSolver;
+import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import br.unb.cic.witup.solver.model.BoolValue;
 import br.unb.cic.witup.solver.model.IntValue;
 import br.unb.cic.witup.solver.model.StringValue;
@@ -55,7 +55,7 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
@@ -83,7 +83,7 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
@@ -111,7 +111,7 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
@@ -139,7 +139,7 @@ public class TextTest {
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
-    ThrowConditionSolver solver = new ThrowConditionSolver();
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
     for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
       String pathId = methodSignature + "#" + i;
