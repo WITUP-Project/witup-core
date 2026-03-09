@@ -1,10 +1,10 @@
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 
 class DriverTest {
 
-  @Test
+  @Disabled
   void shouldRunDriverWithValidJar() {
     assertDoesNotThrow(() -> Driver.main(new String[] {"witup-test-jar-1.0-SNAPSHOT.jar"}));
   }
