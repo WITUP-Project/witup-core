@@ -12,9 +12,11 @@ import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jgrapht.GraphPath;
@@ -57,13 +59,17 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
    */
   public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final String methodSignature) {
     WITUpGraph graph = new WITUpGraph();
+    Map<PropertyGraphNode, WITUpNode> cachedNodes = new HashMap<>();
     graph.methodSignature = methodSignature;
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
       // we are creating the same node multiple times here and it
       // may hurt comparisons down the line.
-      WITUpNode source = createNode(edge.getSource());
-      WITUpNode target = createNode(edge.getDestination());
+
+      WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(),
+              WITUpGraph::createNode);
+      WITUpNode target = cachedNodes.computeIfAbsent(edge.getDestination(), WITUpGraph::createNode);
+
       graph.addVertex(source);
       graph.addVertex(target);
 

@@ -6,17 +6,19 @@ import sootup.core.jimple.basic.Immediate;
 /** A node representing a throw statement. */
 public class ThrowStatementNode extends WITUpNode {
 
-  private final Immediate throwExpr;
+  private final Immediate local;
 
   /**
    * Constructor for ThrowStatementNode.
    *
    * @param node the property graph node
-   * @param throwExpr the throw expression
+   * @param local the throw expression
    */
-  public ThrowStatementNode(final PropertyGraphNode node, final Immediate throwExpr) {
+  public ThrowStatementNode(final PropertyGraphNode node, final Immediate local) {
     super(node);
-    this.throwExpr = throwExpr;
+    // this will generate something like #l1 = (java.lang.Throwable) $stack5,
+    // so we can trace back to the type
+    this.local = local;
   }
 
   /**
@@ -24,7 +26,7 @@ public class ThrowStatementNode extends WITUpNode {
    *
    * @return the throw expression
    */
-  public Immediate getThrowExpr() {
-    return throwExpr;
+  public Immediate getLocal() {
+    return local;
   }
 }
