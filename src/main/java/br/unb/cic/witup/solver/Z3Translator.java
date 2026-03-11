@@ -10,7 +10,6 @@ import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
-import br.unb.cic.witup.analysis.symbolic.SymNewArray;
 import br.unb.cic.witup.analysis.symbolic.SymParam;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
@@ -188,12 +187,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return exprMap.computeIfAbsent(
         inv.toString(),
         k -> inv.kind() == SymKind.BOOLEAN_METHOD ? context.mkBoolConst(k) : context.mkIntConst(k));
-  }
-
-  @Override
-  public Expr<?> visitNewArray(final SymNewArray r) {
-    String key = r.toString();
-    return exprMap.computeIfAbsent(key, context::mkIntConst);
   }
 
   @Override
