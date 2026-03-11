@@ -4,21 +4,16 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymArray extends SymExpr {
   private final String name;
-  private final SymKind elemKind;
   private final String objectType;
 
   public SymArray(final String name, final SymKind elemKind, final String objectType) {
+    super(elemKind);
     this.name = name;
-    this.elemKind = elemKind;
     this.objectType = objectType;
   }
 
   public String getName() {
     return name;
-  }
-
-  public SymKind getElementKind() {
-    return elemKind;
   }
 
   public String getObjectType() {
@@ -43,10 +38,5 @@ public final class SymArray extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return name.equals(varName);
-  }
-
-  @Override
-  public SymKind kind() {
-    return elemKind;
   }
 }

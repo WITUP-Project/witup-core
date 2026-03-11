@@ -27,7 +27,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitBinOp(final SymBinOp b) {
-    return b.getLeft().accept(this);
+    return b.getLhs().accept(this);
   }
 
   @Override
@@ -52,7 +52,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitVar(final SymVar v) {
-    return switch (v.kind()) {
+    return switch (v.getKind()) {
       case BOOLEAN, BOOLEAN_METHOD -> context.getBoolSort();
       case STRING -> context.getStringSort();
       default -> context.getIntSort();
@@ -61,14 +61,14 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitVirtualInvoke(final SymVirtualInvoke v) {
-    return v.kind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
+    return v.getKind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
   }
 
-//  @Override
-//  public Sort visitNewArray(final SymNewArray r) {
-//    // only int
-//    return context.mkArraySort(context.getIntSort(), context.getIntSort());
-//  }
+  //  @Override
+  //  public Sort visitNewArray(final SymNewArray r) {
+  //    // only int
+  //    return context.mkArraySort(context.getIntSort(), context.getIntSort());
+  //  }
 
   @Override
   public Sort visitArray(final SymArray symArray) {
@@ -76,12 +76,12 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
         "visitArray: "
             + symArray.getName()
             + " elementKind="
-            + symArray.getElementKind()
+            + symArray.getKind()
             + " typeStr="
             + symArray.getObjectType());
     // Declare array sort based on element type
     Sort elemSort =
-        switch (symArray.getElementKind()) {
+        switch (symArray.getKind()) {
           case INT -> context.getIntSort();
           case STRING -> context.getStringSort();
           case REAL -> context.getRealSort();
@@ -122,7 +122,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitParamRef(final SymParam r) {
-    return switch (r.kind()) {
+    return switch (r.getKind()) {
       case BOOLEAN, BOOLEAN_METHOD -> context.getBoolSort();
       case STRING -> context.getStringSort();
       default -> context.getIntSort();

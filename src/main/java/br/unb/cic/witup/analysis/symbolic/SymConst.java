@@ -3,12 +3,13 @@ package br.unb.cic.witup.analysis.symbolic;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymConst extends SymExpr {
-  public static final SymConst TRUE = new SymConst(1);
-  public static final SymConst FALSE = new SymConst(0);
+  public static final SymConst TRUE = new SymConst(1, SymKind.BOOLEAN);
+  public static final SymConst FALSE = new SymConst(0, SymKind.BOOLEAN);
 
   private final Object value;
 
-  public SymConst(final Object value) {
+  public SymConst(final Object value, final SymKind kind) {
+    super(kind);
     this.value = value;
   }
 
@@ -52,10 +53,5 @@ public final class SymConst extends SymExpr {
   @Override
   public int hashCode() {
     return value.hashCode();
-  }
-
-  @Override
-  public SymKind kind() {
-    return SymKind.OTHER;
   }
 }

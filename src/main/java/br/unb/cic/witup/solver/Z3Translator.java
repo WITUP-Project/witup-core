@@ -67,8 +67,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitBinOp(final SymBinOp b) {
-    Expr<?> left = b.getLeft().accept(this);
-    Expr<?> right = b.getRight().accept(this);
+    Expr<?> left = b.getLhs().accept(this);
+    Expr<?> right = b.getRhs().accept(this);
 
     if (b.getOp() == BinOp.EQ || b.getOp() == BinOp.NE) {
       return buildEqualityExpr(b.getOp(), left, right);
@@ -186,7 +186,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public Expr<?> visitVirtualInvoke(final SymVirtualInvoke inv) {
     return exprMap.computeIfAbsent(
         inv.toString(),
-        k -> inv.kind() == SymKind.BOOLEAN_METHOD ? context.mkBoolConst(k) : context.mkIntConst(k));
+        k ->
+            inv.getKind() == SymKind.BOOLEAN_METHOD
+                ? context.mkBoolConst(k)
+                : context.mkIntConst(k));
   }
 
   @Override

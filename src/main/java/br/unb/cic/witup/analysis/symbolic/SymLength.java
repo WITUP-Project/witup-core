@@ -6,6 +6,7 @@ public final class SymLength extends SymExpr {
   private final SymExpr op;
 
   public SymLength(final SymExpr op) {
+    super(SymKind.OTHER);
     this.op = op;
   }
 
@@ -35,10 +36,5 @@ public final class SymLength extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return op.contains(varName);
-  }
-
-  @Override
-  public SymKind kind() {
-    return SymKind.OTHER;
   }
 }

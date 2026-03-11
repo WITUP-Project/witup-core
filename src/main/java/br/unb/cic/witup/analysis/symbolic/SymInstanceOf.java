@@ -7,6 +7,7 @@ public final class SymInstanceOf extends SymExpr {
   private final String type;
 
   public SymInstanceOf(final SymExpr op, final String type) {
+    super(SymKind.BOOLEAN);
     this.op = op;
     this.type = type;
   }
@@ -37,10 +38,5 @@ public final class SymInstanceOf extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return op.contains(varName);
-  }
-
-  @Override
-  public SymKind kind() {
-    return SymKind.BOOLEAN;
   }
 }

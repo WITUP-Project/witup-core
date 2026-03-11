@@ -4,13 +4,26 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymBinOp extends SymExpr {
   private final BinOp op;
-  private final SymExpr left;
-  private final SymExpr right;
+  private final SymExpr lhs;
+  private final SymExpr rhs;
 
-  public SymBinOp(final BinOp op, final SymExpr left, final SymExpr right) {
+  public SymBinOp(final BinOp op, final SymExpr lhs, final SymExpr rhs) {
+    super(deriveKind(lhs, rhs));
     this.op = op;
-    this.left = left;
-    this.right = right;
+    this.lhs = lhs;
+    this.rhs = rhs;
+  }
+
+  private static SymKind deriveKind(final SymExpr left, final SymExpr right) {
+    if (left.getKind() == SymKind.BOOLEAN_METHOD
+            || left.getKind() == SymKind.BOOLEAN) {
+      return left.getKind();
+    }
+    if (right.getKind() == SymKind.BOOLEAN_METHOD
+            || right.getKind() == SymKind.BOOLEAN) {
+      return right.getKind();
+    }
+    return SymKind.OTHER;
   }
 
   @Override
@@ -22,24 +35,24 @@ public final class SymBinOp extends SymExpr {
     return op;
   }
 
-  public SymExpr getLeft() {
-    return left;
+  public SymExpr getLhs() {
+    return lhs;
   }
 
-  public SymExpr getRight() {
-    return right;
+  public SymExpr getRhs() {
+    return rhs;
   }
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    SymExpr newLeft = left.substitute(varName, replacement);
-    SymExpr newRight = right.substitute(varName, replacement);
+    SymExpr newLeft = lhs.substitute(varName, replacement);
+    SymExpr newRight = rhs.substitute(varName, replacement);
 
     // when the SymExpr is SymVirtualInvoke that returns boolean, we need to do differently
     // $stack2 == 0 because the virtual invoke is s.isEmpty(), instead of is.Empty() == 0
     // I want isEmpty() true or false
     // newLeft would be isEmpty(), but what about the condition?
-    if (newLeft != left || newRight != right) {
+    if (newLeft != lhs || newRight != rhs) {
       return new SymBinOp(op, newLeft, newRight);
     }
     return this;
@@ -47,12 +60,12 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return left.contains(varName) || right.contains(varName);
+    return lhs.contains(varName) || rhs.contains(varName);
   }
 
   @Override
   public String toString() {
-    return "(" + left.toString() + " " + op.toString() + " " + right.toString() + ")";
+    return "(" + lhs.toString() + " " + op.toString() + " " + rhs.toString() + ")";
   }
 
   @Override
@@ -60,21 +73,15 @@ public final class SymBinOp extends SymExpr {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SymBinOp)) {
+    if (!(o instanceof SymBinOp symBinOp)) {
       return false;
     }
-    SymBinOp symBinOp = (SymBinOp) o;
-    return op == symBinOp.op && left.equals(symBinOp.left) && right.equals(symBinOp.right);
+    return op == symBinOp.op && lhs.equals(symBinOp.lhs) && rhs.equals(symBinOp.rhs);
   }
 
   @Override
   public int hashCode() {
     final int prime = 31;
-    return prime * (prime * op.hashCode() + left.hashCode()) + right.hashCode();
-  }
-
-  @Override
-  public SymKind kind() {
-    return SymKind.OTHER;
+    return prime * (prime * op.hashCode() + lhs.hashCode()) + rhs.hashCode();
   }
 }

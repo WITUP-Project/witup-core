@@ -58,7 +58,7 @@ public final class BackwardSymbolicGenerator {
       SymExpr symExpr = generateSymbolicExpression(throwConstraint.node());
       boolean truthValue = throwConstraint.truthValue();
 
-      if (symExpr.kind() == SymKind.BOOLEAN_METHOD) {
+      if (symExpr.getKind() == SymKind.BOOLEAN_METHOD) {
         truthValue = !truthValue;
       }
 
