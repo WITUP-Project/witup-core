@@ -7,7 +7,6 @@ import sootup.core.jimple.common.constant.DoubleConstant;
 import sootup.core.jimple.common.constant.FloatConstant;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
-import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
 import sootup.core.jimple.common.expr.AbstractConditionExpr;
@@ -80,7 +79,6 @@ public abstract class SymExpr {
       case FloatConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
       case LongConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
       case StringConstant c -> new SymStringConst(c.getValue());
-      case NullConstant ignored -> new SymConst(null, SymKind.NULL); // Consider if we need SymNull
       case JInstanceFieldRef r -> fromFieldRef(r);
       case AbstractConditionExpr e -> fromAbstractCondExpr(e);
       case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
