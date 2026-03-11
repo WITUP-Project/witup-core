@@ -11,12 +11,9 @@ public final class SymVirtualInvoke extends SymExpr {
     return base;
   }
 
-  public String getInvokeName() {
-    return invokeName;
-  }
-
   public SymVirtualInvoke(
       final SymExpr base, final String invokeName, final boolean returnsBoolean) {
+    super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER);
     this.base = base;
     this.invokeName = invokeName;
     this.returnsBoolean = returnsBoolean;
@@ -44,10 +41,5 @@ public final class SymVirtualInvoke extends SymExpr {
   @Override
   public String toString() {
     return base.toString() + "." + invokeName;
-  }
-
-  @Override
-  public SymKind kind() {
-    return returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER;
   }
 }

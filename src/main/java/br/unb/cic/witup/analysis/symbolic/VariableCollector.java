@@ -13,8 +13,8 @@ public final class VariableCollector implements SymExprVisitor<Void> {
 
   @Override
   public Void visitBinOp(final SymBinOp b) {
-    b.getLeft().accept(this);
-    b.getRight().accept(this);
+    b.getLhs().accept(this);
+    b.getRhs().accept(this);
     return null;
   }
 
@@ -43,11 +43,6 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   @Override
   public Void visitVirtualInvoke(final SymVirtualInvoke inv) {
     inv.getBase().accept(this);
-    return null;
-  }
-
-  @Override
-  public Void visitNewArray(final SymNewArray r) {
     return null;
   }
 

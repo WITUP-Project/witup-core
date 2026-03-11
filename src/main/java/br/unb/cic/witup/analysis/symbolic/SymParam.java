@@ -4,19 +4,14 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymParam extends SymExpr {
   private final int index;
-  private final SymKind kind;
 
   public SymParam(final int index, final SymKind kind) {
+    super(kind);
     this.index = index;
-    this.kind = kind;
   }
 
   public int getIndex() {
     return index;
-  }
-
-  public SymKind getKind() {
-    return kind;
   }
 
   @Override
@@ -42,10 +37,5 @@ public final class SymParam extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return Integer.toString(index).contains(varName);
-  }
-
-  @Override
-  public SymKind kind() {
-    return kind;
   }
 }

@@ -7,6 +7,7 @@ public final class SymArrayRef extends SymExpr {
   private final SymExpr index;
 
   public SymArrayRef(final SymExpr array, final SymExpr index) {
+    super(array.getKind());
     this.array = array;
     this.index = index;
   }
@@ -39,10 +40,9 @@ public final class SymArrayRef extends SymExpr {
     return array.toString().contains(varName);
   }
 
-  @Override
   public SymKind kind() {
     if (array instanceof SymArray arr) {
-      return arr.getElementKind();
+      return arr.getKind();
     }
     return SymKind.OTHER;
   }

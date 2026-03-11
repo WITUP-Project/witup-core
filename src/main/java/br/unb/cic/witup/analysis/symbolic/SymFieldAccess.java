@@ -5,12 +5,11 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 public final class SymFieldAccess extends SymExpr {
   private final SymExpr base; // e.g., "this" or another object
   private final String fieldName; // e.g., "radius"
-  private final SymKind kind;
 
   public SymFieldAccess(final SymExpr base, final String fieldName, final SymKind kind) {
+    super(kind);
     this.base = base;
     this.fieldName = fieldName;
-    this.kind = kind;
   }
 
   @Override
@@ -31,7 +30,7 @@ public final class SymFieldAccess extends SymExpr {
     // Substitute in the base expression
     SymExpr newBase = base.substitute(varName, replacement);
     if (newBase != base) {
-      return new SymFieldAccess(newBase, fieldName, kind);
+      return new SymFieldAccess(newBase, fieldName, getKind());
     }
     return this;
   }
@@ -51,10 +50,9 @@ public final class SymFieldAccess extends SymExpr {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SymFieldAccess)) {
+    if (!(o instanceof SymFieldAccess symFieldAccess)) {
       return false;
     }
-    SymFieldAccess symFieldAccess = (SymFieldAccess) o;
     return base.equals(symFieldAccess.base) && fieldName.equals(symFieldAccess.fieldName);
   }
 
@@ -62,10 +60,5 @@ public final class SymFieldAccess extends SymExpr {
   public int hashCode() {
     final int prime = 31;
     return prime * base.hashCode() + fieldName.hashCode();
-  }
-
-  @Override
-  public SymKind kind() {
-    return kind;
   }
 }

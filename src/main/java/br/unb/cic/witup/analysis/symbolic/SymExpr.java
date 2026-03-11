@@ -7,7 +7,6 @@ import sootup.core.jimple.common.constant.DoubleConstant;
 import sootup.core.jimple.common.constant.FloatConstant;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
-import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
 import sootup.core.jimple.common.expr.AbstractConditionExpr;
@@ -41,6 +40,16 @@ import sootup.core.types.Type;
 public abstract class SymExpr {
   public abstract <T> T accept(SymExprVisitor<T> visitor);
 
+  private final SymKind kind;
+
+  public SymExpr(final SymKind kind) {
+    this.kind = kind;
+  }
+
+  public final SymKind getKind() {
+    return kind;
+  }
+
   public abstract SymExpr substitute(String varName, SymExpr replacement);
 
   /***
@@ -58,8 +67,6 @@ public abstract class SymExpr {
 
   public abstract boolean contains(String varName);
 
-  public abstract SymKind kind();
-
   // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
@@ -67,12 +74,11 @@ public abstract class SymExpr {
           new SymArray(l.toString(), symKindFromType(at.getElementType()), l.getType().toString());
 
       case Local l -> new SymVar(l.toString(), symKindFromType(l.getType()));
-      case IntConstant c -> new SymConst(c.getValue());
-      case DoubleConstant c -> new SymConst(c.getValue());
-      case FloatConstant c -> new SymConst(c.getValue());
-      case LongConstant c -> new SymConst(c.getValue());
+      case IntConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
+      case DoubleConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
+      case FloatConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
+      case LongConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
       case StringConstant c -> new SymStringConst(c.getValue());
-      case NullConstant ignored -> new SymConst(null); // Consider if we need SymNull
       case JInstanceFieldRef r -> fromFieldRef(r);
       case AbstractConditionExpr e -> fromAbstractCondExpr(e);
       case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
@@ -227,8 +233,8 @@ public abstract class SymExpr {
       return expr;
     }
 
-    SymExpr left = simplifyCmpPatterns(binOp.getLeft());
-    SymExpr right = simplifyCmpPatterns(binOp.getRight());
+    SymExpr left = simplifyCmpPatterns(binOp.getLhs());
+    SymExpr right = simplifyCmpPatterns(binOp.getRhs());
 
     // Pattern: (x cmpg/cmpl y) op 0
     if (left instanceof SymBinOp leftBinOp
@@ -244,11 +250,11 @@ public abstract class SymExpr {
       //     (x cmpg y) == 0 means x == y
       //     (x cmpg y) < 0 means x < y
       //     (x cmpg y) <= 0 means x <= y
-      return new SymBinOp(binOp.getOp(), leftBinOp.getLeft(), leftBinOp.getRight());
+      return new SymBinOp(binOp.getOp(), leftBinOp.getLhs(), leftBinOp.getRhs());
     }
 
     // Return with simplified children
-    if (left != binOp.getLeft() || right != binOp.getRight()) {
+    if (left != binOp.getLhs() || right != binOp.getRhs()) {
       return new SymBinOp(binOp.getOp(), left, right);
     }
 
@@ -260,16 +266,16 @@ public abstract class SymExpr {
       return expr;
     }
 
-    SymExpr lhs = bin.getLeft();
-    SymExpr rhs = bin.getRight();
+    SymExpr lhs = bin.getLhs();
+    SymExpr rhs = bin.getRhs();
 
     // when we have a Jimple comparison whose stack variable traces back to
     // a method call, we don't need the equality; only the respective symbol
     // and the truth value
     if (rhs instanceof SymConst c
             && Integer.valueOf(0).equals(c.getValue())
-            && (lhs.kind() == SymKind.BOOLEAN_METHOD)
-        || lhs.kind() == SymKind.BOOLEAN) {
+            && (lhs.getKind() == SymKind.BOOLEAN_METHOD)
+        || lhs.getKind() == SymKind.BOOLEAN) {
 
       return lhs;
     }

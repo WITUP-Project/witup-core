@@ -6,6 +6,7 @@ public final class SymStringConst extends SymExpr {
   private final String value;
 
   public SymStringConst(final String value) {
+    super(SymKind.STRING);
     this.value = value;
   }
 
@@ -31,10 +32,5 @@ public final class SymStringConst extends SymExpr {
   @Override
   public String toString() {
     return "'" + value + "'";
-  }
-
-  @Override
-  public SymKind kind() {
-    return SymKind.STRING;
   }
 }

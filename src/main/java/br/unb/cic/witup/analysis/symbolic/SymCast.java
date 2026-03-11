@@ -7,6 +7,7 @@ public final class SymCast extends SymExpr {
   private final String type;
 
   public SymCast(final SymExpr op, final String type) {
+    super(SymKind.CAST);
     this.op = op;
     this.type = type;
   }
@@ -37,10 +38,5 @@ public final class SymCast extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return op.contains(varName);
-  }
-
-  @Override
-  public SymKind kind() {
-    return SymKind.CAST;
   }
 }
