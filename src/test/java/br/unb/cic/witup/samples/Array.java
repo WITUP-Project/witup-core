@@ -95,9 +95,16 @@ public class Array {
     return sum;
   }
 
-  public void requireNonNull(Object o) {
+  public void requireNonNullObject(Object o) {
     if (o == null) {
       throw new NullPointerException("o is null");
     }
+  }
+
+  public int[] requireNonNullArray(int[] arr) {
+    if (arr == null) {
+      throw new NullPointerException("arr is null");
+    }
+    return arr;
   }
 }

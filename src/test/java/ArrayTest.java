@@ -40,7 +40,7 @@ public class ArrayTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     assertNotNull(witupGraphs);
-    assertEquals(11, witupGraphs.size());
+    assertEquals(12, witupGraphs.size());
   }
 
   @Test
@@ -269,8 +269,7 @@ public class ArrayTest {
 
   @Test
   public void sumUntilZero() {
-    String methodSignature =
-            "<br.unb.cic.witup.samples.Array: int sumUntilZero(int[])>";
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZero(int[])>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -278,11 +277,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -308,8 +307,7 @@ public class ArrayTest {
 
   @Test
   public void sumUntilZeroWhile() {
-    String methodSignature =
-            "<br.unb.cic.witup.samples.Array: int sumUntilZeroWhile(int[])>";
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroWhile(int[])>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -317,11 +315,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -347,8 +345,7 @@ public class ArrayTest {
 
   @Test
   public void sumUntilZeroDoWhile() {
-    String methodSignature =
-            "<br.unb.cic.witup.samples.Array: int sumUntilZeroDoWhile(int[])>";
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroDoWhile(int[])>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -356,11 +353,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -386,8 +383,7 @@ public class ArrayTest {
 
   @Test
   public void sumUntilZeroForEach() {
-    String methodSignature =
-            "<br.unb.cic.witup.samples.Array: int sumUntilZeroForEach(int[])>";
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroForEach(int[])>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -395,11 +391,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -424,9 +420,9 @@ public class ArrayTest {
   }
 
   @Test
-  public void requireNonNull() {
+  public void requireNonNullObject() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: void requireNonNull(java.lang.Object)>";
+        "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
@@ -434,11 +430,11 @@ public class ArrayTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-            cpg.getConstraintPaths(throwNodes.get(0));
+        cpg.getConstraintPaths(throwNodes.get(0));
 
     BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
 
@@ -456,5 +452,39 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     assertEquals(0, sol0.getInt("o"), "o to be 0 (encoding for null)");
+  }
+
+  @Test
+  public void requireNonNullArray() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[] requireNonNullArray(int[])>";
+
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+
+    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
+        cpg.getConstraintPaths(throwNodes.get(0));
+
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+
+    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
+
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
+      results.add(result);
+    }
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+
+    assertTrue(sol0.getBool("arr_is_null"), "arr_is_null to be true");
   }
 }

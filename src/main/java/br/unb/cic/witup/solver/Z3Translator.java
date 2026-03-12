@@ -42,6 +42,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String INSTANCEOF = "_instanceof_";
   public static final String FIELD_DECL_PREFIX = "field_";
   public static final String ARRAY_SELECT = "select:";
+  public static final String IS_NULL = "_is_null";
+  public static final String NULL_STR = "__null__";
   private final Context context;
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
@@ -81,10 +83,26 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return buildArithExpr(b.getOp(), left, right);
   }
 
+  private boolean isNullSentinel(final Expr<?> expr) {
+    return expr.toString().equals(NULL_STR);
+  }
+
   private BoolExpr buildEqualityExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
+    if (isNullSentinel(right) || isNullSentinel(left)) {
+      Expr<?> ref = isNullSentinel(right) ? left : right;
+      // arr comes as |array_name:int[]|. we make it become array_name_is_null
+      BoolExpr isNull =
+          (BoolExpr) exprMap.computeIfAbsent(buildNullArrayName(ref), context::mkBoolConst);
+      return op == BinOp.EQ ? isNull : context.mkNot(isNull);
+    }
+
     var coerced = coerceForEquality(left, right);
     BoolExpr eq = context.mkEq(coerced.lhs(), coerced.rhs);
     return op == BinOp.EQ ? eq : context.mkNot(eq);
+  }
+
+  private String buildNullArrayName(final Expr<?> expr) {
+    return expr.toString().replace("|", "").split(":")[0] + IS_NULL;
   }
 
   private record ExprPair(Expr<?> lhs, Expr<?> rhs) {}
@@ -296,6 +314,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitNull(final SymNull n) {
-    return context.mkInt(0);
+    return context.mkConst(NULL_STR, context.mkUninterpretedSort("Null"));
   }
 }

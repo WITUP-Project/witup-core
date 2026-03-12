@@ -26,7 +26,9 @@ import java.util.Map;
  */
 public final class SymbolicConstraintSolver {
 
+  // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
+  public static final String IS_NULL = "_is_null";
   private Map<String, MethodSummary> methodSummaries = new HashMap<>();
 
   public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {}
