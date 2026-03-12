@@ -70,11 +70,11 @@ public abstract class SymExpr {
   // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
-      case Local l when l.getType() instanceof ArrayType at ->
-          new SymArray(l.toString(), symKindFromType(at.getElementType()), l.getType().toString());
+      case Local l when l.getType() instanceof ArrayType ->
+          new SymArray(l);
 
-      case Local l -> new SymVar(l.toString(), symKindFromType(l.getType()));
-      case IntConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
+      case Local l -> new SymVar(l);
+      case IntConstant c -> new SymIntConst(c);
       case DoubleConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
       case FloatConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
       case LongConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
@@ -85,7 +85,7 @@ public abstract class SymExpr {
       case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
       case JArrayRef r -> fromArrayRef(r);
       case JLengthExpr e -> fromLength(e);
-      case JNewArrayExpr e -> fromNewArray(e);
+      case JNewArrayExpr e -> new SymArray(e);
       case JCastExpr e -> fromCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
       case JParameterRef r -> fromParamRef(r);
@@ -152,11 +152,6 @@ public abstract class SymExpr {
   private static SymExpr fromLength(final JLengthExpr r) {
     SymExpr op = fromJimple(r.getOp());
     return new SymLength(op);
-  }
-
-  private static SymExpr fromNewArray(final JNewArrayExpr r) {
-    String name = r.toString();
-    return new SymArray(name, symKindFromType(r.getType()), r.getType().toString());
   }
 
   private static SymExpr fromCast(final JCastExpr r) {
@@ -269,17 +264,22 @@ public abstract class SymExpr {
     SymExpr lhs = bin.getLhs();
     SymExpr rhs = bin.getRhs();
 
-    // when we have a Jimple comparison whose stack variable traces back to
-    // a method call, we don't need the equality; only the respective symbol
-    // and the truth value
-    if (rhs instanceof SymConst c
-            && Integer.valueOf(0).equals(c.getValue())
-            && (lhs.getKind() == SymKind.BOOLEAN_METHOD)
-        || lhs.getKind() == SymKind.BOOLEAN) {
-
+    if (isZeroConst(rhs)
+            && (lhs.getKind() == SymKind.BOOLEAN_METHOD
+            || lhs.getKind() == SymKind.BOOLEAN)) {
       return lhs;
     }
 
     return expr;
+  }
+
+  private static boolean isZeroConst(final SymExpr expr) {
+    if (expr instanceof SymConst c) {
+      return Integer.valueOf(0).equals(c.getValue());
+    }
+    if (expr instanceof SymIntConst ic) {
+      return ic.getValue() == 0;
+    }
+    return false;
   }
 }

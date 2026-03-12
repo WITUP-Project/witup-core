@@ -1,15 +1,24 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.basic.Local;
+import sootup.core.jimple.common.expr.JNewArrayExpr;
+import sootup.core.types.ArrayType;
+
 
 public final class SymArray extends SymExpr {
   private final String name;
   private final String objectType;
 
-  public SymArray(final String name, final SymKind elemKind, final String objectType) {
-    super(elemKind);
-    this.name = name;
-    this.objectType = objectType;
+  public SymArray(final Local l) {
+    super(symKindFromType(((ArrayType) l.getType()).getElementType()));
+    this.name = l.toString();
+    this.objectType = l.getType().toString();
+  }
+
+  public SymArray(final JNewArrayExpr newArrExpr) {
+    super(symKindFromType(newArrExpr.getType()));
+    this.name = newArrExpr.toString();
+    this.objectType = newArrExpr.getType().toString();
   }
 
   public String getName() {

@@ -1,18 +1,13 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.basic.Local;
 
 public final class SymVar extends SymExpr {
   private final String name;
 
-  public SymVar(final String name, final SymKind kind) {
-    super(kind);
-    this.name = name;
-  }
-
-  // DEPRECATED
-  public SymVar(final String name) {
-    this(name, SymKind.OTHER);
+  public SymVar(final Local l) {
+    super(symKindFromType(l.getType()));
+    this.name = l.getName();
   }
 
   @Override

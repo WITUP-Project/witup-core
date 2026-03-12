@@ -8,6 +8,7 @@ import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
+import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymParam;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
@@ -38,6 +39,11 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
       case Float ignored -> context.getRealSort();
       default -> context.getIntSort();
     };
+  }
+
+  @Override
+  public Sort visitIntConst(final SymIntConst c) {
+    return context.getIntSort();
   }
 
   @Override
