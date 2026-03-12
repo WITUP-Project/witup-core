@@ -6,6 +6,8 @@ import br.unb.cic.witup.analysis.ClassAnalyser;
 import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
+import br.unb.cic.witup.analysis.SummaryCache;
+import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
@@ -19,6 +21,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import org.jgrapht.GraphPath;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,7 +43,7 @@ public class IntTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     assertNotNull(witupGraphs);
-    assertEquals(8, witupGraphs.size());
+    assertEquals(9, witupGraphs.size());
   }
 
   @Test
@@ -320,5 +324,41 @@ public class IntTest {
     // is impossible
     SolverResult sol1 = results.get(1);
     assertTrue(sol1.isUnsat());
+  }
+
+  @Test
+  public void addAndCheck() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int addAndCheck(int,int)>";
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+
+    // wire repositories for interprocedural resolution
+    GraphRepository graphRepo = sig -> Optional.ofNullable(witupGraphs.get(sig));
+    SummaryCache summaryCache = new SummaryCache();
+
+    MethodConstraintAnalysis analysis =
+            new MethodConstraintAnalysis(cpg, graphRepo, summaryCache);
+
+    List<List<SymbolicConstraint>> symbolicConstraintPaths =
+            analysis.getSymbolicConstraintPaths(throwNodes.get(0));
+
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
+      String pathId = methodSignature + "#" + i;
+      results.add(solver.checkPath(pathId, symbolicConstraintPaths.get(i)));
+    }
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    int a = sol0.getInt("a");
+    int b = sol0.getInt("b");
+    assertTrue(a + b > 512, "Expected a + b > 512");
   }
 }

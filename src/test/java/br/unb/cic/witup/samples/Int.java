@@ -59,4 +59,12 @@ public class Int {
     }
     return a;
   }
+
+  public int addAndCheck(int a, int b) {
+    int result = add(a, b);
+    if (result > 512) {
+      throw new IllegalArgumentException("result overflows");
+    }
+    return result;
+  }
 }

@@ -118,11 +118,6 @@ public final class BackwardSymbolicGenerator {
     return resolveAndSimplifyWithParams(SymExpr.fromJimple(returnNode.getOp()), returnNode);
   }
 
-  private SymExpr backwardSubstitute(
-      final SymExpr symExpr, final WITUpNode currentNode, final Set<WITUpNode> visited) {
-    return backwardSubstitute(symExpr, currentNode, visited, false);
-  }
-
   // it's ok to reassign current in a recursive function
   // given a Jimple statement, produces a SymExpr by backwards
   // tracing temporaries back to their origins
@@ -168,24 +163,27 @@ public final class BackwardSymbolicGenerator {
           continue;
         }
         rhsOp = assign.getRightOp();
+        lhsOp = assign.getLeftOp();
 
+        // this is the interprocedural hook
         if (rhsOp instanceof JVirtualInvokeExpr invoke && resolver != null) {
           String calleeSig = invoke.getMethodSignature().toString();
+          log.debug("Interprocedural hook fired for: {}", calleeSig);
+
           List<SymExpr> actuals = invoke.getArgs().stream()
                   .map(SymExpr::fromJimple)
                   .collect(Collectors.toList());
-          Optional<SymExpr> resolved = resolver.resolveReturnExpr(calleeSig, actuals);
-          if (resolved.isPresent()) {
+
+          Optional<SymExpr> resolvedRet = resolver.resolveReturnExpr(calleeSig, actuals);
+          if (resolvedRet.isPresent()) {
             String definedVar = getVariableName(assign.getLeftOp());
             if (freeVars.contains(definedVar)) {
-              symExpr = symExpr.substitute(definedVar, resolved.get());
+              symExpr = symExpr.substitute(definedVar, resolvedRet.get());
               symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
             }
             continue;
           }
         }
-        lhsOp = assign.getLeftOp();
-
       } else if (stmt instanceof JIdentityStmt identity) {
         if (!followIdentity) {
           continue;
@@ -202,18 +200,10 @@ public final class BackwardSymbolicGenerator {
         continue;
       }
 
-      // this is the interprocedural hook
       SymExpr rhsSymExpr = SymExpr.fromJimple(rhsOp);
-      // if rhs is a virtual invoke and we have a resolver, try to substitute
-      if (rhsSymExpr instanceof SymVirtualInvoke inv && resolver != null) {
-        // extract callee signature and actuals from the Jimple invoke expr
-        log.debug(
-            "Interprocedural call site: {} — resolver present, substitution not yet implemented",
-            inv);
-      }
 
       symExpr = symExpr.substitute(definedVar, rhsSymExpr);
-      symExpr = backwardSubstitute(symExpr, sourceNode, visited);
+      symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
     }
 
     return symExpr;

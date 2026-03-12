@@ -58,6 +58,9 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
   @Override
   public Optional<SymExpr> resolveReturnExpr(
       final String calleeSignature, final List<SymExpr> actuals) {
+    log.debug("resolveReturnExpr called for: {}", calleeSignature);
+    log.debug("summaryRepository null: {}", summaryRepository == null);
+    log.debug("graphRepository null: {}", graphRepository == null);
     if (summaryRepository == null || graphRepository == null) {
       log.debug("Interprocedural resolution skipped — no repository for {}", calleeSignature);
       return Optional.empty();
@@ -120,7 +123,7 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
         throwNode,
         node -> {
           var constraintPaths = cpg.getConstraintPaths(node);
-          BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+          BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths, this);
           return sg.generateSymbolicConstraintPaths();
         });
   }

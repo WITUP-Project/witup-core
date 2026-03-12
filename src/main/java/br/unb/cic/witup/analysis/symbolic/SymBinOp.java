@@ -49,16 +49,26 @@ public final class SymBinOp extends SymExpr {
   }
 
   @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newLhs = lhs.substituteParam(idx, actual);
+    SymExpr newRhs = rhs.substituteParam(idx, actual);
+    if (newLhs != lhs || newRhs != rhs) {
+      return new SymBinOp(op, newLhs, newRhs);
+    }
+    return this;
+  }
+
+  @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    SymExpr newLeft = lhs.substitute(varName, replacement);
-    SymExpr newRight = rhs.substitute(varName, replacement);
+    SymExpr newLhs = lhs.substitute(varName, replacement);
+    SymExpr newRhs = rhs.substitute(varName, replacement);
 
     // when the SymExpr is SymVirtualInvoke that returns boolean, we need to do differently
     // $stack2 == 0 because the virtual invoke is s.isEmpty(), instead of is.Empty() == 0
     // I want isEmpty() true or false
     // newLeft would be isEmpty(), but what about the condition?
-    if (newLeft != lhs || newRight != rhs) {
-      return new SymBinOp(op, newLeft, newRight);
+    if (newLhs != lhs || newRhs != rhs) {
+      return new SymBinOp(op, newLhs, newRhs);
     }
     return this;
   }
