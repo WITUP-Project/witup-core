@@ -6,6 +6,7 @@ import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
+import br.unb.cic.witup.analysis.symbolic.SymDoubleConst;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
@@ -153,6 +154,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitIntConst(final SymIntConst i) {
     return context.mkInt(i.getValue());
+  }
+
+  @Override
+  public Expr<?> visitDoubleConst(final SymDoubleConst d) {
+    return context.mkReal(d.toString());
   }
 
   @Override
