@@ -207,4 +207,19 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
     return edges;
   }
+
+  public List<ReturnStatementNode> getReturnNodes() {
+    return vertexSet().stream()
+        .filter(n -> n instanceof ReturnStatementNode)
+        .map(n -> (ReturnStatementNode) n)
+        .collect(Collectors.toList());
+  }
+
+  public List<GraphPath<WITUpNode, WITUpEdge>> getAllPathsToReturn(
+      final WITUpNode returnNode) {
+    WITUpNode entry = findEntryNode();
+    AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
+    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
+    return allPaths.getAllPaths(entry, returnNode, true, null);
+  }
 }

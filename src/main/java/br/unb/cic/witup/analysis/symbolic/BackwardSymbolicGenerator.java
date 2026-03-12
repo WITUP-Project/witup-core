@@ -5,6 +5,7 @@ import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
+import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -85,19 +86,25 @@ public final class BackwardSymbolicGenerator {
     this.currentPath = p;
   }
 
+  private SymExpr resolveAndSimplify(final SymExpr initial, final WITUpNode startNode) {
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>());
+    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
+    return SymExpr.stripBooleanEncoding(symExpr);
+  }
+
   public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
     StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
-    SymExpr symExpr = SymExpr.fromJimple(ifStmt.getCondition());
+    return resolveAndSimplify(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
+  }
 
-    // traverse backward and substitute temporaries so that each SymbolicConstraint
-    // element has all the information it needs to pass to a solver
-    symExpr = backwardSubstitute(symExpr, constraintNode, new HashSet<>());
-
-    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
-    symExpr = SymExpr.stripBooleanEncoding(symExpr);
-
-    return symExpr;
+  public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {
+    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
+    if (paths.isEmpty()) {
+      return SymExpr.fromJimple(returnNode.getOp());
+    }
+    this.currentPath = paths.get(0);
+    return resolveAndSimplify(SymExpr.fromJimple(returnNode.getOp()), returnNode);
   }
 
   // it's ok to reassign current in a recursive function
@@ -170,6 +177,49 @@ public final class BackwardSymbolicGenerator {
 
     return symExpr;
   }
+
+  //  private SymExpr backwardSubstituteUnbounded(
+  //      SymExpr symExpr, final WITUpNode currentNode, final Set<WITUpNode> visited) {
+  //
+  //    if (visited.contains(currentNode)) {
+  //      return symExpr;
+  //    }
+  //    visited.add(currentNode);
+  //
+  //    Set<String> freeVars = new VariableCollector().collect(symExpr);
+  //    if (freeVars.isEmpty()) {
+  //      return symExpr;
+  //    }
+  //
+  //    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
+  //      WITUpNode sourceNode = cpg.getEdgeSource(edge);
+  //
+  //      if (!(sourceNode instanceof SimpleNode simpleNode)) {
+  //        continue;
+  //      }
+  //      if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
+  //        continue;
+  //      }
+  //
+  //      Stmt stmt = stmtNode.getStmt();
+  //      if (!(stmt instanceof JAssignStmt assign)) {
+  //        continue;
+  //      }
+  //      if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
+  //        continue;
+  //      }
+  //
+  //      String definedVar = getVariableName(assign.getLeftOp());
+  //      if (!freeVars.contains(definedVar)) {
+  //        continue;
+  //      }
+  //
+  //      SymExpr rhsSymExpr = SymExpr.fromJimple(assign.getRightOp());
+  //      symExpr = symExpr.substitute(definedVar, rhsSymExpr);
+  //      symExpr = backwardSubstituteUnbounded(symExpr, sourceNode, visited);
+  //    }
+  //    return symExpr;
+  //  }
 
   private boolean isNodeInPath(final WITUpNode node) {
     PropertyGraphNode targetNode = node.getNode();

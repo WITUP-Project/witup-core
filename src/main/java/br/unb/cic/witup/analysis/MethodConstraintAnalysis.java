@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis;
 
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
+import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymExpr;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.core.types.Type;
@@ -127,13 +130,31 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
             .collect(Collectors.toList());
 
     List<SymParamRef> formals = buildFormals(cpg);
-    MethodSummary summary = new MethodSummary(getMethodSignature(), paths, formals, null);
+    SymExpr returnExpr = traceReturnExpr();
+
+    MethodSummary summary = new MethodSummary(getMethodSignature(), paths, formals, returnExpr);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);
     }
 
     return summary;
+  }
+
+  private SymExpr traceReturnExpr() {
+    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
+    if (returnNodes.isEmpty()) {
+      log.error("No return nodes found for {}", getMethodSignature());
+      throw new IllegalStateException("No return nodes found for " + getMethodSignature());
+    }
+    if (returnNodes.size() > 1) {
+      // multiple return points — stub for now, take first
+      log.debug("Multiple return nodes for {} — using first", getMethodSignature());
+    }
+    ReturnStatementNode returnNode = returnNodes.get(0);
+    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getConstraintPaths(returnNode);
+    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, paths, this);
+    return sg.generateReturnExpression(returnNode);
   }
 
   private static List<SymParamRef> buildFormals(final WITUpGraph cpg) {
