@@ -1,15 +1,16 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.expr.JInstanceOfExpr;
 
 public final class SymInstanceOf extends SymExpr {
   private final SymExpr op;
   private final String type;
 
-  public SymInstanceOf(final SymExpr op, final String type) {
+  public SymInstanceOf(final JInstanceOfExpr e) {
     super(SymKind.BOOLEAN);
-    this.op = op;
-    this.type = type;
+    this.op = fromJimple(e.getOp());
+    this.type = e.getCheckType().toString();
   }
 
   public SymExpr getOp() {

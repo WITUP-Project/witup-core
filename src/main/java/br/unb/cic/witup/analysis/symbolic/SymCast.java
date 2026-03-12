@@ -12,7 +12,7 @@ public final class SymCast extends SymExpr {
     op = fromJimple(c.getOp());
     type = c.getType().toString();
   }
-  
+
   public SymExpr getOp() {
     return op;
   }
