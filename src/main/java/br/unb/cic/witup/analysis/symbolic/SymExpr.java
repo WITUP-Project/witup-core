@@ -82,7 +82,7 @@ public abstract class SymExpr {
       case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
       case JVirtualInvokeExpr e -> SymVirtualInvoke.fromVirtualInvokeExpr(e);
       case JArrayRef r -> SymArrayRef.fromArrayRef(r);
-      case JLengthExpr e -> fromLength(e);
+      case JLengthExpr e -> new SymLength(e);
       case JNewArrayExpr e -> new SymArray(e);
       case JCastExpr e -> fromCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
@@ -109,11 +109,6 @@ public abstract class SymExpr {
       case ClassType ignore -> SymKind.OBJECT;
       default -> SymKind.OTHER;
     };
-  }
-
-  private static SymExpr fromLength(final JLengthExpr r) {
-    SymExpr op = fromJimple(r.getOp());
-    return new SymLength(op);
   }
 
   private static SymExpr fromCast(final JCastExpr r) {
