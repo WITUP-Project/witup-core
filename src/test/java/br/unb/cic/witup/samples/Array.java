@@ -46,4 +46,15 @@ public class Array {
     }
     return arr[i];
   }
+
+  public int sumUntilZero(int[] arr) {
+    int sum = 0;
+    for (int i = 0; i < arr.length; i++) {
+      if (arr[i] == 0) {
+        throw new IllegalArgumentException("zero element at index " + i);
+      }
+      sum += arr[i];
+    }
+    return sum;
+  }
 }
