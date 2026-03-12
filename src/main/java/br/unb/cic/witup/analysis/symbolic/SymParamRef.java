@@ -7,7 +7,7 @@ public final class SymParamRef extends SymExpr {
   private final int index;
 
   public SymParamRef(final JParameterRef r) {
-    super(symKindFromType(r.getType()));
+    super(fromJimpleType(r.getType()));
     this.index = r.getIndex();
   }
 

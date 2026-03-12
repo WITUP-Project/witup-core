@@ -6,7 +6,7 @@ public final class SymFloatConst extends SymExpr {
   private final float value;
 
   public SymFloatConst(final FloatConstant c) {
-    super(symKindFromType(c.getType()));
+    super(fromJimpleType(c.getType()));
     value = c.getValue();
   }
 

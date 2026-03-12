@@ -6,7 +6,7 @@ public final class SymIntConst extends SymExpr {
   private final int value;
 
   public SymIntConst(final IntConstant c) {
-    super(symKindFromType(c.getType()));
+    super(fromJimpleType(c.getType()));
      value = c.getValue();
   }
 

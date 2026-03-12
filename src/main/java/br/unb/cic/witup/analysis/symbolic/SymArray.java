@@ -10,13 +10,13 @@ public final class SymArray extends SymExpr {
   private final String objectType;
 
   public SymArray(final Local l) {
-    super(symKindFromType(((ArrayType) l.getType()).getElementType()));
+    super(fromJimpleType(((ArrayType) l.getType()).getElementType()));
     this.name = l.toString();
     this.objectType = l.getType().toString();
   }
 
   public SymArray(final JNewArrayExpr newArrExpr) {
-    super(symKindFromType(newArrExpr.getType()));
+    super(fromJimpleType(newArrExpr.getType()));
     this.name = newArrExpr.toString();
     this.objectType = newArrExpr.getType().toString();
   }

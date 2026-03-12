@@ -6,7 +6,7 @@ public final class SymDoubleConst extends SymExpr {
   private final double value;
 
   public SymDoubleConst(final DoubleConstant c) {
-    super(symKindFromType(c.getType()));
+    super(fromJimpleType(c.getType()));
     value = c.getValue();
   }
 
