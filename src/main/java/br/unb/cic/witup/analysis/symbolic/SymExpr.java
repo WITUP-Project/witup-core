@@ -91,9 +91,9 @@ public abstract class SymExpr {
     };
   }
 
-  public static SymKind symKindFromType(final Type type) {
+  public static SymKind fromJimpleType(final Type type) {
     if (type instanceof ArrayType at) {
-      return symKindFromType(at.getElementType());
+      return fromJimpleType(at.getElementType());
     }
 
     return switch (type) {
@@ -110,7 +110,7 @@ public abstract class SymExpr {
       default -> SymKind.OTHER;
     };
   }
-  
+
   static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
     if (expr instanceof JEqExpr) {
       return BinOp.EQ;

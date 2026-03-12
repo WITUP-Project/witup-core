@@ -8,7 +8,7 @@ public final class SymFieldAccess extends SymExpr {
   private final String fieldName; // e.g., "radius"
 
   public SymFieldAccess(final SymExpr base, final JInstanceFieldRef r) {
-    super(symKindFromType(r.getType()));
+    super(fromJimpleType(r.getType()));
     this.base = base;
     this.fieldName = r.getFieldSignature().getName();
   }

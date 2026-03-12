@@ -6,7 +6,7 @@ public final class SymVar extends SymExpr {
   private final String name;
 
   public SymVar(final Local l) {
-    super(symKindFromType(l.getType()));
+    super(fromJimpleType(l.getType()));
     this.name = l.getName();
   }
 

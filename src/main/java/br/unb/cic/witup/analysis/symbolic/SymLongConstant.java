@@ -6,7 +6,7 @@ public final class SymLongConstant extends SymExpr {
   private final long value;
 
   public SymLongConstant(final LongConstant c) {
-    super(symKindFromType(c.getType()));
+    super(fromJimpleType(c.getType()));
     value = c.getValue();
   }
 
