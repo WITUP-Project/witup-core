@@ -17,10 +17,10 @@ public final class MethodSummary {
   }
 
   public MethodSummary(
-          final String methodSignature,
-          final List<List<SymbolicConstraint>> symbolicConstraintPaths,
-          final List<SymParamRef> formalParams,
-          final SymExpr returnExpr) {
+      final String methodSignature,
+      final List<List<SymbolicConstraint>> symbolicConstraintPaths,
+      final List<SymParamRef> formalParams,
+      final SymExpr returnExpr) {
     this.methodSignature = methodSignature;
     this.symbolicConstraintPaths = symbolicConstraintPaths;
     this.formalParams = formalParams;

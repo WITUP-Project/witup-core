@@ -40,8 +40,8 @@ public final class ProjectAnalyser implements GraphRepository {
     for (Map.Entry<String, WITUpGraph> entry : graphs.entrySet()) {
       String sig = entry.getKey();
       try {
-        MethodSummary summary = new MethodConstraintAnalysis(
-                entry.getValue(), this, summaryCache)
+        MethodSummary summary =
+            new MethodConstraintAnalysis(entry.getValue(), this, summaryCache)
                 .summariseConstraintPaths();
         summaries.put(sig, summary);
       } catch (Exception e) {

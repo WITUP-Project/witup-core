@@ -7,20 +7,18 @@ import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sootup.core.types.Type;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sootup.core.types.Type;
 
 /**
- * Given a method that throws, build the symbolic constraints for each path leading
- * to throw nodes.
+ * Given a method that throws, build the symbolic constraints for each path leading to throw nodes.
  */
 public final class MethodConstraintAnalysis implements SummaryResolver {
   private static final Logger log = LoggerFactory.getLogger("MethodConstraintAnalysis");
@@ -36,37 +34,35 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
   }
 
   public MethodConstraintAnalysis(
-          final WITUpGraph cpg,
-          final GraphRepository graphRepository,
-          final SummaryRepository summaryRepository) {
+      final WITUpGraph cpg,
+      final GraphRepository graphRepository,
+      final SummaryRepository summaryRepository) {
     this.cpg = cpg;
     this.graphRepository = graphRepository;
     this.summaryRepository = summaryRepository;
   }
 
   public static Map<String, MethodSummary> summariseAll(
-          final Map<String, WITUpGraph> methodGraphs) {
+      final Map<String, WITUpGraph> methodGraphs) {
     return methodGraphs.entrySet().stream()
-            .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> new MethodConstraintAnalysis(entry.getValue())
-                            .summariseConstraintPaths()));
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                entry ->
+                    new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths()));
   }
-
 
   @Override
   public Optional<SymExpr> resolveReturnExpr(
-          final String calleeSignature, final List<SymExpr> actuals) {
+      final String calleeSignature, final List<SymExpr> actuals) {
     if (summaryRepository == null || graphRepository == null) {
-      log.debug("Interprocedural resolution skipped — no repository for {}",
-              calleeSignature);
+      log.debug("Interprocedural resolution skipped — no repository for {}", calleeSignature);
       return Optional.empty();
     }
 
     // any alternatives to being conservatives here or mathematically impossible?
     if (summaryRepository.isInProgress(calleeSignature)) {
-      log.debug("Recursive call detected for {} — returning conservative empty",
-              calleeSignature);
+      log.debug("Recursive call detected for {} — returning conservative empty", calleeSignature);
       return Optional.empty();
     }
 
@@ -85,14 +81,14 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
 
     log.debug("Recursively analysing callee {}", calleeSignature);
     summaryRepository.markInProgress(calleeSignature);
-    MethodConstraintAnalysis calleeAnalysis = new MethodConstraintAnalysis(
-            calleeGraph.get(), graphRepository, summaryRepository);
+    MethodConstraintAnalysis calleeAnalysis =
+        new MethodConstraintAnalysis(calleeGraph.get(), graphRepository, summaryRepository);
     MethodSummary calleeSummary = calleeAnalysis.summariseConstraintPaths();
     summaryRepository.putSummary(calleeSignature, calleeSummary);
 
     // instantiate returnExpr with actuals when MethodSummary carries returnExpr
-    log.debug("Callee {} analysed — return expr instantiation not yet implemented",
-            calleeSignature);
+    log.debug(
+        "Callee {} analysed — return expr instantiation not yet implemented", calleeSignature);
     return Optional.empty();
   }
 
@@ -124,7 +120,7 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
       }
       summaryRepository.markInProgress(sig);
     }
-    
+
     List<List<SymbolicConstraint>> paths =
         getThrowNodes().stream()
             .flatMap(node -> getSymbolicConstraintPaths(node).stream())

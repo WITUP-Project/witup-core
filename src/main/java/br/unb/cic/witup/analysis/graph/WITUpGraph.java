@@ -8,6 +8,7 @@ import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.GotoCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.IfStatementNode;
+import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
@@ -37,6 +38,7 @@ import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
+import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
 import sootup.java.core.JavaSootMethod;
 
@@ -49,7 +51,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return methodSignature;
   }
 
-  public JavaSootMethod getMethod() { return method; }
+  public JavaSootMethod getMethod() {
+    return method;
+  }
 
   private WITUpGraph() {
     super(WITUpEdge.class);
@@ -99,6 +103,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       return new ThrowStatementNode(node, throwStmt.getOp());
     } else if (node instanceof StmtGraphNode stmt && stmt.getStmt() instanceof JIfStmt ifStmt) {
       return new IfStatementNode(node, ifStmt.getCondition());
+    } else if (node instanceof StmtGraphNode stmt
+        && stmt.getStmt() instanceof JReturnStmt returnStmt) {
+      return new ReturnStatementNode(node, returnStmt);
     }
     return new SimpleNode(node);
   }
@@ -151,7 +158,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
     return new AsSubgraph<>(
-            this,
+        this,
         null,
         this.edgeSet().stream()
             .filter(edge -> edge instanceof CFGEdge)
