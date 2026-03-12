@@ -80,7 +80,7 @@ public abstract class SymExpr {
       case StringConstant c -> new SymStringConst(c);
       case JInstanceFieldRef r ->  new SymFieldAccess(fromJimple(r.getBase()), r);
       case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
-      case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
+      case JVirtualInvokeExpr e -> SymVirtualInvoke.fromVirtualInvokeExpr(e);
       case JArrayRef r -> fromArrayRef(r);
       case JLengthExpr e -> fromLength(e);
       case JNewArrayExpr e -> new SymArray(e);
@@ -109,15 +109,6 @@ public abstract class SymExpr {
       case ClassType ignore -> SymKind.OBJECT;
       default -> SymKind.OTHER;
     };
-  }
-
-  private static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
-    SymExpr base = fromJimple(e.getBase());
-    String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
-    boolean returnsBoolean =
-        e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
-
-    return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
   }
 
   private static SymExpr fromArrayRef(final JArrayRef r) {
