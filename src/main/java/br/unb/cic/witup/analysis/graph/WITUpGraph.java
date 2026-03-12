@@ -8,6 +8,7 @@ import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.GotoCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.IfStatementNode;
+import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
@@ -37,14 +38,21 @@ import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
+import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
+import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
   private String methodSignature;
+  private JavaSootMethod method;
 
   public String getMethodSignature() {
     return methodSignature;
+  }
+
+  public JavaSootMethod getMethod() {
+    return method;
   }
 
   private WITUpGraph() {
@@ -57,10 +65,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
    * @param pg the PropertyGraph to convert
    * @return the converted WITUpGraph
    */
-  public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final String methodSignature) {
+  public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final JavaSootMethod method) {
     WITUpGraph graph = new WITUpGraph();
     Map<PropertyGraphNode, WITUpNode> cachedNodes = new HashMap<>();
-    graph.methodSignature = methodSignature;
+    graph.methodSignature = method.getSignature().toString();
+    graph.method = method;
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
       WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(), WITUpGraph::createNode);
@@ -94,6 +103,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       return new ThrowStatementNode(node, throwStmt.getOp());
     } else if (node instanceof StmtGraphNode stmt && stmt.getStmt() instanceof JIfStmt ifStmt) {
       return new IfStatementNode(node, ifStmt.getCondition());
+    } else if (node instanceof StmtGraphNode stmt
+        && stmt.getStmt() instanceof JReturnStmt returnStmt) {
+      return new ReturnStatementNode(node, returnStmt);
     }
     return new SimpleNode(node);
   }
@@ -145,14 +157,12 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
-    AsSubgraph<WITUpNode, WITUpEdge> cfg =
-        new AsSubgraph<>(
-            this,
-            null,
-            this.edgeSet().stream()
-                .filter(edge -> edge instanceof CFGEdge)
-                .collect(Collectors.toSet()));
-    return cfg;
+    return new AsSubgraph<>(
+        this,
+        null,
+        this.edgeSet().stream()
+            .filter(edge -> edge instanceof CFGEdge)
+            .collect(Collectors.toSet()));
   }
 
   private WITUpNode findEntryNode() {
@@ -196,5 +206,19 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return edges;
+  }
+
+  public List<ReturnStatementNode> getReturnNodes() {
+    return vertexSet().stream()
+        .filter(n -> n instanceof ReturnStatementNode)
+        .map(n -> (ReturnStatementNode) n)
+        .collect(Collectors.toList());
+  }
+
+  public List<GraphPath<WITUpNode, WITUpEdge>> getAllPathsToReturn(final WITUpNode returnNode) {
+    WITUpNode entry = findEntryNode();
+    AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
+    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
+    return allPaths.getAllPaths(entry, returnNode, true, null);
   }
 }

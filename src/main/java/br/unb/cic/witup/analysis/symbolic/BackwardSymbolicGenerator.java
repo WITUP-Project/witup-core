@@ -1,23 +1,32 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.SummaryResolver;
 import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
+import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.jgrapht.GraphPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.expr.JCastExpr;
+import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
+import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
@@ -30,11 +39,22 @@ public final class BackwardSymbolicGenerator {
   private final WITUpGraph cpg;
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
+  // for now, resolver being null means intraprocedural. fix me when poc is done
+  private final SummaryResolver resolver;
+  private static final Logger log = LoggerFactory.getLogger("BackwardSymbolicGenerator");
 
   public BackwardSymbolicGenerator(
       final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
+    this(cpg, constraintPaths, null);
+  }
+
+  public BackwardSymbolicGenerator(
+      final WITUpGraph cpg,
+      final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths,
+      final SummaryResolver resolver) {
     this.cpg = cpg;
     this.constraintPaths = constraintPaths;
+    this.resolver = resolver;
   }
 
   public List<List<SymbolicConstraint>> generateSymbolicConstraintPaths() {
@@ -71,19 +91,31 @@ public final class BackwardSymbolicGenerator {
     this.currentPath = p;
   }
 
+  private SymExpr resolveAndSimplify(final SymExpr initial, final WITUpNode startNode) {
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false);
+    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
+    return SymExpr.stripBooleanEncoding(symExpr);
+  }
+
+  private SymExpr resolveAndSimplifyWithParams(final SymExpr initial, final WITUpNode startNode) {
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), true);
+    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
+    return SymExpr.stripBooleanEncoding(symExpr);
+  }
+
   public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
     StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
     JIfStmt ifStmt = (JIfStmt) n.getStmt();
-    SymExpr symExpr = SymExpr.fromJimple(ifStmt.getCondition());
+    return resolveAndSimplify(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
+  }
 
-    // traverse backward and substitute temporaries so that each SymbolicConstraint
-    // element has all the information it needs to pass to a solver
-    symExpr = backwardSubstitute(symExpr, constraintNode, new HashSet<>());
-
-    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
-    symExpr = SymExpr.stripBooleanEncoding(symExpr);
-
-    return symExpr;
+  public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {
+    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
+    if (paths.isEmpty()) {
+      return SymExpr.fromJimple(returnNode.getOp());
+    }
+    this.currentPath = paths.get(0);
+    return resolveAndSimplifyWithParams(SymExpr.fromJimple(returnNode.getOp()), returnNode);
   }
 
   // it's ok to reassign current in a recursive function
@@ -92,7 +124,8 @@ public final class BackwardSymbolicGenerator {
   private SymExpr backwardSubstitute(
       SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
       final WITUpNode currentNode,
-      final Set<WITUpNode> visited) {
+      final Set<WITUpNode> visited,
+      final boolean followIdentity) {
 
     if (visited.contains(currentNode)) {
       return symExpr;
@@ -116,37 +149,108 @@ public final class BackwardSymbolicGenerator {
         continue;
       }
 
-      PropertyGraphNode propNode = simpleNode.getNode();
-      if (!(simpleNode.getNode() instanceof StmtGraphNode)) {
+      if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
         continue;
       }
 
-      StmtGraphNode stmtNode = (StmtGraphNode) propNode;
       Stmt stmt = stmtNode.getStmt();
 
-      if (!(stmt instanceof JAssignStmt assign)) {
+      Value lhsOp;
+      Value rhsOp;
+
+      if (stmt instanceof JAssignStmt assign) {
+        if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
+          continue;
+        }
+        rhsOp = assign.getRightOp();
+        lhsOp = assign.getLeftOp();
+
+        // this is the interprocedural hook
+        if (rhsOp instanceof JVirtualInvokeExpr invoke && resolver != null) {
+          String calleeSig = invoke.getMethodSignature().toString();
+          log.debug("Interprocedural hook fired for: {}", calleeSig);
+
+          List<SymExpr> actuals = invoke.getArgs().stream()
+                  .map(SymExpr::fromJimple)
+                  .collect(Collectors.toList());
+
+          Optional<SymExpr> resolvedRet = resolver.resolveReturnExpr(calleeSig, actuals);
+          if (resolvedRet.isPresent()) {
+            String definedVar = getVariableName(assign.getLeftOp());
+            if (freeVars.contains(definedVar)) {
+              symExpr = symExpr.substitute(definedVar, resolvedRet.get());
+              symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
+            }
+            continue;
+          }
+        }
+      } else if (stmt instanceof JIdentityStmt identity) {
+        if (!followIdentity) {
+          continue;
+        }
+        lhsOp = identity.getLeftOp();
+        rhsOp = identity.getRightOp();
+      } else {
         continue;
       }
-
-      if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
-        continue;
-      }
-
-      Value leftOp = assign.getLeftOp();
       // local variable on the lhs e.g. $stack1 == 0
-      String definedVar = getVariableName(leftOp);
+      String definedVar = getVariableName(lhsOp);
 
       if (!freeVars.contains(definedVar)) {
         continue;
       }
 
-      SymExpr rhsSymExpr = SymExpr.fromJimple(assign.getRightOp());
+      SymExpr rhsSymExpr = SymExpr.fromJimple(rhsOp);
+
       symExpr = symExpr.substitute(definedVar, rhsSymExpr);
-      symExpr = backwardSubstitute(symExpr, sourceNode, visited);
+      symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
     }
 
     return symExpr;
   }
+
+  //  private SymExpr backwardSubstituteUnbounded(
+  //      SymExpr symExpr, final WITUpNode currentNode, final Set<WITUpNode> visited) {
+  //
+  //    if (visited.contains(currentNode)) {
+  //      return symExpr;
+  //    }
+  //    visited.add(currentNode);
+  //
+  //    Set<String> freeVars = new VariableCollector().collect(symExpr);
+  //    if (freeVars.isEmpty()) {
+  //      return symExpr;
+  //    }
+  //
+  //    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
+  //      WITUpNode sourceNode = cpg.getEdgeSource(edge);
+  //
+  //      if (!(sourceNode instanceof SimpleNode simpleNode)) {
+  //        continue;
+  //      }
+  //      if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
+  //        continue;
+  //      }
+  //
+  //      Stmt stmt = stmtNode.getStmt();
+  //      if (!(stmt instanceof JAssignStmt assign)) {
+  //        continue;
+  //      }
+  //      if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
+  //        continue;
+  //      }
+  //
+  //      String definedVar = getVariableName(assign.getLeftOp());
+  //      if (!freeVars.contains(definedVar)) {
+  //        continue;
+  //      }
+  //
+  //      SymExpr rhsSymExpr = SymExpr.fromJimple(assign.getRightOp());
+  //      symExpr = symExpr.substitute(definedVar, rhsSymExpr);
+  //      symExpr = backwardSubstituteUnbounded(symExpr, sourceNode, visited);
+  //    }
+  //    return symExpr;
+  //  }
 
   private boolean isNodeInPath(final WITUpNode node) {
     PropertyGraphNode targetNode = node.getNode();

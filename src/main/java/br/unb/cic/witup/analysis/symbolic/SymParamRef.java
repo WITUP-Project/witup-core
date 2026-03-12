@@ -1,6 +1,7 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import sootup.core.jimple.common.ref.JParameterRef;
+import sootup.core.types.Type;
 
 public final class SymParamRef extends SymExpr {
   private final int index;
@@ -10,6 +11,12 @@ public final class SymParamRef extends SymExpr {
     super(fromJimpleType(r.getType()));
     this.index = r.getIndex();
     this.paramType = r.getType().toString();
+  }
+
+  public SymParamRef(final int index, final Type type) {
+    super(fromJimpleType(type));
+    this.index = index;
+    this.paramType = type.toString();
   }
 
   public int getIndex() {

@@ -17,6 +17,7 @@ import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
+import br.unb.cic.witup.analysis.symbolic.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
@@ -44,6 +45,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String ARRAY_SELECT = "select:";
   public static final String IS_NULL = "_is_null";
   public static final String NULL_STR = "__null__";
+  public static final String THIS_STR = "__this__";
   private final Context context;
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
@@ -315,5 +317,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitNull(final SymNull n) {
     return context.mkConst(NULL_STR, context.mkUninterpretedSort("Null"));
+  }
+
+  @Override
+  public Expr<?> visitThisRef(final SymThisRef r) {
+    return context.mkConst(THIS_STR, context.mkUninterpretedSort("This"));
   }
 }
