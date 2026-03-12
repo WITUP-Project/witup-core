@@ -84,7 +84,7 @@ public abstract class SymExpr {
       case JArrayRef r -> SymArrayRef.fromArrayRef(r);
       case JLengthExpr e -> new SymLength(e);
       case JNewArrayExpr e -> new SymArray(e);
-      case JCastExpr e -> fromCast(e);
+      case JCastExpr e -> new SymCast(e);
       case JInstanceOfExpr e -> fromInstanceOf(e);
       case JParameterRef r -> fromParamRef(r);
       default -> throw new IllegalStateException("Unexpected value: " + value);
@@ -109,12 +109,6 @@ public abstract class SymExpr {
       case ClassType ignore -> SymKind.OBJECT;
       default -> SymKind.OTHER;
     };
-  }
-
-  private static SymExpr fromCast(final JCastExpr r) {
-    SymExpr op = fromJimple(r.getOp());
-    String type = r.getType().toString();
-    return new SymCast(op, type);
   }
 
   private static SymExpr fromInstanceOf(final JInstanceOfExpr r) {
