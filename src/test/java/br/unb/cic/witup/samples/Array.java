@@ -46,4 +46,52 @@ public class Array {
     }
     return arr[i];
   }
+
+  public int sumUntilZero(int[] arr) {
+    int sum = 0;
+    for (int i = 0; i < arr.length; i++) {
+      if (arr[i] == 0) {
+        throw new IllegalArgumentException("zero element at index " + i);
+      }
+      sum += arr[i];
+    }
+    return sum;
+  }
+
+  public int sumUntilZeroWhile(int[] arr) {
+    int sum = 0;
+    int i = 0;
+    while (i < arr.length) {
+      if (arr[i] == 0) {
+        throw new IllegalArgumentException("zero element at index " + i);
+      }
+      sum += arr[i];
+      i++;
+    }
+    return sum;
+  }
+
+  public int sumUntilZeroDoWhile(int[] arr) {
+    int sum = 0;
+    int i = 0;
+    do {
+      if (arr[i] == 0) {
+        throw new IllegalArgumentException("zero element at index " + i);
+      }
+      sum += arr[i];
+      i++;
+    } while (i < arr.length);
+    return sum;
+  }
+
+  public int sumUntilZeroForEach(int[] arr) {
+    int sum = 0;
+    for (int x : arr) {
+      if (x == 0) {
+        throw new IllegalArgumentException("zero element");
+      }
+      sum += x;
+    }
+    return sum;
+  }
 }
