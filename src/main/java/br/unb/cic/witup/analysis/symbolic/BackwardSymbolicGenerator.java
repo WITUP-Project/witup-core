@@ -12,7 +12,10 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +24,7 @@ import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.expr.JCastExpr;
+import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
@@ -163,8 +167,25 @@ public final class BackwardSymbolicGenerator {
         if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
           continue;
         }
-        lhsOp = assign.getLeftOp();
         rhsOp = assign.getRightOp();
+
+        if (rhsOp instanceof JVirtualInvokeExpr invoke && resolver != null) {
+          String calleeSig = invoke.getMethodSignature().toString();
+          List<SymExpr> actuals = invoke.getArgs().stream()
+                  .map(SymExpr::fromJimple)
+                  .collect(Collectors.toList());
+          Optional<SymExpr> resolved = resolver.resolveReturnExpr(calleeSig, actuals);
+          if (resolved.isPresent()) {
+            String definedVar = getVariableName(assign.getLeftOp());
+            if (freeVars.contains(definedVar)) {
+              symExpr = symExpr.substitute(definedVar, resolved.get());
+              symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
+            }
+            continue;
+          }
+        }
+        lhsOp = assign.getLeftOp();
+
       } else if (stmt instanceof JIdentityStmt identity) {
         if (!followIdentity) {
           continue;

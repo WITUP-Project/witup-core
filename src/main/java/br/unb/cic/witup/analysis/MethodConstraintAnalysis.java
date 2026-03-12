@@ -72,8 +72,7 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
     Optional<MethodSummary> cachedSummary = summaryRepository.getSummary(calleeSignature);
     if (cachedSummary.isPresent()) {
       log.debug("Cache hit for {}", calleeSignature);
-      // instantiate returnExpr with actuals when MethodSummary carries returnExpr
-      return Optional.empty();
+      return instantiate(cachedSummary.get(), actuals);
     }
 
     Optional<WITUpGraph> calleeGraph = graphRepository.getGraph(calleeSignature);
@@ -92,7 +91,28 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
     // instantiate returnExpr with actuals when MethodSummary carries returnExpr
     log.debug(
         "Callee {} analysed — return expr instantiation not yet implemented", calleeSignature);
-    return Optional.empty();
+    return instantiate(calleeSummary, actuals);
+  }
+
+  private Optional<SymExpr> instantiate(
+          final MethodSummary summary, final List<SymExpr> actuals) {
+    if (!summary.hasReturnExpr()) {
+      log.debug("No return expr in summary for {}", summary.getMethodSignature());
+      return Optional.empty();
+    }
+
+    List<SymParamRef> formals = summary.getFormalParams();
+    if (formals == null || formals.size() != actuals.size()) {
+      log.debug("Formal/actual mismatch for {}", summary.getMethodSignature());
+      return Optional.empty();
+    }
+
+    SymExpr returnExpr = summary.getReturnExpr();
+    for (int i = 0; i < formals.size(); i++) {
+      returnExpr = returnExpr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+    }
+    log.debug("Instantiated return expr for {}: {}", summary.getMethodSignature(), returnExpr);
+    return Optional.of(returnExpr);
   }
 
   public List<List<SymbolicConstraint>> getSymbolicConstraintPaths(final WITUpNode throwNode) {
