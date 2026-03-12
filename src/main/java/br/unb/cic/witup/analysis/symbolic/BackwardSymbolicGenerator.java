@@ -22,6 +22,7 @@ import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.expr.JCastExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
+import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
 
@@ -87,7 +88,13 @@ public final class BackwardSymbolicGenerator {
   }
 
   private SymExpr resolveAndSimplify(final SymExpr initial, final WITUpNode startNode) {
-    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>());
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false);
+    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
+    return SymExpr.stripBooleanEncoding(symExpr);
+  }
+
+  private SymExpr resolveAndSimplifyWithParams(final SymExpr initial, final WITUpNode startNode) {
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), true);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     return SymExpr.stripBooleanEncoding(symExpr);
   }
@@ -104,7 +111,12 @@ public final class BackwardSymbolicGenerator {
       return SymExpr.fromJimple(returnNode.getOp());
     }
     this.currentPath = paths.get(0);
-    return resolveAndSimplify(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+    return resolveAndSimplifyWithParams(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+  }
+
+  private SymExpr backwardSubstitute(
+      final SymExpr symExpr, final WITUpNode currentNode, final Set<WITUpNode> visited) {
+    return backwardSubstitute(symExpr, currentNode, visited, false);
   }
 
   // it's ok to reassign current in a recursive function
@@ -113,7 +125,8 @@ public final class BackwardSymbolicGenerator {
   private SymExpr backwardSubstitute(
       SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
       final WITUpNode currentNode,
-      final Set<WITUpNode> visited) {
+      final Set<WITUpNode> visited,
+      final boolean followIdentity) {
 
     if (visited.contains(currentNode)) {
       return symExpr;
@@ -137,32 +150,39 @@ public final class BackwardSymbolicGenerator {
         continue;
       }
 
-      PropertyGraphNode propNode = simpleNode.getNode();
-      if (!(simpleNode.getNode() instanceof StmtGraphNode)) {
+      if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
         continue;
       }
 
-      StmtGraphNode stmtNode = (StmtGraphNode) propNode;
       Stmt stmt = stmtNode.getStmt();
 
-      if (!(stmt instanceof JAssignStmt assign)) {
+      Value lhsOp;
+      Value rhsOp;
+
+      if (stmt instanceof JAssignStmt assign) {
+        if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
+          continue;
+        }
+        lhsOp = assign.getLeftOp();
+        rhsOp = assign.getRightOp();
+      } else if (stmt instanceof JIdentityStmt identity) {
+        if (!followIdentity) {
+          continue;
+        }
+        lhsOp = identity.getLeftOp();
+        rhsOp = identity.getRightOp();
+      } else {
         continue;
       }
-
-      if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
-        continue;
-      }
-
-      Value leftOp = assign.getLeftOp();
       // local variable on the lhs e.g. $stack1 == 0
-      String definedVar = getVariableName(leftOp);
+      String definedVar = getVariableName(lhsOp);
 
       if (!freeVars.contains(definedVar)) {
         continue;
       }
 
       // this is the interprocedural hook
-      SymExpr rhsSymExpr = SymExpr.fromJimple(assign.getRightOp());
+      SymExpr rhsSymExpr = SymExpr.fromJimple(rhsOp);
       // if rhs is a virtual invoke and we have a resolver, try to substitute
       if (rhsSymExpr instanceof SymVirtualInvoke inv && resolver != null) {
         // extract callee signature and actuals from the Jimple invoke expr

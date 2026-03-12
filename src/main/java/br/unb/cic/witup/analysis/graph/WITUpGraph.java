@@ -215,8 +215,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         .collect(Collectors.toList());
   }
 
-  public List<GraphPath<WITUpNode, WITUpEdge>> getAllPathsToReturn(
-      final WITUpNode returnNode) {
+  public List<GraphPath<WITUpNode, WITUpEdge>> getAllPathsToReturn(final WITUpNode returnNode) {
     WITUpNode entry = findEntryNode();
     AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
     AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);

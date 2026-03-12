@@ -34,4 +34,6 @@ public interface SymExprVisitor<T> {
   T visitParamRef(SymParamRef p);
 
   T visitNull(SymNull n);
+
+  T visitThisRef(SymThisRef r);
 }
