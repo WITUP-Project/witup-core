@@ -1,15 +1,16 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.expr.JCastExpr;
 
 public final class SymCast extends SymExpr {
   private final SymExpr op;
   private final String type;
 
-  public SymCast(final SymExpr op, final String type) {
+  public SymCast(final JCastExpr c) {
     super(SymKind.CAST);
-    this.op = op;
-    this.type = type;
+    op = fromJimple(c.getOp());
+    type = c.getType().toString();
   }
 
   public SymExpr getOp() {

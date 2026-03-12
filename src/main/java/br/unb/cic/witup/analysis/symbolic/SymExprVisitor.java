@@ -5,6 +5,14 @@ public interface SymExprVisitor<T> {
 
   T visitConst(SymConst c);
 
+  T visitIntConst(SymIntConst i);
+
+  T visitDoubleConst(SymDoubleConst d);
+
+  T visitFloatConst(SymFloatConst f);
+
+  T visitLongConst(SymLongConstant l);
+
   T visitFieldAccess(SymFieldAccess f);
 
   T visitStringConst(SymStringConst s);
@@ -23,5 +31,5 @@ public interface SymExprVisitor<T> {
 
   T visitInstanceOf(SymInstanceOf r);
 
-  T visitParamRef(SymParam p);
+  T visitParamRef(SymParamRef p);
 }

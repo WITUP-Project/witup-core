@@ -24,6 +24,26 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
+  public Void visitIntConst(final SymIntConst i) {
+    return null;
+  }
+
+  @Override
+  public Void visitDoubleConst(final SymDoubleConst d) {
+    return null;
+  }
+
+  @Override
+  public Void visitFloatConst(final SymFloatConst f) {
+    return null;
+  }
+
+  @Override
+  public Void visitLongConst(final SymLongConstant l) {
+    return null;
+  }
+
+  @Override
   public Void visitFieldAccess(final SymFieldAccess f) {
     f.getBase().accept(this);
     return null;
@@ -76,7 +96,7 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
-  public Void visitParamRef(final SymParam r) {
+  public Void visitParamRef(final SymParamRef r) {
     return null;
   }
 }

@@ -9,7 +9,6 @@ import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
-import sootup.core.jimple.common.expr.AbstractConditionExpr;
 import sootup.core.jimple.common.expr.JAddExpr;
 import sootup.core.jimple.common.expr.JCastExpr;
 import sootup.core.jimple.common.expr.JCmpExpr;
@@ -70,25 +69,24 @@ public abstract class SymExpr {
   // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
-      case Local l when l.getType() instanceof ArrayType at ->
-          new SymArray(l.toString(), symKindFromType(at.getElementType()), l.getType().toString());
+      case Local l when l.getType() instanceof ArrayType ->
+          new SymArray(l);
 
-      case Local l -> new SymVar(l.toString(), symKindFromType(l.getType()));
-      case IntConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
-      case DoubleConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
-      case FloatConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
-      case LongConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
-      case StringConstant c -> new SymStringConst(c.getValue());
-      case JInstanceFieldRef r -> fromFieldRef(r);
-      case AbstractConditionExpr e -> fromAbstractCondExpr(e);
-      case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
-      case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
-      case JArrayRef r -> fromArrayRef(r);
-      case JLengthExpr e -> fromLength(e);
-      case JNewArrayExpr e -> fromNewArray(e);
-      case JCastExpr e -> fromCast(e);
-      case JInstanceOfExpr e -> fromInstanceOf(e);
-      case JParameterRef r -> fromParamRef(r);
+      case Local l -> new SymVar(l);
+      case IntConstant c -> new SymIntConst(c);
+      case DoubleConstant c -> new SymDoubleConst(c);
+      case FloatConstant c -> new SymFloatConst(c);
+      case LongConstant c -> new SymLongConstant(c);
+      case StringConstant c -> new SymStringConst(c);
+      case JInstanceFieldRef r ->  new SymFieldAccess(fromJimple(r.getBase()), r);
+      case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
+      case JVirtualInvokeExpr e -> SymVirtualInvoke.fromVirtualInvokeExpr(e);
+      case JArrayRef r -> SymArrayRef.fromArrayRef(r);
+      case JLengthExpr e -> new SymLength(e);
+      case JNewArrayExpr e -> new SymArray(e);
+      case JCastExpr e -> new SymCast(e);
+      case JInstanceOfExpr e -> new SymInstanceOf(e);
+      case JParameterRef r -> new SymParamRef(r);
       default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }
@@ -112,72 +110,8 @@ public abstract class SymExpr {
       default -> SymKind.OTHER;
     };
   }
-
-  private static SymExpr fromFieldRef(final JInstanceFieldRef r) {
-    // this.<ClassName: type fieldName>
-    SymExpr base = fromJimple(r.getBase());
-    String fieldName = r.getFieldSignature().getName();
-    return new SymFieldAccess(base, fieldName, symKindFromType(r.getType()));
-  }
-
-  private static SymExpr fromAbstractCondExpr(final AbstractConditionExpr e) {
-    SymExpr left = fromJimple(e.getOp1());
-    SymExpr right = fromJimple(e.getOp2());
-    BinOp op = jimpleOpToBinOp(e);
-    return new SymBinOp(op, left, right);
-  }
-
-  private static SymExpr fromAbstractBinOpExpr(final AbstractBinopExpr e) {
-    SymExpr left = fromJimple(e.getOp1());
-    SymExpr right = fromJimple(e.getOp2());
-    BinOp op = jimpleBinopToBinOp(e);
-    return new SymBinOp(op, left, right);
-  }
-
-  private static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
-    SymExpr base = fromJimple(e.getBase());
-    String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
-    boolean returnsBoolean =
-        e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
-
-    return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
-  }
-
-  private static SymExpr fromArrayRef(final JArrayRef r) {
-    SymArray base = (SymArray) fromJimple(r.getBase());
-    SymExpr indexExpr = fromJimple(r.getIndex());
-    return new SymArrayRef(base, indexExpr);
-  }
-
-  private static SymExpr fromLength(final JLengthExpr r) {
-    SymExpr op = fromJimple(r.getOp());
-    return new SymLength(op);
-  }
-
-  private static SymExpr fromNewArray(final JNewArrayExpr r) {
-    String name = r.toString();
-    return new SymArray(name, symKindFromType(r.getType()), r.getType().toString());
-  }
-
-  private static SymExpr fromCast(final JCastExpr r) {
-    SymExpr op = fromJimple(r.getOp());
-    String type = r.getType().toString();
-    return new SymCast(op, type);
-  }
-
-  private static SymExpr fromInstanceOf(final JInstanceOfExpr r) {
-    SymExpr op = fromJimple(r.getOp());
-    String type = r.getCheckType().toString();
-    return new SymInstanceOf(op, type);
-  }
-
-  private static SymExpr fromParamRef(final JParameterRef r) {
-    int index = r.getIndex();
-    SymKind kind = symKindFromType(r.getType());
-    return new SymParam(index, kind);
-  }
-
-  private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {
+  
+  static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
     if (expr instanceof JEqExpr) {
       return BinOp.EQ;
     }
@@ -196,10 +130,6 @@ public abstract class SymExpr {
     if (expr instanceof JGeExpr) {
       return BinOp.GE;
     }
-    throw new IllegalArgumentException("Unknown condition expr: " + expr.getClass());
-  }
-
-  private static BinOp jimpleBinopToBinOp(final AbstractBinopExpr expr) {
     if (expr instanceof JAddExpr) {
       return BinOp.ADD;
     }
@@ -269,17 +199,22 @@ public abstract class SymExpr {
     SymExpr lhs = bin.getLhs();
     SymExpr rhs = bin.getRhs();
 
-    // when we have a Jimple comparison whose stack variable traces back to
-    // a method call, we don't need the equality; only the respective symbol
-    // and the truth value
-    if (rhs instanceof SymConst c
-            && Integer.valueOf(0).equals(c.getValue())
-            && (lhs.getKind() == SymKind.BOOLEAN_METHOD)
-        || lhs.getKind() == SymKind.BOOLEAN) {
-
+    if (isZeroConst(rhs)
+            && (lhs.getKind() == SymKind.BOOLEAN_METHOD
+            || lhs.getKind() == SymKind.BOOLEAN)) {
       return lhs;
     }
 
     return expr;
+  }
+
+  private static boolean isZeroConst(final SymExpr expr) {
+    if (expr instanceof SymConst c) {
+      return Integer.valueOf(0).equals(c.getValue());
+    }
+    if (expr instanceof SymIntConst ic) {
+      return ic.getValue() == 0;
+    }
+    return false;
   }
 }

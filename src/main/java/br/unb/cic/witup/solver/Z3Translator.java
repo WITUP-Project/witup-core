@@ -6,11 +6,15 @@ import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
+import br.unb.cic.witup.analysis.symbolic.SymDoubleConst;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
+import br.unb.cic.witup.analysis.symbolic.SymFloatConst;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
+import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
-import br.unb.cic.witup.analysis.symbolic.SymParam;
+import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
+import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
@@ -150,6 +154,26 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
+  public Expr<?> visitIntConst(final SymIntConst i) {
+    return context.mkInt(i.getValue());
+  }
+
+  @Override
+  public Expr<?> visitDoubleConst(final SymDoubleConst d) {
+    return context.mkReal(d.toString());
+  }
+
+  @Override
+  public Expr<?> visitFloatConst(final SymFloatConst f) {
+    return context.mkReal(f.toString());
+  }
+
+  @Override
+  public Expr<?> visitLongConst(final SymLongConstant l) {
+    return context.mkInt(l.getValue());
+  }
+
+  @Override
   public Expr<?> visitFieldAccess(final SymFieldAccess f) {
     Expr<?> base = f.getBase().accept(this);
     String key = toFieldKEy(f, base);
@@ -260,7 +284,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  public Expr<?> visitParamRef(final SymParam r) {
+  public Expr<?> visitParamRef(final SymParamRef r) {
     return exprMap.computeIfAbsent(
         r.toString(),
         name -> {

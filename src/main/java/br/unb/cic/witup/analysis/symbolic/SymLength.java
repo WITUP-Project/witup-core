@@ -1,12 +1,18 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.expr.JLengthExpr;
 
 public final class SymLength extends SymExpr {
   private final SymExpr op;
 
-  public SymLength(final SymExpr op) {
-    super(SymKind.OTHER);
+  public SymLength(final JLengthExpr e) {
+    super(SymKind.INT);
+    this.op = fromJimple(e.getOp());
+  }
+
+  private SymLength(final SymExpr op) {
+    super(SymKind.INT);
     this.op = op;
   }
 
