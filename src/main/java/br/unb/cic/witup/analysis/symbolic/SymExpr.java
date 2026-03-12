@@ -77,7 +77,7 @@ public abstract class SymExpr {
       case IntConstant c -> new SymIntConst(c);
       case DoubleConstant c -> new SymDoubleConst(c);
       case FloatConstant c -> new SymFloatConst(c);
-      case LongConstant c -> new SymConst(c.getValue(), symKindFromType(c.getType()));
+      case LongConstant c -> new SymLongConstant(c);
       case StringConstant c -> new SymStringConst(c.getValue());
       case JInstanceFieldRef r -> fromFieldRef(r);
       case AbstractConditionExpr e -> fromAbstractCondExpr(e);

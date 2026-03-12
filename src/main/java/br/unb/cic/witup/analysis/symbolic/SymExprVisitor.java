@@ -11,6 +11,8 @@ public interface SymExprVisitor<T> {
 
   T visitFloatConst(SymFloatConst f);
 
+  T visitLongConst(SymLongConstant l);
+
   T visitFieldAccess(SymFieldAccess f);
 
   T visitStringConst(SymStringConst s);
