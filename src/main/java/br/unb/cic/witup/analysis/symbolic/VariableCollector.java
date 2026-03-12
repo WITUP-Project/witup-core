@@ -34,6 +34,11 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
+  public Void visitFloatConst(final SymFloatConst f) {
+    return null;
+  }
+
+  @Override
   public Void visitFieldAccess(final SymFieldAccess f) {
     f.getBase().accept(this);
     return null;
