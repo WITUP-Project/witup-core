@@ -5,6 +5,7 @@ import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +24,7 @@ public final class ProjectAnalyser implements GraphRepository {
   private final Path jarPath;
   private static final Logger log = LoggerFactory.getLogger("ProjectAnalyser");
   private final Map<String, WITUpGraph> methodGraphs = new HashMap<>();
+  private final SummaryCache summaryCache = new SummaryCache();
 
   public ProjectAnalyser(final Path jarPath) {
     this.jarPath = jarPath;
@@ -33,6 +35,22 @@ public final class ProjectAnalyser implements GraphRepository {
     return Optional.ofNullable(methodGraphs.get(methodSignature));
   }
 
+  public Map<String, MethodSummary> summariseAll(final Map<String, WITUpGraph> graphs) {
+    Map<String, MethodSummary> summaries = new LinkedHashMap<>();
+    for (Map.Entry<String, WITUpGraph> entry : graphs.entrySet()) {
+      String sig = entry.getKey();
+      try {
+        MethodSummary summary = new MethodConstraintAnalysis(
+                entry.getValue(), this, summaryCache)
+                .summariseConstraintPaths();
+        summaries.put(sig, summary);
+      } catch (Exception e) {
+        log.warn("Failed to summarise {}: {}", sig, e.getMessage());
+      }
+    }
+    return summaries;
+  }
+
   public Map<String, WITUpGraph> analyseProject() {
     AnalysisInputLocation inputLocation =
         new JavaClassPathAnalysisInputLocation(jarPath.toAbsolutePath().toString());
@@ -41,7 +59,9 @@ public final class ProjectAnalyser implements GraphRepository {
     log.info("Found {} classes", classes.size());
     log.info(classes.toString());
 
-    return analyseClasses(classes);
+    Map<String, WITUpGraph> methodGraph = analyseClasses(classes);
+    methodGraphs.putAll(methodGraph);
+    return methodGraphs;
   }
 
   private Map<String, WITUpGraph> analyseClasses(final List<JavaSootClass> classes) {
