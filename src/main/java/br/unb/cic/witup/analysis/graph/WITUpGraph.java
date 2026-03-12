@@ -38,14 +38,18 @@ import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
+import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
   private String methodSignature;
+  private JavaSootMethod method;
 
   public String getMethodSignature() {
     return methodSignature;
   }
+
+  public JavaSootMethod getMethod() { return method; }
 
   private WITUpGraph() {
     super(WITUpEdge.class);
@@ -57,10 +61,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
    * @param pg the PropertyGraph to convert
    * @return the converted WITUpGraph
    */
-  public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final String methodSignature) {
+  public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final JavaSootMethod method) {
     WITUpGraph graph = new WITUpGraph();
     Map<PropertyGraphNode, WITUpNode> cachedNodes = new HashMap<>();
-    graph.methodSignature = methodSignature;
+    graph.methodSignature = method.getSignature().toString();
+    graph.method = method;
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
       WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(), WITUpGraph::createNode);
@@ -145,14 +150,12 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
-    AsSubgraph<WITUpNode, WITUpEdge> cfg =
-        new AsSubgraph<>(
+    return new AsSubgraph<>(
             this,
-            null,
-            this.edgeSet().stream()
-                .filter(edge -> edge instanceof CFGEdge)
-                .collect(Collectors.toSet()));
-    return cfg;
+        null,
+        this.edgeSet().stream()
+            .filter(edge -> edge instanceof CFGEdge)
+            .collect(Collectors.toSet()));
   }
 
   private WITUpNode findEntryNode() {

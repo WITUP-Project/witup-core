@@ -34,7 +34,7 @@ public final class CPGBuilder {
     //      e.printStackTrace();
     //    }
 
-    return WITUpGraph.fromPropertyGraph(cpg, method.getSignature().toString());
+    return WITUpGraph.fromPropertyGraph(cpg, method);
   }
 
   public static PropertyGraph buildCpg(final JavaSootMethod method) {

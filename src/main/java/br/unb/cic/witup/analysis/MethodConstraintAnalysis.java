@@ -5,10 +5,13 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sootup.core.types.Type;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +130,8 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
             .flatMap(node -> getSymbolicConstraintPaths(node).stream())
             .collect(Collectors.toList());
 
-    MethodSummary summary = new MethodSummary(sig, paths);
+    List<SymParamRef> formals = buildFormals(cpg);
+    MethodSummary summary = new MethodSummary(getMethodSignature(), paths, formals, null);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);
@@ -136,4 +140,12 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
     return summary;
   }
 
+  private static List<SymParamRef> buildFormals(final WITUpGraph cpg) {
+    List<Type> paramTypes = cpg.getMethod().getParameterTypes();
+    List<SymParamRef> formals = new ArrayList<>();
+    for (int i = 0; i < paramTypes.size(); i++) {
+      formals.add(new SymParamRef(i, paramTypes.get(i)));
+    }
+    return formals;
+  }
 }
