@@ -7,6 +7,7 @@ import sootup.core.jimple.common.constant.DoubleConstant;
 import sootup.core.jimple.common.constant.FloatConstant;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
+import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
 import sootup.core.jimple.common.expr.JAddExpr;
@@ -78,6 +79,7 @@ public abstract class SymExpr {
       case FloatConstant c -> new SymFloatConst(c);
       case LongConstant c -> new SymLongConstant(c);
       case StringConstant c -> new SymStringConst(c);
+      case NullConstant n -> SymNull.INSTANCE;
       case JInstanceFieldRef r ->  new SymFieldAccess(fromJimple(r.getBase()), r);
       case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
       case JVirtualInvokeExpr e -> SymVirtualInvoke.fromVirtualInvokeExpr(e);

@@ -99,4 +99,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitParamRef(final SymParamRef r) {
     return null;
   }
+
+  @Override
+  public Void visitNull(SymNull n) {
+    return null;
+  }
 }

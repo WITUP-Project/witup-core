@@ -14,6 +14,7 @@ import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
+import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
@@ -291,5 +292,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
           Sort sort = r.accept(sortInferrer);
           return context.mkConst(name, sort);
         });
+  }
+
+  @Override
+  public Expr<?> visitNull(final SymNull n) {
+    return context.mkInt(0);
   }
 }
