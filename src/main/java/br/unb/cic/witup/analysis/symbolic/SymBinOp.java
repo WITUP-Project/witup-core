@@ -1,11 +1,18 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.expr.AbstractBinopExpr;
 
 public final class SymBinOp extends SymExpr {
   private final BinOp op;
   private final SymExpr lhs;
   private final SymExpr rhs;
+
+  public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
+    SymExpr left = fromJimple(e.getOp1());
+    SymExpr right = fromJimple(e.getOp2());
+    return new SymBinOp(fromJimpleBinop(e), left, right);
+  }
 
   public SymBinOp(final BinOp op, final SymExpr lhs, final SymExpr rhs) {
     super(deriveKind(lhs, rhs));

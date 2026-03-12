@@ -9,7 +9,6 @@ import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
-import sootup.core.jimple.common.expr.AbstractConditionExpr;
 import sootup.core.jimple.common.expr.JAddExpr;
 import sootup.core.jimple.common.expr.JCastExpr;
 import sootup.core.jimple.common.expr.JCmpExpr;
@@ -80,8 +79,7 @@ public abstract class SymExpr {
       case LongConstant c -> new SymLongConstant(c);
       case StringConstant c -> new SymStringConst(c);
       case JInstanceFieldRef r ->  new SymFieldAccess(fromJimple(r.getBase()), r);
-      case AbstractConditionExpr e -> fromAbstractCondExpr(e);
-      case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
+      case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
       case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
       case JArrayRef r -> fromArrayRef(r);
       case JLengthExpr e -> fromLength(e);
@@ -111,20 +109,6 @@ public abstract class SymExpr {
       case ClassType ignore -> SymKind.OBJECT;
       default -> SymKind.OTHER;
     };
-  }
-
-  private static SymExpr fromAbstractCondExpr(final AbstractConditionExpr e) {
-    SymExpr left = fromJimple(e.getOp1());
-    SymExpr right = fromJimple(e.getOp2());
-    BinOp op = jimpleOpToBinOp(e);
-    return new SymBinOp(op, left, right);
-  }
-
-  private static SymExpr fromAbstractBinOpExpr(final AbstractBinopExpr e) {
-    SymExpr left = fromJimple(e.getOp1());
-    SymExpr right = fromJimple(e.getOp2());
-    BinOp op = jimpleBinopToBinOp(e);
-    return new SymBinOp(op, left, right);
   }
 
   private static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
@@ -165,7 +149,7 @@ public abstract class SymExpr {
     return new SymParam(index, kind);
   }
 
-  private static BinOp jimpleOpToBinOp(final AbstractConditionExpr expr) {
+  static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
     if (expr instanceof JEqExpr) {
       return BinOp.EQ;
     }
@@ -184,10 +168,6 @@ public abstract class SymExpr {
     if (expr instanceof JGeExpr) {
       return BinOp.GE;
     }
-    throw new IllegalArgumentException("Unknown condition expr: " + expr.getClass());
-  }
-
-  private static BinOp jimpleBinopToBinOp(final AbstractBinopExpr expr) {
     if (expr instanceof JAddExpr) {
       return BinOp.ADD;
     }
@@ -214,6 +194,56 @@ public abstract class SymExpr {
     }
     throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
   }
+
+//  private static BinOp fromJimpleOp(final AbstractConditionExpr expr) {
+//    if (expr instanceof JEqExpr) {
+//      return BinOp.EQ;
+//    }
+//    if (expr instanceof JNeExpr) {
+//      return BinOp.NE;
+//    }
+//    if (expr instanceof JLtExpr) {
+//      return BinOp.LT;
+//    }
+//    if (expr instanceof JLeExpr) {
+//      return BinOp.LE;
+//    }
+//    if (expr instanceof JGtExpr) {
+//      return BinOp.GT;
+//    }
+//    if (expr instanceof JGeExpr) {
+//      return BinOp.GE;
+//    }
+//    throw new IllegalArgumentException("Unknown condition expr: " + expr.getClass());
+//  }
+//
+//  private static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
+//    if (expr instanceof JAddExpr) {
+//      return BinOp.ADD;
+//    }
+//    if (expr instanceof JSubExpr) {
+//      return BinOp.SUB;
+//    }
+//    if (expr instanceof JMulExpr) {
+//      return BinOp.MUL;
+//    }
+//    if (expr instanceof JDivExpr) {
+//      return BinOp.DIV;
+//    }
+//    if (expr instanceof JRemExpr) {
+//      return BinOp.MOD;
+//    }
+//    if (expr instanceof JCmpExpr) {
+//      return BinOp.CMP;
+//    }
+//    if (expr instanceof JCmpgExpr) {
+//      return BinOp.CMPG;
+//    }
+//    if (expr instanceof JCmplExpr) {
+//      return BinOp.CMPL;
+//    }
+//    throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
+//  }
 
   // Simplify patterns like (x cmpg y) >= 0 to x >= y
   public static SymExpr simplifyCmpPatterns(final SymExpr expr) {
