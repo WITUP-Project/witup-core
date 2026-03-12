@@ -1,4 +1,5 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,6 +25,8 @@ import org.jgrapht.GraphPath;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+
+import static br.unb.cic.witup.test.SymbolicTestHelper.solve;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ArrayTest {
@@ -486,5 +489,43 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     assertTrue(sol0.getBool("arr_is_null"), "arr_is_null to be true");
+  }
+
+  @Test
+  public void getChecked() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int getChecked(int[],int)>";
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(3, throwNodes.size());
+
+    // first throw node (null check)
+    List<WITUpNode> conditionNodes0 =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes0.size());
+
+    SolverResult sol0 = solve(cpg, throwNodes.get(0), methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getBool("arr_is_null"), "arr must be null");
+
+    // second throw node (i < 0)
+    List<WITUpNode> conditionNodes1 =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(1));
+    assertEquals(2, conditionNodes1.size());
+
+    SolverResult sol1 = solve(cpg, throwNodes.get(1), methodSignature).getFirst();
+    assertTrue(sol1.isSat());
+    assertTrue(sol1.getInt("i") < 0, "expected i < 0");
+
+    // third throw node (i >= arr.length)
+    List<WITUpNode> conditionNodes2 =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(2));
+    assertEquals(3, conditionNodes2.size());
+
+    SolverResult sol2 = solve(cpg, throwNodes.get(2), methodSignature).getFirst();
+    assertTrue(sol2.isSat());
+    assertFalse(sol2.getBool("arr_is_null"), "arr must not be null");
+    assertTrue(sol2.getInt("i") >= 0, "i must be non-negative");
+    assertTrue(sol2.getInt("i") >= sol2.getInt("arr.length"), "expected i >= arr.length");
   }
 }

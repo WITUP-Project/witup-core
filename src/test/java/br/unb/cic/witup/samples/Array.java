@@ -112,7 +112,10 @@ public class Array {
     if (arr == null) {
       throw new NullPointerException("arr is null");
     }
-    if (i < 0 || i >= arr.length) {
+    if (i < 0) {
+      throw new ArrayIndexOutOfBoundsException("index out of bounds");
+    }
+    if (i >= arr.length) {
       throw new ArrayIndexOutOfBoundsException("index out of bounds");
     }
     return arr[i];
