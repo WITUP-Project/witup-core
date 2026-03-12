@@ -26,7 +26,9 @@ import java.util.Map;
  */
 public final class SymbolicConstraintSolver {
 
+  // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
+  public static final String IS_NULL = "_is_null";
   private Map<String, MethodSummary> methodSummaries = new HashMap<>();
 
   public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {}
@@ -141,6 +143,25 @@ public final class SymbolicConstraintSolver {
 
   private String toModelKey(final String name) {
     return name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
+  }
+
+  public Map<String, List<SolverResult>> solveConstraintsSafe(
+          final Map<String, String> failures) {
+    Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
+    for (MethodSummary summary : methodSummaries.values()) {
+      String sig = summary.getMethodSignature();
+      try {
+        List<SolverResult> results = new ArrayList<>();
+        List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
+        for (int i = 0; i < paths.size(); i++) {
+          results.add(checkPath(sig + "#" + i, paths.get(i)));
+        }
+        methodSolutions.put(sig, results);
+      } catch (Exception e) {
+        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
+      }
+    }
+    return methodSolutions;
   }
 
   //  public List<SolverResult> solveConstraints(final List<SymbolicConstraint> constraints) {

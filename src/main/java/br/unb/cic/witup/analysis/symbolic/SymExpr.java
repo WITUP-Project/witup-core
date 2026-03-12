@@ -7,6 +7,7 @@ import sootup.core.jimple.common.constant.DoubleConstant;
 import sootup.core.jimple.common.constant.FloatConstant;
 import sootup.core.jimple.common.constant.IntConstant;
 import sootup.core.jimple.common.constant.LongConstant;
+import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
 import sootup.core.jimple.common.expr.JAddExpr;
@@ -69,8 +70,7 @@ public abstract class SymExpr {
   // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
-      case Local l when l.getType() instanceof ArrayType ->
-          new SymArray(l);
+      case Local l when l.getType() instanceof ArrayType -> new SymArray(l);
 
       case Local l -> new SymVar(l);
       case IntConstant c -> new SymIntConst(c);
@@ -78,7 +78,8 @@ public abstract class SymExpr {
       case FloatConstant c -> new SymFloatConst(c);
       case LongConstant c -> new SymLongConstant(c);
       case StringConstant c -> new SymStringConst(c);
-      case JInstanceFieldRef r ->  new SymFieldAccess(fromJimple(r.getBase()), r);
+      case NullConstant n -> SymNull.INSTANCE;
+      case JInstanceFieldRef r -> new SymFieldAccess(fromJimple(r.getBase()), r);
       case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
       case JVirtualInvokeExpr e -> SymVirtualInvoke.fromVirtualInvokeExpr(e);
       case JArrayRef r -> SymArrayRef.fromArrayRef(r);
@@ -200,8 +201,7 @@ public abstract class SymExpr {
     SymExpr rhs = bin.getRhs();
 
     if (isZeroConst(rhs)
-            && (lhs.getKind() == SymKind.BOOLEAN_METHOD
-            || lhs.getKind() == SymKind.BOOLEAN)) {
+        && (lhs.getKind() == SymKind.BOOLEAN_METHOD || lhs.getKind() == SymKind.BOOLEAN)) {
       return lhs;
     }
 

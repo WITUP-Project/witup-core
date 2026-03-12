@@ -22,12 +22,10 @@ public final class SymBinOp extends SymExpr {
   }
 
   private static SymKind deriveKind(final SymExpr left, final SymExpr right) {
-    if (left.getKind() == SymKind.BOOLEAN_METHOD
-            || left.getKind() == SymKind.BOOLEAN) {
+    if (left.getKind() == SymKind.BOOLEAN_METHOD || left.getKind() == SymKind.BOOLEAN) {
       return left.getKind();
     }
-    if (right.getKind() == SymKind.BOOLEAN_METHOD
-            || right.getKind() == SymKind.BOOLEAN) {
+    if (right.getKind() == SymKind.BOOLEAN_METHOD || right.getKind() == SymKind.BOOLEAN) {
       return right.getKind();
     }
     return SymKind.OTHER;

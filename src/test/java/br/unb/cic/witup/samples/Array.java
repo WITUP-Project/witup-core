@@ -94,4 +94,30 @@ public class Array {
     }
     return sum;
   }
+
+  public void requireNonNullObject(Object o) {
+    if (o == null) {
+      throw new NullPointerException("o is null");
+    }
+  }
+
+  public int[] requireNonNullArray(int[] arr) {
+    if (arr == null) {
+      throw new NullPointerException("arr is null");
+    }
+    return arr;
+  }
+
+  public int getChecked(int[] arr, int i) {
+    if (arr == null) {
+      throw new NullPointerException("arr is null");
+    }
+    if (i < 0) {
+      throw new ArrayIndexOutOfBoundsException("index out of bounds");
+    }
+    if (i >= arr.length) {
+      throw new ArrayIndexOutOfBoundsException("index out of bounds");
+    }
+    return arr[i];
+  }
 }
