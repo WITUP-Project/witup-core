@@ -145,8 +145,7 @@ public final class SymbolicConstraintSolver {
     return name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
   }
 
-  public Map<String, List<SolverResult>> solveConstraintsSafe(
-          final Map<String, String> failures) {
+  public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
     Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
     for (MethodSummary summary : methodSummaries.values()) {
       String sig = summary.getMethodSignature();

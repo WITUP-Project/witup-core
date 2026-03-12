@@ -1,5 +1,6 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.SummaryResolver;
 import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
@@ -12,6 +13,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.jgrapht.GraphPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.LValue;
@@ -30,11 +33,22 @@ public final class BackwardSymbolicGenerator {
   private final WITUpGraph cpg;
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
+  // for now, resolver being null means intraprocedural. fix me when poc is done
+  private final SummaryResolver resolver;
+  private static final Logger log = LoggerFactory.getLogger("BackwardSymbolicGenerator");
 
   public BackwardSymbolicGenerator(
       final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
+    this(cpg, constraintPaths, null);
+  }
+
+  public BackwardSymbolicGenerator(
+      final WITUpGraph cpg,
+      final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths,
+      final SummaryResolver resolver) {
     this.cpg = cpg;
     this.constraintPaths = constraintPaths;
+    this.resolver = resolver;
   }
 
   public List<List<SymbolicConstraint>> generateSymbolicConstraintPaths() {
@@ -140,7 +154,16 @@ public final class BackwardSymbolicGenerator {
         continue;
       }
 
+      // this is the interprocedural hook
       SymExpr rhsSymExpr = SymExpr.fromJimple(assign.getRightOp());
+      // if rhs is a virtual invoke and we have a resolver, try to substitute
+      if (rhsSymExpr instanceof SymVirtualInvoke inv && resolver != null) {
+        // extract callee signature and actuals from the Jimple invoke expr
+        log.debug(
+            "Interprocedural call site: {} — resolver present, substitution not yet implemented",
+            inv);
+      }
+
       symExpr = symExpr.substitute(definedVar, rhsSymExpr);
       symExpr = backwardSubstitute(symExpr, sourceNode, visited);
     }

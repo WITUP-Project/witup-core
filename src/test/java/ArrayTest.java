@@ -1,3 +1,4 @@
+import static br.unb.cic.witup.test.SymbolicTestHelper.solve;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -25,8 +26,6 @@ import org.jgrapht.GraphPath;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import static br.unb.cic.witup.test.SymbolicTestHelper.solve;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ArrayTest {
@@ -501,7 +500,7 @@ public class ArrayTest {
 
     // first throw node (null check)
     List<WITUpNode> conditionNodes0 =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes0.size());
 
     SolverResult sol0 = solve(cpg, throwNodes.get(0), methodSignature).getFirst();
@@ -510,7 +509,7 @@ public class ArrayTest {
 
     // second throw node (i < 0)
     List<WITUpNode> conditionNodes1 =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(1));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(1));
     assertEquals(2, conditionNodes1.size());
 
     SolverResult sol1 = solve(cpg, throwNodes.get(1), methodSignature).getFirst();
@@ -519,7 +518,7 @@ public class ArrayTest {
 
     // third throw node (i >= arr.length)
     List<WITUpNode> conditionNodes2 =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(2));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(2));
     assertEquals(3, conditionNodes2.size());
 
     SolverResult sol2 = solve(cpg, throwNodes.get(2), methodSignature).getFirst();

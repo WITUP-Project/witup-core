@@ -2,6 +2,11 @@ import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.solver.SolverResult;
+import br.unb.cic.witup.solver.SolverResultDTO;
+import br.unb.cic.witup.solver.SymbolicConstraintSolver;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,12 +14,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import br.unb.cic.witup.solver.SolverResult;
-import br.unb.cic.witup.solver.SolverResultDTO;
-import br.unb.cic.witup.solver.SymbolicConstraintSolver;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +50,8 @@ public final class Driver {
     for (Map.Entry<String, WITUpGraph> entry : methodGraphs.entrySet()) {
       String sig = entry.getKey();
       try {
-        methodSummaries.put(sig,
-                new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths());
+        methodSummaries.put(
+            sig, new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths());
       } catch (Exception e) {
         log.warn("Failed to summarise {}: {}", sig, e.getMessage());
         failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -64,10 +63,13 @@ public final class Driver {
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(methodSummaries);
     Map<String, List<SolverResult>> methodSolutions = solver.solveConstraintsSafe(failures);
 
-    Map<String, List<SolverResultDTO>> dtoSolutions = methodSolutions.entrySet().stream()
-            .collect(Collectors.toMap(
+    Map<String, List<SolverResultDTO>> dtoSolutions =
+        methodSolutions.entrySet().stream()
+            .collect(
+                Collectors.toMap(
                     Map.Entry::getKey,
-                    entry -> entry.getValue().stream()
+                    entry ->
+                        entry.getValue().stream()
                             .map(SolverResultDTO::from)
                             .collect(Collectors.toList())));
 
