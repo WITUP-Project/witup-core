@@ -1,13 +1,14 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.constant.StringConstant;
 
 public final class SymStringConst extends SymExpr {
   private final String value;
 
-  public SymStringConst(final String value) {
+  public SymStringConst(final StringConstant c) {
     super(SymKind.STRING);
-    this.value = value;
+    this.value = c.getValue();
   }
 
   @Override
