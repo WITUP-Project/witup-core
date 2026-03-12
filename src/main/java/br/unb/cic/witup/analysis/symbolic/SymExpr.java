@@ -79,7 +79,7 @@ public abstract class SymExpr {
       case FloatConstant c -> new SymFloatConst(c);
       case LongConstant c -> new SymLongConstant(c);
       case StringConstant c -> new SymStringConst(c);
-      case JInstanceFieldRef r -> fromFieldRef(r);
+      case JInstanceFieldRef r ->  new SymFieldAccess(fromJimple(r.getBase()), r);
       case AbstractConditionExpr e -> fromAbstractCondExpr(e);
       case AbstractBinopExpr e -> fromAbstractBinOpExpr(e);
       case JVirtualInvokeExpr e -> fromVirtualInvokeExpr(e);
@@ -111,13 +111,6 @@ public abstract class SymExpr {
       case ClassType ignore -> SymKind.OBJECT;
       default -> SymKind.OTHER;
     };
-  }
-
-  private static SymExpr fromFieldRef(final JInstanceFieldRef r) {
-    // this.<ClassName: type fieldName>
-    SymExpr base = fromJimple(r.getBase());
-    String fieldName = r.getFieldSignature().getName();
-    return new SymFieldAccess(base, fieldName, symKindFromType(r.getType()));
   }
 
   private static SymExpr fromAbstractCondExpr(final AbstractConditionExpr e) {

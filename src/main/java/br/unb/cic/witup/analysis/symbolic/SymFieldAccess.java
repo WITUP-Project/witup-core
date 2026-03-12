@@ -1,15 +1,22 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.ref.JInstanceFieldRef;
 
 public final class SymFieldAccess extends SymExpr {
   private final SymExpr base; // e.g., "this" or another object
   private final String fieldName; // e.g., "radius"
 
-  public SymFieldAccess(final SymExpr base, final String fieldName, final SymKind kind) {
-    super(kind);
+  public SymFieldAccess(final SymExpr base, final JInstanceFieldRef r) {
+    super(symKindFromType(r.getType()));
     this.base = base;
+    this.fieldName = r.getFieldSignature().getName();
+  }
+
+  private SymFieldAccess(final SymExpr value, final String fieldName, final SymKind kind) {
+    super(kind);
     this.fieldName = fieldName;
+    this.base = value;
   }
 
   @Override

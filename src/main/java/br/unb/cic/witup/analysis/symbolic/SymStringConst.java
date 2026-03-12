@@ -5,6 +5,7 @@ import sootup.core.jimple.common.constant.StringConstant;
 
 public final class SymStringConst extends SymExpr {
   private final String value;
+  // we have access to c.getType() if we need
 
   public SymStringConst(final StringConstant c) {
     super(SymKind.STRING);
