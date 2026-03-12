@@ -86,7 +86,7 @@ public abstract class SymExpr {
       case JNewArrayExpr e -> new SymArray(e);
       case JCastExpr e -> new SymCast(e);
       case JInstanceOfExpr e -> new SymInstanceOf(e);
-      case JParameterRef r -> fromParamRef(r);
+      case JParameterRef r -> new SymParamRef(r);
       default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }
@@ -110,13 +110,7 @@ public abstract class SymExpr {
       default -> SymKind.OTHER;
     };
   }
-
-  private static SymExpr fromParamRef(final JParameterRef r) {
-    int index = r.getIndex();
-    SymKind kind = symKindFromType(r.getType());
-    return new SymParam(index, kind);
-  }
-
+  
   static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
     if (expr instanceof JEqExpr) {
       return BinOp.EQ;

@@ -1,11 +1,17 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.ref.JParameterRef;
 
-public final class SymParam extends SymExpr {
+public final class SymParamRef extends SymExpr {
   private final int index;
 
-  public SymParam(final int index, final SymKind kind) {
+  public SymParamRef(final JParameterRef r) {
+    super(symKindFromType(r.getType()));
+    this.index = r.getIndex();
+  }
+
+  public SymParamRef(final int index, final SymKind kind) {
     super(kind);
     this.index = index;
   }

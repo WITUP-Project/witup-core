@@ -14,7 +14,7 @@ import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
-import br.unb.cic.witup.analysis.symbolic.SymParam;
+import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
@@ -284,7 +284,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  public Expr<?> visitParamRef(final SymParam r) {
+  public Expr<?> visitParamRef(final SymParamRef r) {
     return exprMap.computeIfAbsent(
         r.toString(),
         name -> {

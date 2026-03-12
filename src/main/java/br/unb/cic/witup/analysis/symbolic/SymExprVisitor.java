@@ -31,5 +31,5 @@ public interface SymExprVisitor<T> {
 
   T visitInstanceOf(SymInstanceOf r);
 
-  T visitParamRef(SymParam p);
+  T visitParamRef(SymParamRef p);
 }
