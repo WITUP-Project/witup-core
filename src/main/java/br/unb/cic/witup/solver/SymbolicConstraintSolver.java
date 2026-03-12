@@ -145,6 +145,25 @@ public final class SymbolicConstraintSolver {
     return name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
   }
 
+  public Map<String, List<SolverResult>> solveConstraintsSafe(
+          final Map<String, String> failures) {
+    Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
+    for (MethodSummary summary : methodSummaries.values()) {
+      String sig = summary.getMethodSignature();
+      try {
+        List<SolverResult> results = new ArrayList<>();
+        List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
+        for (int i = 0; i < paths.size(); i++) {
+          results.add(checkPath(sig + "#" + i, paths.get(i)));
+        }
+        methodSolutions.put(sig, results);
+      } catch (Exception e) {
+        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
+      }
+    }
+    return methodSolutions;
+  }
+
   //  public List<SolverResult> solveConstraints(final List<SymbolicConstraint> constraints) {
   //    List<SolverResult> results = new ArrayList<>();
   //    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
