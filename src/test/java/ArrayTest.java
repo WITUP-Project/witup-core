@@ -40,7 +40,7 @@ public class ArrayTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     assertNotNull(witupGraphs);
-    assertEquals(12, witupGraphs.size());
+    assertEquals(13, witupGraphs.size());
   }
 
   @Test

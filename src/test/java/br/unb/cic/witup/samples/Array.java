@@ -107,4 +107,14 @@ public class Array {
     }
     return arr;
   }
+
+  public int getChecked(int[] arr, int i) {
+    if (arr == null) {
+      throw new NullPointerException("arr is null");
+    }
+    if (i < 0 || i >= arr.length) {
+      throw new ArrayIndexOutOfBoundsException("index out of bounds");
+    }
+    return arr[i];
+  }
 }
