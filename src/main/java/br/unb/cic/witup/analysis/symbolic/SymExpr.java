@@ -81,7 +81,7 @@ public abstract class SymExpr {
       case JInstanceFieldRef r ->  new SymFieldAccess(fromJimple(r.getBase()), r);
       case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
       case JVirtualInvokeExpr e -> SymVirtualInvoke.fromVirtualInvokeExpr(e);
-      case JArrayRef r -> fromArrayRef(r);
+      case JArrayRef r -> SymArrayRef.fromArrayRef(r);
       case JLengthExpr e -> fromLength(e);
       case JNewArrayExpr e -> new SymArray(e);
       case JCastExpr e -> fromCast(e);
@@ -109,12 +109,6 @@ public abstract class SymExpr {
       case ClassType ignore -> SymKind.OBJECT;
       default -> SymKind.OTHER;
     };
-  }
-
-  private static SymExpr fromArrayRef(final JArrayRef r) {
-    SymArray base = (SymArray) fromJimple(r.getBase());
-    SymExpr indexExpr = fromJimple(r.getIndex());
-    return new SymArrayRef(base, indexExpr);
   }
 
   private static SymExpr fromLength(final JLengthExpr r) {
@@ -185,56 +179,6 @@ public abstract class SymExpr {
     }
     throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
   }
-
-//  private static BinOp fromJimpleOp(final AbstractConditionExpr expr) {
-//    if (expr instanceof JEqExpr) {
-//      return BinOp.EQ;
-//    }
-//    if (expr instanceof JNeExpr) {
-//      return BinOp.NE;
-//    }
-//    if (expr instanceof JLtExpr) {
-//      return BinOp.LT;
-//    }
-//    if (expr instanceof JLeExpr) {
-//      return BinOp.LE;
-//    }
-//    if (expr instanceof JGtExpr) {
-//      return BinOp.GT;
-//    }
-//    if (expr instanceof JGeExpr) {
-//      return BinOp.GE;
-//    }
-//    throw new IllegalArgumentException("Unknown condition expr: " + expr.getClass());
-//  }
-//
-//  private static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
-//    if (expr instanceof JAddExpr) {
-//      return BinOp.ADD;
-//    }
-//    if (expr instanceof JSubExpr) {
-//      return BinOp.SUB;
-//    }
-//    if (expr instanceof JMulExpr) {
-//      return BinOp.MUL;
-//    }
-//    if (expr instanceof JDivExpr) {
-//      return BinOp.DIV;
-//    }
-//    if (expr instanceof JRemExpr) {
-//      return BinOp.MOD;
-//    }
-//    if (expr instanceof JCmpExpr) {
-//      return BinOp.CMP;
-//    }
-//    if (expr instanceof JCmpgExpr) {
-//      return BinOp.CMPG;
-//    }
-//    if (expr instanceof JCmplExpr) {
-//      return BinOp.CMPL;
-//    }
-//    throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
-//  }
 
   // Simplify patterns like (x cmpg y) >= 0 to x >= y
   public static SymExpr simplifyCmpPatterns(final SymExpr expr) {

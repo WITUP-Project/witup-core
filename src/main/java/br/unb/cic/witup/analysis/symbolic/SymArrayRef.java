@@ -1,10 +1,18 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import sootup.core.jimple.common.ref.JArrayRef;
 
 public final class SymArrayRef extends SymExpr {
   private final SymExpr array;
   private final SymExpr index;
+  // we have access to getType, getUses
+
+  public static SymExpr fromArrayRef(final JArrayRef r) {
+    SymArray base = (SymArray) fromJimple(r.getBase());
+    SymExpr indexExpr = fromJimple(r.getIndex());
+    return new SymArrayRef(base, indexExpr);
+  }
 
   public SymArrayRef(final SymExpr array, final SymExpr index) {
     super(array.getKind());
