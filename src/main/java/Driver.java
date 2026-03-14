@@ -1,4 +1,3 @@
-import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
@@ -40,24 +39,11 @@ public final class Driver {
     }
 
     log.info("Starting analysis for {}", jarPath);
-
     ProjectAnalyser analyser = new ProjectAnalyser(jarPath);
     Map<String, WITUpGraph> methodGraphs = analyser.analyseProject();
 
-    Map<String, MethodSummary> methodSummaries = analyser.summariseAll(methodGraphs);
-
     Map<String, String> failures = new LinkedHashMap<>();
-
-    for (Map.Entry<String, WITUpGraph> entry : methodGraphs.entrySet()) {
-      String sig = entry.getKey();
-      try {
-        methodSummaries.put(
-            sig, new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths());
-      } catch (Exception e) {
-        log.warn("Failed to summarise {}: {}", sig, e.getMessage());
-        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
-      }
-    }
+    Map<String, MethodSummary> methodSummaries = analyser.summariseAll(methodGraphs, failures);
 
     log.info("Summarised {}/{} methods", methodSummaries.size(), methodGraphs.size());
 

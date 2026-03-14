@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ import sootup.core.jimple.common.stmt.Stmt;
  * trace temporaries, parameters back to their origin node Produces a path of symbolic constraints
  * to be tested by Z3.
  */
-public final class BackwardSymbolicGenerator {
+public final class SymbolicConstraintGenerator {
   private final WITUpGraph cpg;
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
@@ -43,12 +42,12 @@ public final class BackwardSymbolicGenerator {
   private final SummaryResolver resolver;
   private static final Logger log = LoggerFactory.getLogger("BackwardSymbolicGenerator");
 
-  public BackwardSymbolicGenerator(
+  public SymbolicConstraintGenerator(
       final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
     this(cpg, constraintPaths, null);
   }
 
-  public BackwardSymbolicGenerator(
+  public SymbolicConstraintGenerator(
       final WITUpGraph cpg,
       final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths,
       final SummaryResolver resolver) {
@@ -170,9 +169,8 @@ public final class BackwardSymbolicGenerator {
           String calleeSig = invoke.getMethodSignature().toString();
           log.debug("Interprocedural hook fired for: {}", calleeSig);
 
-          List<SymExpr> actuals = invoke.getArgs().stream()
-                  .map(SymExpr::fromJimple)
-                  .collect(Collectors.toList());
+          List<SymExpr> actuals =
+              invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
 
           Optional<SymExpr> resolvedRet = resolver.resolveReturnExpr(calleeSig, actuals);
           if (resolvedRet.isPresent()) {

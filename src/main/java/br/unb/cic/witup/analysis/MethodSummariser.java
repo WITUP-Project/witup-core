@@ -5,10 +5,10 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
-import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +23,7 @@ import sootup.core.types.Type;
 /**
  * Given a method that throws, build the symbolic constraints for each path leading to throw nodes.
  */
-public final class MethodConstraintAnalysis implements SummaryResolver {
+public final class MethodSummariser implements SummaryResolver {
   private static final Logger log = LoggerFactory.getLogger("MethodConstraintAnalysis");
 
   private final WITUpGraph cpg;
@@ -32,27 +32,17 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
   private final GraphRepository graphRepository;
   private final SummaryRepository summaryRepository;
 
-  public MethodConstraintAnalysis(final WITUpGraph cpg) {
+  public MethodSummariser(final WITUpGraph cpg) {
     this(cpg, null, null);
   }
 
-  public MethodConstraintAnalysis(
+  public MethodSummariser(
       final WITUpGraph cpg,
       final GraphRepository graphRepository,
       final SummaryRepository summaryRepository) {
     this.cpg = cpg;
     this.graphRepository = graphRepository;
     this.summaryRepository = summaryRepository;
-  }
-
-  public static Map<String, MethodSummary> summariseAll(
-      final Map<String, WITUpGraph> methodGraphs) {
-    return methodGraphs.entrySet().stream()
-        .collect(
-            Collectors.toMap(
-                Map.Entry::getKey,
-                entry ->
-                    new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths()));
   }
 
   @Override
@@ -86,9 +76,9 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
 
     log.debug("Recursively analysing callee {}", calleeSignature);
     summaryRepository.markInProgress(calleeSignature);
-    MethodConstraintAnalysis calleeAnalysis =
-        new MethodConstraintAnalysis(calleeGraph.get(), graphRepository, summaryRepository);
-    MethodSummary calleeSummary = calleeAnalysis.summariseConstraintPaths();
+    MethodSummariser calleeAnalysis =
+        new MethodSummariser(calleeGraph.get(), graphRepository, summaryRepository);
+    MethodSummary calleeSummary = calleeAnalysis.summarise();
     summaryRepository.putSummary(calleeSignature, calleeSummary);
 
     // instantiate returnExpr with actuals when MethodSummary carries returnExpr
@@ -97,8 +87,7 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
     return instantiate(calleeSummary, actuals);
   }
 
-  private Optional<SymExpr> instantiate(
-          final MethodSummary summary, final List<SymExpr> actuals) {
+  private Optional<SymExpr> instantiate(final MethodSummary summary, final List<SymExpr> actuals) {
     if (!summary.hasReturnExpr()) {
       log.debug("No return expr in summary for {}", summary.getMethodSignature());
       return Optional.empty();
@@ -118,12 +107,13 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
     return Optional.of(returnExpr);
   }
 
-  public List<List<SymbolicConstraint>> getSymbolicConstraintPaths(final WITUpNode throwNode) {
+  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
     return symbolicThrowConstraints.computeIfAbsent(
         throwNode,
         node -> {
           var constraintPaths = cpg.getConstraintPaths(node);
-          BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths, this);
+          SymbolicConstraintGenerator sg =
+              new SymbolicConstraintGenerator(cpg, constraintPaths, this);
           return sg.generateSymbolicConstraintPaths();
         });
   }
@@ -132,11 +122,7 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
     return cpg.getMethodSignature();
   }
 
-  public List<WITUpNode> getThrowNodes() {
-    return cpg.getThrowNodes();
-  }
-
-  public MethodSummary summariseConstraintPaths() {
+  public MethodSummary summarise() {
     String sig = getMethodSignature();
 
     if (summaryRepository != null) {
@@ -148,8 +134,8 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
     }
 
     List<List<SymbolicConstraint>> paths =
-        getThrowNodes().stream()
-            .flatMap(node -> getSymbolicConstraintPaths(node).stream())
+        cpg.getThrowNodes().stream()
+            .flatMap(node -> buildSymbolicConstraintPaths(node).stream())
             .collect(Collectors.toList());
 
     List<SymParamRef> formals = buildFormals(cpg);
@@ -171,12 +157,12 @@ public final class MethodConstraintAnalysis implements SummaryResolver {
       throw new IllegalStateException("No return nodes found for " + getMethodSignature());
     }
     if (returnNodes.size() > 1) {
-      // multiple return points — stub for now, take first
+      // encode multiple return nodes as Z3 If-Then-Else
       log.debug("Multiple return nodes for {} — using first", getMethodSignature());
     }
     ReturnStatementNode returnNode = returnNodes.get(0);
     List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getConstraintPaths(returnNode);
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, paths, this);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, paths, this);
     return sg.generateReturnExpression(returnNode);
   }
 

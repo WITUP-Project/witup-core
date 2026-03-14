@@ -5,8 +5,8 @@ import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
-import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import br.unb.cic.witup.solver.model.BoolValue;
@@ -51,7 +51,7 @@ public class TextTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -79,7 +79,7 @@ public class TextTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -107,7 +107,7 @@ public class TextTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -135,7 +135,7 @@ public class TextTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 

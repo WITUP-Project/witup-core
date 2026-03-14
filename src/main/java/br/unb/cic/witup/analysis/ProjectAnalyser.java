@@ -35,17 +35,18 @@ public final class ProjectAnalyser implements GraphRepository {
     return Optional.ofNullable(methodGraphs.get(methodSignature));
   }
 
-  public Map<String, MethodSummary> summariseAll(final Map<String, WITUpGraph> graphs) {
+  public Map<String, MethodSummary> summariseAll(
+      final Map<String, WITUpGraph> graphs, final Map<String, String> failures) {
     Map<String, MethodSummary> summaries = new LinkedHashMap<>();
-    for (Map.Entry<String, WITUpGraph> entry : graphs.entrySet()) {
-      String sig = entry.getKey();
+    for (Map.Entry<String, WITUpGraph> witUpGraph : graphs.entrySet()) {
+      String sig = witUpGraph.getKey();
       try {
-        MethodSummary summary =
-            new MethodConstraintAnalysis(entry.getValue(), this, summaryCache)
-                .summariseConstraintPaths();
+        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue(), this, summaryCache);
+        MethodSummary summary = ms.summarise();
         summaries.put(sig, summary);
       } catch (Exception e) {
         log.warn("Failed to summarise {}: {}", sig, e.getMessage());
+        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
       }
     }
     return summaries;

@@ -34,7 +34,5 @@ mvn install:install-file \
   -Dpackaging=jar
 ```
 
-
-
 At the moment we do not have a driver to orchestrate the analysis.
 Run the tests with `mvn test`.

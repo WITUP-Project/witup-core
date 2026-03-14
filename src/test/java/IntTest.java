@@ -3,7 +3,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.ClassAnalyser;
-import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
+import br.unb.cic.witup.analysis.MethodSummariser;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.SummaryCache;
@@ -12,8 +12,8 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
-import br.unb.cic.witup.analysis.symbolic.BackwardSymbolicGenerator;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Path;
@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.jgrapht.GraphPath;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -52,13 +51,13 @@ public class IntTest {
 
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
-    MethodConstraintAnalysis analysis = new MethodConstraintAnalysis(cpg);
+    MethodSummariser analysis = new MethodSummariser(cpg);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths =
-        analysis.getSymbolicConstraintPaths(throwNodes.get(0));
+        analysis.buildSymbolicConstraintPaths(throwNodes.get(0));
 
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
@@ -74,7 +73,7 @@ public class IntTest {
     int b = solution.getInt("b");
     assertTrue(a + b > 256, "Expected a + b > 256");
 
-    MethodSummary summary = analysis.summariseConstraintPaths();
+    MethodSummary summary = analysis.summarise();
 
     assertEquals(methodSignature, summary.getMethodSignature());
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
@@ -96,7 +95,7 @@ public class IntTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -129,7 +128,7 @@ public class IntTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -162,7 +161,7 @@ public class IntTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -195,7 +194,7 @@ public class IntTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -228,7 +227,7 @@ public class IntTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -262,7 +261,7 @@ public class IntTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -302,7 +301,7 @@ public class IntTest {
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
         cpg.getConstraintPaths(throwNodes.get(0));
 
-    BackwardSymbolicGenerator sg = new BackwardSymbolicGenerator(cpg, constraintPaths);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
 
@@ -335,18 +334,17 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
     // wire repositories for interprocedural resolution
     GraphRepository graphRepo = sig -> Optional.ofNullable(witupGraphs.get(sig));
     SummaryCache summaryCache = new SummaryCache();
 
-    MethodConstraintAnalysis analysis =
-            new MethodConstraintAnalysis(cpg, graphRepo, summaryCache);
+    MethodSummariser methodSummariser = new MethodSummariser(cpg, graphRepo, summaryCache);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths =
-            analysis.getSymbolicConstraintPaths(throwNodes.get(0));
+        methodSummariser.buildSymbolicConstraintPaths(throwNodes.get(0));
 
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
