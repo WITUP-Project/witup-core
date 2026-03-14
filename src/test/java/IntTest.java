@@ -57,7 +57,7 @@ public class IntTest {
     assertEquals(1, throwNodes.size());
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths =
-        analysis.getSymbolicConstraintPaths(throwNodes.get(0));
+        analysis.buildSymbolicConstraintPaths(throwNodes.get(0));
 
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();
@@ -73,7 +73,7 @@ public class IntTest {
     int b = solution.getInt("b");
     assertTrue(a + b > 256, "Expected a + b > 256");
 
-    MethodSummary summary = analysis.summariseConstraintPaths();
+    MethodSummary summary = analysis.summarise();
 
     assertEquals(methodSignature, summary.getMethodSignature());
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
@@ -344,7 +344,7 @@ public class IntTest {
     MethodSummariser methodSummariser = new MethodSummariser(cpg, graphRepo, summaryCache);
 
     List<List<SymbolicConstraint>> symbolicConstraintPaths =
-        methodSummariser.getSymbolicConstraintPaths(throwNodes.get(0));
+        methodSummariser.buildSymbolicConstraintPaths(throwNodes.get(0));
 
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
     List<SolverResult> results = new ArrayList<>();

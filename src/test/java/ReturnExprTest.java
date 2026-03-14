@@ -30,7 +30,7 @@ public class ReturnExprTest {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int add(int,int)>";
     WITUpGraph cpg = witupGraphs.get(methodSignature);
     MethodSummariser analysis = new MethodSummariser(cpg);
-    MethodSummary summary = analysis.summariseConstraintPaths();
+    MethodSummary summary = analysis.summarise();
 
     assertNotNull(summary.getReturnExpr());
     assertNotNull(summary.getFormalParams());

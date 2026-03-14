@@ -78,7 +78,7 @@ public final class MethodSummariser implements SummaryResolver {
     summaryRepository.markInProgress(calleeSignature);
     MethodSummariser calleeAnalysis =
         new MethodSummariser(calleeGraph.get(), graphRepository, summaryRepository);
-    MethodSummary calleeSummary = calleeAnalysis.summariseConstraintPaths();
+    MethodSummary calleeSummary = calleeAnalysis.summarise();
     summaryRepository.putSummary(calleeSignature, calleeSummary);
 
     // instantiate returnExpr with actuals when MethodSummary carries returnExpr
@@ -107,7 +107,7 @@ public final class MethodSummariser implements SummaryResolver {
     return Optional.of(returnExpr);
   }
 
-  public List<List<SymbolicConstraint>> getSymbolicConstraintPaths(final WITUpNode throwNode) {
+  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
     return symbolicThrowConstraints.computeIfAbsent(
         throwNode,
         node -> {
@@ -122,7 +122,7 @@ public final class MethodSummariser implements SummaryResolver {
     return cpg.getMethodSignature();
   }
 
-  public MethodSummary summariseConstraintPaths() {
+  public MethodSummary summarise() {
     String sig = getMethodSignature();
 
     if (summaryRepository != null) {
@@ -135,7 +135,7 @@ public final class MethodSummariser implements SummaryResolver {
 
     List<List<SymbolicConstraint>> paths =
         cpg.getThrowNodes().stream()
-            .flatMap(node -> getSymbolicConstraintPaths(node).stream())
+            .flatMap(node -> buildSymbolicConstraintPaths(node).stream())
             .collect(Collectors.toList());
 
     List<SymParamRef> formals = buildFormals(cpg);
