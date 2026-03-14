@@ -13,11 +13,6 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/src/main/resources/native/linux
 
     steps:
-      - name: Show repo structure
-        run: |
-          pwd
-          ls -R
-
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -26,7 +21,14 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-          cache: maven
+
+      - name: Cache Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
       - name: Install local Z3 Maven artifact
         run: |
