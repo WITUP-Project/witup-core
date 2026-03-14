@@ -41,8 +41,7 @@ public final class ProjectAnalyser implements GraphRepository {
       String sig = entry.getKey();
       try {
         MethodSummary summary =
-            new MethodConstraintAnalysis(entry.getValue(), this, summaryCache)
-                .summariseConstraintPaths();
+            new MethodSummariser(entry.getValue(), this, summaryCache).summariseConstraintPaths();
         summaries.put(sig, summary);
       } catch (Exception e) {
         log.warn("Failed to summarise {}: {}", sig, e.getMessage());

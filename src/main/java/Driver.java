@@ -1,4 +1,4 @@
-import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
+import br.unb.cic.witup.analysis.MethodSummariser;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
@@ -51,8 +51,7 @@ public final class Driver {
     for (Map.Entry<String, WITUpGraph> entry : methodGraphs.entrySet()) {
       String sig = entry.getKey();
       try {
-        methodSummaries.put(
-            sig, new MethodConstraintAnalysis(entry.getValue()).summariseConstraintPaths());
+        methodSummaries.put(sig, new MethodSummariser(entry.getValue()).summariseConstraintPaths());
       } catch (Exception e) {
         log.warn("Failed to summarise {}: {}", sig, e.getMessage());
         failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());

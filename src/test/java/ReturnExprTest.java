@@ -2,7 +2,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.ClassAnalyser;
-import br.unb.cic.witup.analysis.MethodConstraintAnalysis;
+import br.unb.cic.witup.analysis.MethodSummariser;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
@@ -29,7 +29,7 @@ public class ReturnExprTest {
   public void addReturnExpr() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int add(int,int)>";
     WITUpGraph cpg = witupGraphs.get(methodSignature);
-    MethodConstraintAnalysis analysis = new MethodConstraintAnalysis(cpg);
+    MethodSummariser analysis = new MethodSummariser(cpg);
     MethodSummary summary = analysis.summariseConstraintPaths();
 
     assertNotNull(summary.getReturnExpr());
