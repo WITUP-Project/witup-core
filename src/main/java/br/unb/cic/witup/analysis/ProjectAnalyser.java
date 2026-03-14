@@ -24,7 +24,7 @@ public final class ProjectAnalyser implements GraphRepository {
   private final Path jarPath;
   private static final Logger log = LoggerFactory.getLogger("ProjectAnalyser");
   private final Map<String, WITUpGraph> methodGraphs = new HashMap<>();
-  private final SummaryCache summaryCache = new SummaryCache();
+//  private final SummaryCache summaryCache = new SummaryCache();
 
   public ProjectAnalyser(final Path jarPath) {
     this.jarPath = jarPath;
@@ -41,7 +41,8 @@ public final class ProjectAnalyser implements GraphRepository {
     for (Map.Entry<String, WITUpGraph> witUpGraph : graphs.entrySet()) {
       String sig = witUpGraph.getKey();
       try {
-        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue(), this, summaryCache);
+        // tweak here to do intra or inter. should probably become a setting
+        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue());
         MethodSummary summary = ms.summarise();
         summaries.put(sig, summary);
       } catch (Exception e) {
