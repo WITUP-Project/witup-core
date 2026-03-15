@@ -12,6 +12,7 @@ import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymFloatConst;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.SymInterfaceInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
@@ -20,6 +21,7 @@ import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
+import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import com.microsoft.z3.ArraySort;
@@ -97,6 +99,17 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
     return s.getKind() == SymKind.BOOLEAN_METHOD
             ? context.getBoolSort()
             : context.getIntSort();
+  }
+
+  @Override
+  public Sort visitInterfaceInvoke(final SymInterfaceInvoke i) {
+    return i.getKind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
+  }
+
+  @Override
+  public Sort visitSpecialInvoke(final SymSpecialInvoke i) {
+    return i.getKind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
+
   }
 
   //  @Override

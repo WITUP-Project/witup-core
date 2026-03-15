@@ -20,6 +20,7 @@ import sootup.core.jimple.common.expr.JEqExpr;
 import sootup.core.jimple.common.expr.JGeExpr;
 import sootup.core.jimple.common.expr.JGtExpr;
 import sootup.core.jimple.common.expr.JInstanceOfExpr;
+import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
 import sootup.core.jimple.common.expr.JLeExpr;
 import sootup.core.jimple.common.expr.JLengthExpr;
 import sootup.core.jimple.common.expr.JLtExpr;
@@ -27,6 +28,7 @@ import sootup.core.jimple.common.expr.JMulExpr;
 import sootup.core.jimple.common.expr.JNeExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
+import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
@@ -85,6 +87,9 @@ public abstract class SymExpr {
       case JInstanceFieldRef r -> new SymFieldAccess(fromJimple(r.getBase()), r);
       case AbstractBinopExpr e -> SymBinOp.fromBinopExpr(e);
       case JVirtualInvokeExpr e -> SymVirtualInvoke.fromVirtualInvokeExpr(e);
+      case JStaticInvokeExpr e -> new SymStaticInvoke(e);
+      case JInterfaceInvokeExpr e -> SymInterfaceInvoke.fromInterfaceInvokeExpr(e);
+      case JSpecialInvokeExpr e -> SymSpecialInvoke.fromSpecialInvokeExpr(e);
       case JArrayRef r -> SymArrayRef.fromArrayRef(r);
       case JLengthExpr e -> new SymLength(e);
       case JNewArrayExpr e -> new SymArray(e);
@@ -93,7 +98,6 @@ public abstract class SymExpr {
       case JParameterRef r -> new SymParamRef(r);
       case JThisRef r -> new SymThisRef(r);
       case JCaughtExceptionRef r -> new SymCaughtExceptionRef(r);
-      case JStaticInvokeExpr e -> new SymStaticInvoke(e);
       default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }
