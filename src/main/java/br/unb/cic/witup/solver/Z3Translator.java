@@ -13,6 +13,7 @@ import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymFloatConst;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.SymInterfaceInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
@@ -21,6 +22,7 @@ import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
+import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -248,6 +250,26 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
             k -> s.getKind() == SymKind.BOOLEAN_METHOD
                     ? context.mkBoolConst(k)
                     : context.mkIntConst(k));
+  }
+
+  @Override
+  public Expr<?> visitInterfaceInvoke(final SymInterfaceInvoke i) {
+    return exprMap.computeIfAbsent(
+            i.toString(),
+            k ->
+                    i.getKind() == SymKind.BOOLEAN_METHOD
+                            ? context.mkBoolConst(k)
+                            : context.mkIntConst(k));
+  }
+
+  @Override
+  public Expr<?> visitSpecialInvoke(final SymSpecialInvoke i) {
+    return exprMap.computeIfAbsent(
+            i.toString(),
+            k ->
+                    i.getKind() == SymKind.BOOLEAN_METHOD
+                            ? context.mkBoolConst(k)
+                            : context.mkIntConst(k));
   }
 
   @Override

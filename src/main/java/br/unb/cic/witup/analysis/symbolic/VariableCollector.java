@@ -73,6 +73,16 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
+  public Void visitInterfaceInvoke(final SymInterfaceInvoke i) {
+    return null;
+  }
+
+  @Override
+  public Void visitSpecialInvoke(final SymSpecialInvoke i) {
+    return null;
+  }
+
+  @Override
   public Void visitArray(final SymArray r) {
     return null;
   }

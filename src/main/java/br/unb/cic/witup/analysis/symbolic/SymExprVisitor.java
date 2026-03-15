@@ -23,6 +23,10 @@ public interface SymExprVisitor<T> {
 
   T visitStaticInvoke(SymStaticInvoke i);
 
+  T visitInterfaceInvoke(SymInterfaceInvoke i);
+
+  T visitSpecialInvoke(SymSpecialInvoke i);
+
   T visitArray(SymArray r);
 
   T visitArrayRef(SymArrayRef r);
