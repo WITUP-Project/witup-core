@@ -45,6 +45,71 @@ public final class MethodSummariser implements SummaryResolver {
     this.summaryRepository = summaryRepository;
   }
 
+  public MethodSummary summarise() {
+    String sig = getMethodSignature();
+
+    if (summaryRepository != null) {
+      Optional<MethodSummary> cached = summaryRepository.getSummary(sig);
+      if (cached.isPresent()) {
+        return cached.get();
+      }
+      summaryRepository.markInProgress(sig);
+    }
+
+    List<List<SymbolicConstraint>> paths =
+        cpg.getThrowNodes().stream()
+            .flatMap(node -> buildSymbolicConstraintPaths(node).stream())
+            .collect(Collectors.toList());
+
+    List<SymParamRef> formals = buildFormals(cpg);
+    SymExpr returnExpr = traceReturnExpr();
+
+    MethodSummary summary = new MethodSummary(getMethodSignature(), paths, formals, returnExpr);
+
+    if (summaryRepository != null) {
+      summaryRepository.putSummary(sig, summary);
+    }
+
+    return summary;
+  }
+
+  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
+    return symbolicThrowConstraints.computeIfAbsent(
+        throwNode,
+        node -> {
+          var constraintPaths = cpg.getConstraintPaths(node);
+          SymbolicConstraintGenerator sg =
+              new SymbolicConstraintGenerator(cpg, constraintPaths, this);
+          return sg.generateSymbolicConstraintPaths();
+        });
+  }
+
+  private static List<SymParamRef> buildFormals(final WITUpGraph cpg) {
+    List<Type> paramTypes = cpg.getMethod().getParameterTypes();
+    List<SymParamRef> formals = new ArrayList<>();
+    for (int i = 0; i < paramTypes.size(); i++) {
+      formals.add(new SymParamRef(i, paramTypes.get(i)));
+    }
+    return formals;
+  }
+
+  private SymExpr traceReturnExpr() {
+    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
+    if (returnNodes.isEmpty()) {
+      log.error("No return nodes found for {}", getMethodSignature());
+      throw new IllegalStateException("No return nodes found for " + getMethodSignature());
+    }
+    if (returnNodes.size() > 1) {
+      // encode multiple return nodes as Z3 If-Then-Else
+      log.debug("Multiple return nodes for {} — using first", getMethodSignature());
+    }
+    ReturnStatementNode returnNode = returnNodes.get(0);
+    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getConstraintPaths(returnNode);
+    log.debug("traceReturnExpr for {} returnNode op: {}", getMethodSignature(), returnNode.getOp());
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, paths, this);
+    return sg.generateReturnExpression(returnNode);
+  }
+
   @Override
   public Optional<SymExpr> resolveReturnExpr(
       final String calleeSignature, final List<SymExpr> actuals) {
@@ -107,72 +172,7 @@ public final class MethodSummariser implements SummaryResolver {
     return Optional.of(returnExpr);
   }
 
-  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
-    return symbolicThrowConstraints.computeIfAbsent(
-        throwNode,
-        node -> {
-          var constraintPaths = cpg.getConstraintPaths(node);
-          SymbolicConstraintGenerator sg =
-              new SymbolicConstraintGenerator(cpg, constraintPaths, this);
-          return sg.generateSymbolicConstraintPaths();
-        });
-  }
-
   public String getMethodSignature() {
     return cpg.getMethodSignature();
-  }
-
-  public MethodSummary summarise() {
-    String sig = getMethodSignature();
-
-    if (summaryRepository != null) {
-      Optional<MethodSummary> cached = summaryRepository.getSummary(sig);
-      if (cached.isPresent()) {
-        return cached.get();
-      }
-      summaryRepository.markInProgress(sig);
-    }
-
-    List<List<SymbolicConstraint>> paths =
-        cpg.getThrowNodes().stream()
-            .flatMap(node -> buildSymbolicConstraintPaths(node).stream())
-            .collect(Collectors.toList());
-
-    List<SymParamRef> formals = buildFormals(cpg);
-    SymExpr returnExpr = traceReturnExpr();
-
-    MethodSummary summary = new MethodSummary(getMethodSignature(), paths, formals, returnExpr);
-
-    if (summaryRepository != null) {
-      summaryRepository.putSummary(sig, summary);
-    }
-
-    return summary;
-  }
-
-  private SymExpr traceReturnExpr() {
-    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
-    if (returnNodes.isEmpty()) {
-      log.error("No return nodes found for {}", getMethodSignature());
-      throw new IllegalStateException("No return nodes found for " + getMethodSignature());
-    }
-    if (returnNodes.size() > 1) {
-      // encode multiple return nodes as Z3 If-Then-Else
-      log.debug("Multiple return nodes for {} — using first", getMethodSignature());
-    }
-    ReturnStatementNode returnNode = returnNodes.get(0);
-    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getConstraintPaths(returnNode);
-    log.debug("traceReturnExpr for {} returnNode op: {}", getMethodSignature(), returnNode.getOp());
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, paths, this);
-    return sg.generateReturnExpression(returnNode);
-  }
-
-  private static List<SymParamRef> buildFormals(final WITUpGraph cpg) {
-    List<Type> paramTypes = cpg.getMethod().getParameterTypes();
-    List<SymParamRef> formals = new ArrayList<>();
-    for (int i = 0; i < paramTypes.size(); i++) {
-      formals.add(new SymParamRef(i, paramTypes.get(i)));
-    }
-    return formals;
   }
 }
