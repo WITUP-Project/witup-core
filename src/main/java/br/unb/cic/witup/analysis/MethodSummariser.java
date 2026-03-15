@@ -96,8 +96,8 @@ public final class MethodSummariser implements SummaryResolver {
   private SymExpr traceReturnExpr() {
     List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
     if (returnNodes.isEmpty()) {
-      log.error("No return nodes found for {}", getMethodSignature());
-      throw new IllegalStateException("No return nodes found for " + getMethodSignature());
+      log.debug("No return nodes found for {}", getMethodSignature());
+      return null;
     }
     if (returnNodes.size() > 1) {
       // encode multiple return nodes as Z3 If-Then-Else
