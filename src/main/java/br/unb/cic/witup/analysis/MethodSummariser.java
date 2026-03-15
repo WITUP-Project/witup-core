@@ -162,6 +162,7 @@ public final class MethodSummariser implements SummaryResolver {
     }
     ReturnStatementNode returnNode = returnNodes.get(0);
     List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getConstraintPaths(returnNode);
+    log.debug("traceReturnExpr for {} returnNode op: {}", getMethodSignature(), returnNode.getOp());
     SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, paths, this);
     return sg.generateReturnExpression(returnNode);
   }

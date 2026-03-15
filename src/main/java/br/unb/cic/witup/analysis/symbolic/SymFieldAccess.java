@@ -34,6 +34,7 @@ public final class SymFieldAccess extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
+    System.out.println("SymFieldAccess.substitute: base=" + base.toString() + "varName=" + varName.toString());
     // Substitute in the base expression
     SymExpr newBase = base.substitute(varName, replacement);
     if (newBase != base) {
