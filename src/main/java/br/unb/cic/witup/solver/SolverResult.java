@@ -5,18 +5,13 @@ import br.unb.cic.witup.solver.model.BoolValue;
 import br.unb.cic.witup.solver.model.IntValue;
 import br.unb.cic.witup.solver.model.ModelValue;
 import br.unb.cic.witup.solver.model.StringValue;
-import com.microsoft.z3.Context;
-import com.microsoft.z3.IntExpr;
-import com.microsoft.z3.Model;
 import com.microsoft.z3.Status;
 import java.util.Map;
 
 public record SolverResult(
     String pathId,
     Status status,
-    Map<String, ModelValue> modelValueMap,
-    Context context,
-    Model model) {
+    Map<String, ModelValue> modelValueMap) {
 
   public Status getStatus() {
     return status;
@@ -54,14 +49,6 @@ public record SolverResult(
     return value.getBool();
   }
 
-  public String getString(final String name) {
-    ModelValue value = modelValueMap.get(name);
-    if (value == null) {
-      throw new IllegalStateException("No modelValueMap value for: " + name);
-    }
-    return value.getString();
-  }
-
   public ArrayValue getArray(final String name) {
     ModelValue value = modelValueMap.get(name);
 
@@ -73,17 +60,6 @@ public record SolverResult(
               + (value == null ? "null" : value.getClass()));
     }
     return av;
-  }
-
-  //  public ModelValue.ObjectValue getObject(String name) {
-  //    Expr<?> val = context.mkConst(name, context.mkUninterpretedSort(name + "_obj"));
-  //    Expr<?> eval = model.eval(val, true);
-  //
-  //    return new ModelValue.ObjectValue(eval, model, context);
-  //  }
-
-  public IntExpr getIntExpr(final String name) {
-    return context.mkIntConst(name);
   }
 
   @SuppressWarnings("unchecked")

@@ -15,6 +15,9 @@ import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,11 +28,15 @@ import java.util.Map;
  * satisfiable.
  */
 public final class SymbolicConstraintSolver {
+  private static final Logger log = LoggerFactory.getLogger("SymbolicConstraintSolver");
 
   // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
   private Map<String, MethodSummary> methodSummaries = new HashMap<>();
+  private final Context ctx = new Context();
+  private final Solver solver = ctx.mkSolver();
+
 
   public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {}
 
@@ -48,6 +55,7 @@ public final class SymbolicConstraintSolver {
         List<SolverResult> results = new ArrayList<>();
         List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
         for (int i = 0; i < paths.size(); i++) {
+          log.debug("Solving path {}/{} for {}", i + 1, paths.size(), sig);
           results.add(checkPath(sig + "#" + i, paths.get(i)));
         }
         methodSolutions.put(sig, results);
@@ -59,8 +67,7 @@ public final class SymbolicConstraintSolver {
   }
 
   public SolverResult checkPath(final String pathId, final List<SymbolicConstraint> constraints) {
-    Context ctx = new Context();
-    Solver solver = ctx.mkSolver();
+    solver.push();
     Z3Translator translator = new Z3Translator(ctx);
 
     for (SymbolicConstraint c : constraints) {
@@ -70,18 +77,20 @@ public final class SymbolicConstraintSolver {
 
     boolean isSat = status == Status.SATISFIABLE;
     Model model = isSat ? solver.getModel() : null;
-    Map<String, ModelValue> modelValueMap = isSat ? extractModel(model, translator, ctx) : Map.of();
+    Map<String, ModelValue> modelValueMap = isSat ? extractModel(model, translator) : Map.of();
 
-    return new SolverResult(pathId, status, modelValueMap, ctx, model);
+    solver.pop();
+
+    return new SolverResult(pathId, status, modelValueMap);
   }
 
   private Map<String, ModelValue> extractModel(
-      final Model model, final Z3Translator translator, final Context ctx) {
+      final Model model, final Z3Translator translator) {
     Map<String, ModelValue> modelValueMap = new HashMap<>();
 
     // should cover variables, virtual invokes, lengths, casts, field accesses
     // when they are all implemented
-    extractDeclarations(model, translator, ctx, modelValueMap);
+    extractDeclarations(model, translator, modelValueMap);
     // Also extract field functions (arity-1 decls named "field_*")
     extractFieldFunctions(model, ctx, modelValueMap);
 
@@ -91,7 +100,6 @@ public final class SymbolicConstraintSolver {
   private void extractDeclarations(
       final Model model,
       final Z3Translator translator,
-      final Context ctx,
       final Map<String, ModelValue> modelValueMap) {
     for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
       String name = entry.getKey();

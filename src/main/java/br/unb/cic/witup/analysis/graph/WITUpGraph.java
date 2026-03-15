@@ -53,6 +53,7 @@ import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
+  public static final int MAX_PATH_LENGTH = 20;
   private String methodSignature;
   private JavaSootMethod method;
   // dot for debugging purposes

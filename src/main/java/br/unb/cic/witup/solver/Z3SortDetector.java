@@ -16,6 +16,7 @@ import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
@@ -89,6 +90,13 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   @Override
   public Sort visitVirtualInvoke(final SymVirtualInvoke v) {
     return v.getKind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
+  }
+
+  @Override
+  public Sort visitStaticInvoke(final SymStaticInvoke s) {
+    return s.getKind() == SymKind.BOOLEAN_METHOD
+            ? context.getBoolSort()
+            : context.getIntSort();
   }
 
   //  @Override
