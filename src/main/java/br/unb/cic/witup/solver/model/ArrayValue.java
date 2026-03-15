@@ -14,6 +14,14 @@ import com.microsoft.z3.Sort;
 public record ArrayValue(ArrayExpr<IntSort, ?> arrayExpr, Model model, Context ctx)
     implements ModelValue {
 
+  public ModelValue get(final String indexName) {
+    return get(ctx.mkIntConst(indexName));
+  }
+
+  public ModelValue get(final int index) {
+    return get(ctx.mkInt(index));
+  }
+
   public ModelValue get(final IntExpr indexExpr) {
     Expr<?> val = model.eval(ctx.mkSelect(arrayExpr, indexExpr), true);
     Sort rangeSort = ((ArraySort<?, ?>) arrayExpr.getSort()).getRange();

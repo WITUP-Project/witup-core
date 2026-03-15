@@ -168,7 +168,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
     AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
-        allPaths.getAllPaths(entry, throwNode, true, MAX_PATH_LENGTH);
+        allPaths.getAllPaths(entry, throwNode, true, null);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConstraints = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {

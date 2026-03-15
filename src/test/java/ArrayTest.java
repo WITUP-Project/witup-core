@@ -77,9 +77,7 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getIntExpr("i");
-
-    ModelValue elementValue = arrArray.get(indexExpr);
+    ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
 
@@ -182,9 +180,7 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getIntExpr("i");
-
-    ModelValue elementValue = arrArray.get(indexExpr);
+    ModelValue elementValue = arrArray.get("i");
     assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
   }
 
@@ -221,10 +217,8 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.context().mkInt(0);
-
-    ModelValue elementValue = arrArray.get(indexExpr);
-    assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
+    ModelValue elementValue = arrArray.get(0);
+    assertEquals("abc", elementValue.getString(), "arr[0] should be 0");
   }
 
   @Test
@@ -260,11 +254,9 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getIntExpr("i");
-
-    ModelValue element = arrArray.get(indexExpr);
-    System.out.println("element type: " + element.getClass() + " value: " + element);
-    ModelValue fieldValue = element.getField("value");
+    ModelValue elementValue = arrArray.get("i");
+    System.out.println("element type: " + elementValue.getClass() + " value: " + elementValue);
+    ModelValue fieldValue = elementValue.getField("value");
 
     assertTrue(fieldValue.getInt() > 10, "expected arr[0].value <= 10");
   }
@@ -301,9 +293,7 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getIntExpr("i");
-
-    ModelValue elementValue = arrArray.get(indexExpr);
+    ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
 
@@ -339,9 +329,7 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getIntExpr("i");
-
-    ModelValue elementValue = arrArray.get(indexExpr);
+    ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
 
@@ -377,9 +365,7 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getIntExpr("i");
-
-    ModelValue elementValue = arrArray.get(indexExpr);
+    ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
 
@@ -415,9 +401,7 @@ public class ArrayTest {
     assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
-    IntExpr indexExpr = sol0.getIntExpr("i");
-
-    ModelValue elementValue = arrArray.get(indexExpr);
+    ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
 
