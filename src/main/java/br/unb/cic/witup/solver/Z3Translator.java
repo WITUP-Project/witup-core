@@ -17,6 +17,7 @@ import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
@@ -236,6 +237,17 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
             inv.getKind() == SymKind.BOOLEAN_METHOD
                 ? context.mkBoolConst(k)
                 : context.mkIntConst(k));
+  }
+
+  // Args are ignored for now since we're intraprocedural — the static invoke
+  // is treated as an uninterpreted function returning a boolean or integer.
+  @Override
+  public Expr<?> visitStaticInvoke(final SymStaticInvoke s) {
+    return exprMap.computeIfAbsent(
+            s.getInvokeName(),
+            k -> s.getKind() == SymKind.BOOLEAN_METHOD
+                    ? context.mkBoolConst(k)
+                    : context.mkIntConst(k));
   }
 
   @Override

@@ -67,6 +67,12 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
+  public Void visitStaticInvoke(final SymStaticInvoke s) {
+    s.getArgs().forEach(arg -> arg.accept(this));
+    return null;
+  }
+
+  @Override
   public Void visitArray(final SymArray r) {
     return null;
   }
