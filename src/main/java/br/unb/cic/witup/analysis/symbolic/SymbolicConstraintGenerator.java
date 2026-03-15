@@ -109,9 +109,10 @@ public final class SymbolicConstraintGenerator {
       return substituteAndSimplify(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
     }
     if (constraintNode instanceof CaughtExceptionNode caught) {
-      return new SymCaughtException(caught.getCaughtExceptionRef());
+      return new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
     }
-    throw new IllegalStateException("Unexpected constraint node type: " + constraintNode.getClass());
+    throw new IllegalStateException(
+        "Unexpected constraint node type: " + constraintNode.getClass());
   }
 
   public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {

@@ -91,7 +91,7 @@ public abstract class SymExpr {
       case JInstanceOfExpr e -> new SymInstanceOf(e);
       case JParameterRef r -> new SymParamRef(r);
       case JThisRef r -> new SymThisRef(r);
-//      case JCaughtExceptionRef -> new SymCaughtExceptionRef();
+      case JCaughtExceptionRef r -> new SymCaughtExceptionRef(r);
       default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }

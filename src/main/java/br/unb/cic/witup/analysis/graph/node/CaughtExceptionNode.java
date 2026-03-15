@@ -6,7 +6,8 @@ import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 public final class CaughtExceptionNode extends WITUpNode {
   private final JCaughtExceptionRef caughtExceptionRef;
 
-  public CaughtExceptionNode(PropertyGraphNode node, JCaughtExceptionRef caughtExceptionRef) {
+  public CaughtExceptionNode(
+      final PropertyGraphNode node, final JCaughtExceptionRef caughtExceptionRef) {
     super(node);
     this.caughtExceptionRef = caughtExceptionRef;
   }

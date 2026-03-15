@@ -116,8 +116,8 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         && stmt.getStmt() instanceof JReturnStmt returnStmt) {
       return new ReturnStatementNode(node, returnStmt);
     } else if (node instanceof StmtGraphNode stmt
-            && stmt.getStmt() instanceof JIdentityStmt identity
-            && identity.getRightOp() instanceof JCaughtExceptionRef ref) {
+        && stmt.getStmt() instanceof JIdentityStmt identity
+        && identity.getRightOp() instanceof JCaughtExceptionRef ref) {
       return new CaughtExceptionNode(node, ref);
     }
     return new SimpleNode(node);
@@ -160,7 +160,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConstraints = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
       for (WITUpNode node : path.getVertexList()) {
-        if (node instanceof IfStatementNode || node instanceof CaughtExceptionNode ) {
+        if (node instanceof IfStatementNode || node instanceof CaughtExceptionNode) {
           pathsWithConstraints.add(path);
           break;
         }
