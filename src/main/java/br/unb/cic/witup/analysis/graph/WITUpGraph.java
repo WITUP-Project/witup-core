@@ -36,10 +36,13 @@ import sootup.codepropertygraph.propertygraph.edges.NormalCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
+import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
+import sootup.core.types.ClassType;
 import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
@@ -220,5 +223,31 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
     AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
     return allPaths.getAllPaths(entry, returnNode, true, null);
+  }
+
+  // The Jimple pattern seems very consitent (hopefully an invariant):
+  // $stack2 = new java.lang.IllegalArgumentException <--> first node has exception type
+  // #l1 = (java.lang.Throwable) $stack 2             <--> mimic JVM wanting throwable
+  // throw #l1                                        <--> actual throw node
+  public ClassType resolveExceptionType(final ThrowStatementNode throwNode) {
+    for (DataDependencyEdge throwableEdge : getIncomingDDGEdges(throwNode)) {
+      WITUpNode castNode = getEdgeSource(throwableEdge);
+      for (DataDependencyEdge throwTypeEdge : getIncomingDDGEdges(castNode)) {
+        WITUpNode newNode = getEdgeSource(throwTypeEdge);
+        if (!(newNode instanceof SimpleNode simpleNode)) {
+          continue;
+        }
+        if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
+          continue;
+        }
+        if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
+          continue;
+        }
+        if (assign.getRightOp() instanceof JNewExpr newExpr) {
+          return newExpr.getType();
+        }
+      }
+    }
+    return null;
   }
 }
