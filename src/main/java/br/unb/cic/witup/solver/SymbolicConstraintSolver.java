@@ -15,6 +15,9 @@ import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +28,7 @@ import java.util.Map;
  * satisfiable.
  */
 public final class SymbolicConstraintSolver {
+  private static final Logger log = LoggerFactory.getLogger("SymbolicConstraintSolver");
 
   // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
@@ -48,6 +52,7 @@ public final class SymbolicConstraintSolver {
         List<SolverResult> results = new ArrayList<>();
         List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
         for (int i = 0; i < paths.size(); i++) {
+          log.debug("Solving path {}/{} for {}", i + 1, paths.size(), sig);
           results.add(checkPath(sig + "#" + i, paths.get(i)));
         }
         methodSolutions.put(sig, results);
