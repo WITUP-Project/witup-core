@@ -3,6 +3,8 @@ package br.unb.cic.witup.analysis;
 import br.unb.cic.witup.analysis.graph.CPGBuilder;
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+
+//import java.io.File;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -10,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+//import guru.nidi.graphviz.engine.Format;
+//import guru.nidi.graphviz.engine.Graphviz;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.core.inputlocation.AnalysisInputLocation;
@@ -84,9 +89,26 @@ public final class ProjectAnalyser implements GraphRepository {
         summaries.put(sig, summary);
       } catch (Exception e) {
         log.warn("Failed to summarise {}: {}", sig, e.getMessage());
+//        dumpGraph(witUpGraph.getValue(), sig);
         failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
       }
     }
     return summaries;
   }
+
+//  private void dumpGraph(final WITUpGraph graph, final String sig) {
+//    try {
+//      String safeName = sig.replaceAll("[<>:()\\s,]", "_");
+//      File graphsDir = new File("graphs/failures");
+//      if (!graphsDir.exists()) {
+//        graphsDir.mkdirs();
+//      }
+//      Graphviz.fromString(graph.getDot())
+//              .render(Format.SVG)
+//              .toFile(new File(graphsDir, safeName + ".svg"));
+//      log.info("Dumped failure graph for {}", sig);
+//    } catch (Exception e) {
+//      log.warn("Could not dump graph for {}: {}", sig, e.getMessage());
+//    }
+//  }
 }
