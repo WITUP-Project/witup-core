@@ -5,8 +5,10 @@ import br.unb.cic.witup.analysis.graph.edge.BooleanCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.CFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.ControlDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
+import br.unb.cic.witup.analysis.graph.edge.ExceptionalCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.GotoCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
+import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.IfStatementNode;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
@@ -29,6 +31,7 @@ import org.jgrapht.traverse.DepthFirstIterator;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
+import sootup.codepropertygraph.propertygraph.edges.ExceptionalCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.GotoCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.IfFalseCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.IfTrueCfgEdge;
@@ -37,6 +40,7 @@ import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
@@ -93,6 +97,8 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         graph.addEdge(source, target, new CFGEdge(edge, source, target));
       } else if (edge instanceof GotoCfgEdge) {
         graph.addEdge(source, target, new GotoCFGEdge(edge, source, target));
+      } else if (edge instanceof ExceptionalCfgEdge) {
+        graph.addEdge(source, target, new ExceptionalCFGEdge(edge, source, target));
       } else {
         throw new IllegalArgumentException("bad edge type: " + edge.getClass().getName());
       }
@@ -109,6 +115,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     } else if (node instanceof StmtGraphNode stmt
         && stmt.getStmt() instanceof JReturnStmt returnStmt) {
       return new ReturnStatementNode(node, returnStmt);
+    } else if (node instanceof StmtGraphNode stmt
+            && stmt.getStmt() instanceof JIdentityStmt identity
+            && identity.getRightOp() instanceof JCaughtExceptionRef ref) {
+      return new CaughtExceptionNode(node, ref);
     }
     return new SimpleNode(node);
   }
@@ -147,16 +157,16 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
         allPaths.getAllPaths(entry, throwNode, true, null);
 
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithIfStatements = new ArrayList<>();
+    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConstraints = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
       for (WITUpNode node : path.getVertexList()) {
-        if (node instanceof IfStatementNode) {
-          pathsWithIfStatements.add(path);
+        if (node instanceof IfStatementNode || node instanceof CaughtExceptionNode ) {
+          pathsWithConstraints.add(path);
           break;
         }
       }
     }
-    return pathsWithIfStatements;
+    return pathsWithConstraints;
   }
 
   private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
@@ -196,6 +206,9 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       if (e instanceof BooleanCFGEdge) {
         WITUpNode sourceNode = e.getSource();
         throwConstraints.add(new ThrowConstraint(sourceNode, ((BooleanCFGEdge) e).getCondition()));
+      } else if (e instanceof ExceptionalCFGEdge) {
+        WITUpNode targetNode = e.getTarget();
+        throwConstraints.add(new ThrowConstraint(targetNode, true));
       }
     }
     return throwConstraints;

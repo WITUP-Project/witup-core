@@ -109,4 +109,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitThisRef(final SymThisRef r) {
     return null;
   }
+
+  @Override
+  public Void visitCaughtException(SymCaughtException e) {
+    return null;
+  }
 }

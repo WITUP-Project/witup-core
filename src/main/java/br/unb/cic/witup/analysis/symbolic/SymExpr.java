@@ -30,6 +30,7 @@ import sootup.core.jimple.common.expr.JRemExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
+import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.jimple.common.ref.JParameterRef;
 import sootup.core.jimple.common.ref.JThisRef;
@@ -90,6 +91,7 @@ public abstract class SymExpr {
       case JInstanceOfExpr e -> new SymInstanceOf(e);
       case JParameterRef r -> new SymParamRef(r);
       case JThisRef r -> new SymThisRef(r);
+//      case JCaughtExceptionRef -> new SymCaughtExceptionRef();
       default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }

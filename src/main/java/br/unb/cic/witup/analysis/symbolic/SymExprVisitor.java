@@ -36,4 +36,6 @@ public interface SymExprVisitor<T> {
   T visitNull(SymNull n);
 
   T visitThisRef(SymThisRef r);
+
+  T visitCaughtException(SymCaughtException e);
 }
