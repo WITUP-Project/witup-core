@@ -7,6 +7,7 @@ import br.unb.cic.witup.analysis.graph.edge.ControlDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.ExceptionalCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.GotoCFGEdge;
+import br.unb.cic.witup.analysis.graph.edge.SwitchCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.IfStatementNode;
@@ -37,6 +38,7 @@ import sootup.codepropertygraph.propertygraph.edges.IfFalseCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.IfTrueCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.NormalCfgEdge;
 import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
+import sootup.codepropertygraph.propertygraph.edges.SwitchCfgEdge;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.common.expr.JNewExpr;
@@ -53,6 +55,8 @@ import sootup.java.core.JavaSootMethod;
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
   private String methodSignature;
   private JavaSootMethod method;
+  // dot for debugging purposes
+  private String dot;
 
   public String getMethodSignature() {
     return methodSignature;
@@ -66,6 +70,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     super(WITUpEdge.class);
   }
 
+  public String getDot() {
+    return dot;
+  }
+
   /**
    * Creates a WITUpGraph from PropertyGraph from SootUp
    *
@@ -77,6 +85,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     Map<PropertyGraphNode, WITUpNode> cachedNodes = new HashMap<>();
     graph.methodSignature = method.getSignature().toString();
     graph.method = method;
+    graph.dot = pg.toDotGraph();
 
     for (PropertyGraphEdge edge : pg.getEdges()) {
       WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(), WITUpGraph::createNode);
@@ -99,8 +108,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         graph.addEdge(source, target, new GotoCFGEdge(edge, source, target));
       } else if (edge instanceof ExceptionalCfgEdge) {
         graph.addEdge(source, target, new ExceptionalCFGEdge(edge, source, target));
+      } else if (edge instanceof SwitchCfgEdge) {
+        graph.addEdge(source, target, new SwitchCFGEdge(edge, source, target));
       } else {
-        throw new IllegalArgumentException("bad edge type: " + edge.getClass().getName());
+        throw new IllegalArgumentException(
+            "bad edge type: " + edge.getClass().getName() + "method: " + method.getSignature());
       }
     }
 
@@ -262,5 +274,19 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return null;
+  }
+
+  public void dump() {
+    System.out.println("=== WITUpGraph === " + methodSignature);
+    for (WITUpNode n : vertexSet()) {
+      System.out.println("  NODE: " + n.getClass().getSimpleName() + " -- " + n.getNode());
+    }
+    for (WITUpEdge e : edgeSet()) {
+      System.out.println(
+          "  EDGE: + "
+              + e.getSource().getClass().getSimpleName()
+              + "-->"
+              + e.getTarget().getClass().getSimpleName());
+    }
   }
 }
