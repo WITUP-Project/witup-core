@@ -1,5 +1,6 @@
 package br.unb.cic.witup.analysis.graph;
 
+//
 // import guru.nidi.graphviz.engine.Format;
 // import guru.nidi.graphviz.engine.Graphviz;
 // import java.io.File;
@@ -17,22 +18,22 @@ public final class CPGBuilder {
 
   public static WITUpGraph buildForMethod(final JavaSootMethod method) {
     PropertyGraph cpg = buildCpg(method);
-    //    String dot = cpg.toDotGraph();
-    //    try {
-    //      File graphsDir = new File("graphs");
+    //        String dot = cpg.toDotGraph();
+    //        try {
+    //          File graphsDir = new File("graphs");
     //
-    //      if (!graphsDir.exists() && !graphsDir.mkdirs()) {
-    //        throw new RuntimeException("Could not create graphs directory");
-    //      }
+    //          if (!graphsDir.exists() && !graphsDir.mkdirs()) {
+    //            throw new RuntimeException("Could not create graphs directory");
+    //          }
     //
-    //      File output = new File(graphsDir, method.getSignature() + ".svg");
+    //          File output = new File(graphsDir, method.getSignature() + ".svg");
     //
-    //      Graphviz.fromString(dot)
-    //              .render(Format.SVG)
-    //              .toFile(output);
-    //    } catch (Exception e) {
-    //      e.printStackTrace();
-    //    }
+    //          Graphviz.fromString(dot)
+    //                  .render(Format.SVG)
+    //                  .toFile(output);
+    //        } catch (Exception e) {
+    //          e.printStackTrace();
+    //        }
 
     return WITUpGraph.fromPropertyGraph(cpg, method);
   }

@@ -40,18 +40,20 @@ public final class SymbolicConstraintSolver {
     this.methodSummaries = methodSummaries;
   }
 
-  public Map<String, List<SolverResult>> solveConstraints() {
+  public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
     Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
-
-    for (MethodSummary methodSummary : methodSummaries.values()) {
-      List<SolverResult> results = new ArrayList<>();
-      List<List<SymbolicConstraint>> constraintPaths = methodSummary.getSymbolicConstraintPaths();
-      for (int i = 0; i < constraintPaths.size(); i++) {
-        String pathId = methodSummary.getMethodSignature() + "#" + i;
-        SolverResult result = checkPath(pathId, constraintPaths.get(i));
-        results.add(result);
+    for (MethodSummary summary : methodSummaries.values()) {
+      String sig = summary.getMethodSignature();
+      try {
+        List<SolverResult> results = new ArrayList<>();
+        List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
+        for (int i = 0; i < paths.size(); i++) {
+          results.add(checkPath(sig + "#" + i, paths.get(i)));
+        }
+        methodSolutions.put(sig, results);
+      } catch (Exception e) {
+        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
       }
-      methodSolutions.put(methodSummary.getMethodSignature(), results);
     }
     return methodSolutions;
   }
@@ -86,6 +88,32 @@ public final class SymbolicConstraintSolver {
     return modelValueMap;
   }
 
+  private void extractDeclarations(
+      final Model model,
+      final Z3Translator translator,
+      final Context ctx,
+      final Map<String, ModelValue> modelValueMap) {
+    for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
+      String name = entry.getKey();
+      Expr<?> expr = entry.getValue();
+
+      try {
+        if (expr.getSort().getSortKind() == Z3_ARRAY_SORT) {
+          // Store under the Z3 constant name (e.g. "arr"), not the cache key
+          // very hacky and implemented like this after too much time debugging
+          String modelKey = this.toModelKey(name);
+          System.out.println("extractModel array: name=" + name + " modelKey=" + modelKey);
+          modelValueMap.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
+        } else {
+          Expr<?> evaluated = model.eval(expr, true);
+          modelValueMap.put(name, ModelValue.fromExpr(evaluated, model, ctx));
+        }
+      } catch (IllegalStateException ignored) {
+        // unsupported sort — skip for now. maybe throw to force correct implementation
+      }
+    }
+  }
+
   private static void extractFieldFunctions(
       final Model model, final Context ctx, final Map<String, ModelValue> modelValueMap) {
     for (FuncDecl<?> decl : model.getDecls()) {
@@ -115,61 +143,7 @@ public final class SymbolicConstraintSolver {
     }
   }
 
-  private void extractDeclarations(
-      final Model model,
-      final Z3Translator translator,
-      final Context ctx,
-      final Map<String, ModelValue> modelValueMap) {
-    for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
-      String name = entry.getKey();
-      Expr<?> expr = entry.getValue();
-
-      try {
-        if (expr.getSort().getSortKind() == Z3_ARRAY_SORT) {
-          // Store under the Z3 constant name (e.g. "arr"), not the cache key
-          // very hacky and implemented like this after too much time debugging
-          String modelKey = this.toModelKey(name);
-          System.out.println("extractModel array: name=" + name + " modelKey=" + modelKey);
-          modelValueMap.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
-        } else {
-          Expr<?> evaluated = model.eval(expr, true);
-          modelValueMap.put(name, ModelValue.fromExpr(evaluated, model, ctx));
-        }
-      } catch (IllegalStateException ignored) {
-        // unsupported sort — skip for now. maybe throw to force correct implementation
-      }
-    }
-  }
-
   private String toModelKey(final String name) {
     return name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
   }
-
-  public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
-    Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
-    for (MethodSummary summary : methodSummaries.values()) {
-      String sig = summary.getMethodSignature();
-      try {
-        List<SolverResult> results = new ArrayList<>();
-        List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
-        for (int i = 0; i < paths.size(); i++) {
-          results.add(checkPath(sig + "#" + i, paths.get(i)));
-        }
-        methodSolutions.put(sig, results);
-      } catch (Exception e) {
-        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
-      }
-    }
-    return methodSolutions;
-  }
-
-  //  public List<SolverResult> solveConstraints(final List<SymbolicConstraint> constraints) {
-  //    List<SolverResult> results = new ArrayList<>();
-  //    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
-  //      String pathId = methodSignature + "#" + i;
-  //      SolverResult result = solver.check(pathId, symbolicConstraintPaths.get(i));
-  //      results.add(result);
-  //    }
-  //    return results;
-  //  }
 }

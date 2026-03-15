@@ -5,6 +5,7 @@ import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
+import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
@@ -90,7 +91,7 @@ public final class SymbolicConstraintGenerator {
     this.currentPath = p;
   }
 
-  private SymExpr resolveAndSimplify(final SymExpr initial, final WITUpNode startNode) {
+  private SymExpr substituteAndSimplify(final SymExpr initial, final WITUpNode startNode) {
     SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     return SymExpr.stripBooleanEncoding(symExpr);
@@ -104,8 +105,14 @@ public final class SymbolicConstraintGenerator {
 
   public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
     StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
-    JIfStmt ifStmt = (JIfStmt) n.getStmt();
-    return resolveAndSimplify(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
+    if (n.getStmt() instanceof JIfStmt ifStmt) {
+      return substituteAndSimplify(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
+    }
+    if (constraintNode instanceof CaughtExceptionNode caught) {
+      return new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
+    }
+    throw new IllegalStateException(
+        "Unexpected constraint node type: " + constraintNode.getClass());
   }
 
   public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {
@@ -206,49 +213,6 @@ public final class SymbolicConstraintGenerator {
 
     return symExpr;
   }
-
-  //  private SymExpr backwardSubstituteUnbounded(
-  //      SymExpr symExpr, final WITUpNode currentNode, final Set<WITUpNode> visited) {
-  //
-  //    if (visited.contains(currentNode)) {
-  //      return symExpr;
-  //    }
-  //    visited.add(currentNode);
-  //
-  //    Set<String> freeVars = new VariableCollector().collect(symExpr);
-  //    if (freeVars.isEmpty()) {
-  //      return symExpr;
-  //    }
-  //
-  //    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
-  //      WITUpNode sourceNode = cpg.getEdgeSource(edge);
-  //
-  //      if (!(sourceNode instanceof SimpleNode simpleNode)) {
-  //        continue;
-  //      }
-  //      if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
-  //        continue;
-  //      }
-  //
-  //      Stmt stmt = stmtNode.getStmt();
-  //      if (!(stmt instanceof JAssignStmt assign)) {
-  //        continue;
-  //      }
-  //      if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
-  //        continue;
-  //      }
-  //
-  //      String definedVar = getVariableName(assign.getLeftOp());
-  //      if (!freeVars.contains(definedVar)) {
-  //        continue;
-  //      }
-  //
-  //      SymExpr rhsSymExpr = SymExpr.fromJimple(assign.getRightOp());
-  //      symExpr = symExpr.substitute(definedVar, rhsSymExpr);
-  //      symExpr = backwardSubstituteUnbounded(symExpr, sourceNode, visited);
-  //    }
-  //    return symExpr;
-  //  }
 
   private boolean isNodeInPath(final WITUpNode node) {
     PropertyGraphNode targetNode = node.getNode();

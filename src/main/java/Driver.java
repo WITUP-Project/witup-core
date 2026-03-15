@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 public final class Driver {
   private static final Path PROJECT_JARS_DIR = Path.of("./project-jars");
+  private static final Path PROJECT_RESULTS = Path.of("./project-results");
   private static final Logger log = LoggerFactory.getLogger("Driver");
 
   private Driver() {
@@ -62,8 +63,14 @@ public final class Driver {
 
     ObjectMapper mapper = new ObjectMapper();
     mapper.enable(SerializationFeature.INDENT_OUTPUT);
-    mapper.writeValue(Path.of("witup-results.json").toFile(), dtoSolutions);
-    mapper.writeValue(Path.of("witup-failures.json").toFile(), failures);
+
+    String projectName = args[0].replaceFirst("\\.jar$", "");
+    Path projectResultsDir = PROJECT_RESULTS.resolve(projectName);
+    Files.createDirectories(projectResultsDir);
+
+    mapper.writeValue(projectResultsDir.resolve("witup-results.json").toFile(), dtoSolutions);
+
+    mapper.writeValue(projectResultsDir.resolve("witup-failures.json").toFile(), failures);
 
     log.info("Results written to witup-results.json ({} methods)", dtoSolutions.size());
     log.info("Failures written to witup-failures.json ({} methods)", failures.size());

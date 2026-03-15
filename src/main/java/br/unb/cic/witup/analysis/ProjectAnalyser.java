@@ -24,33 +24,11 @@ public final class ProjectAnalyser implements GraphRepository {
   private final Path jarPath;
   private static final Logger log = LoggerFactory.getLogger("ProjectAnalyser");
   private final Map<String, WITUpGraph> methodGraphs = new HashMap<>();
-//  private final SummaryCache summaryCache = new SummaryCache();
+
+  //  private final SummaryCache summaryCache = new SummaryCache();
 
   public ProjectAnalyser(final Path jarPath) {
     this.jarPath = jarPath;
-  }
-
-  @Override
-  public Optional<WITUpGraph> getGraph(final String methodSignature) {
-    return Optional.ofNullable(methodGraphs.get(methodSignature));
-  }
-
-  public Map<String, MethodSummary> summariseAll(
-      final Map<String, WITUpGraph> graphs, final Map<String, String> failures) {
-    Map<String, MethodSummary> summaries = new LinkedHashMap<>();
-    for (Map.Entry<String, WITUpGraph> witUpGraph : graphs.entrySet()) {
-      String sig = witUpGraph.getKey();
-      try {
-        // tweak here to do intra or inter. should probably become a setting
-        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue());
-        MethodSummary summary = ms.summarise();
-        summaries.put(sig, summary);
-      } catch (Exception e) {
-        log.warn("Failed to summarise {}: {}", sig, e.getMessage());
-        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
-      }
-    }
-    return summaries;
   }
 
   public Map<String, WITUpGraph> analyseProject() {
@@ -87,5 +65,28 @@ public final class ProjectAnalyser implements GraphRepository {
   private static boolean methodHasThrow(final JavaSootMethod method) {
     return method.getBody().getStmtGraph().getNodes().stream()
         .anyMatch(s -> s instanceof JThrowStmt);
+  }
+
+  @Override
+  public Optional<WITUpGraph> getGraph(final String methodSignature) {
+    return Optional.ofNullable(methodGraphs.get(methodSignature));
+  }
+
+  public Map<String, MethodSummary> summariseAll(
+      final Map<String, WITUpGraph> graphs, final Map<String, String> failures) {
+    Map<String, MethodSummary> summaries = new LinkedHashMap<>();
+    for (Map.Entry<String, WITUpGraph> witUpGraph : graphs.entrySet()) {
+      String sig = witUpGraph.getKey();
+      try {
+        // tweak here to do intra or inter. should probably become a setting
+        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue());
+        MethodSummary summary = ms.summarise();
+        summaries.put(sig, summary);
+      } catch (Exception e) {
+        log.warn("Failed to summarise {}: {}", sig, e.getMessage());
+        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
+      }
+    }
+    return summaries;
   }
 }

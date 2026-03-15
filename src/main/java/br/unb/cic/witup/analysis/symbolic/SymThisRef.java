@@ -18,7 +18,7 @@ public final class SymThisRef extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    return null;
+    return this;
   }
 
   @Override
