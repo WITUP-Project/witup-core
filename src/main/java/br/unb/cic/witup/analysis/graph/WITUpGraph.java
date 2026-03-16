@@ -210,6 +210,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
 
+    // lambdas and static initializers with no parameters
+    for (WITUpNode witNode : this.vertexSet()) {
+      if (!hasIncoming.contains(witNode.getNode())) {
+        return witNode;
+      }
+    }
+
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
