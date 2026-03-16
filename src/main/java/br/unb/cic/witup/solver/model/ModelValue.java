@@ -1,5 +1,6 @@
 package br.unb.cic.witup.solver.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
@@ -10,6 +11,11 @@ import com.microsoft.z3.enumerations.Z3_sort_kind;
 
 public sealed interface ModelValue
     permits IntValue, BoolValue, StringValue, ArrayValue, ObjectValue {
+
+  @JsonValue
+  default String jsonValue() {
+    return toString();
+  }
 
   default ModelValue getField(final String fieldName) {
     throw new IllegalStateException("Not an object: " + this.getClass());

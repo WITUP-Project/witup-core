@@ -48,6 +48,15 @@ public final class SymbolicConstraintGenerator {
     this(cpg, constraintPaths, null);
   }
 
+  /**
+   * Interprocedural constructor.
+   *
+   * @param cpg a WITUpGraph with the CPG of the method under analysis
+   * @param constraintPaths List<GraphPath<WITUpNode, WITUpEdge>> paths that
+   *                        represent symbolic constraints
+   * @param resolver a MethodSummariser that recursively resolves
+   *                 interprocedural calls.
+   */
   public SymbolicConstraintGenerator(
       final WITUpGraph cpg,
       final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths,

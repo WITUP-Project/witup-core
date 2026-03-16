@@ -4,15 +4,23 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.types.PrimitiveType;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 public final class SymVirtualInvoke extends SymExpr {
   private final SymExpr base; // e.g. s
   private final String invokeName; // e.g. length
   private final boolean returnsBoolean;
+  private final List<SymExpr> args;
 
   // we have access to getArgs, getArgCount, getMethodSignature, getType, getUses
 
   public SymExpr getBase() {
     return base;
+  }
+  public List<SymExpr> getArgs() {
+    return args;
   }
 
   public static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
@@ -21,15 +29,21 @@ public final class SymVirtualInvoke extends SymExpr {
     boolean returnsBoolean =
         e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
 
-    return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean);
+    List<SymExpr> args = e.getArgs().stream()
+            .map(SymExpr::fromJimple)
+            .collect(Collectors.toList());
+
+    return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean, args);
   }
 
   public SymVirtualInvoke(
-      final SymExpr base, final String invokeName, final boolean returnsBoolean) {
+      final SymExpr base, final String invokeName, final boolean returnsBoolean,
+      final List<SymExpr> args) {
     super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER);
     this.base = base;
     this.invokeName = invokeName;
     this.returnsBoolean = returnsBoolean;
+    this.args = args;
   }
 
   @Override
@@ -38,21 +52,30 @@ public final class SymVirtualInvoke extends SymExpr {
   }
 
   @Override
-  public SymExpr substitute(final String invField, final SymExpr replacement) {
-    SymExpr newBase = base.substitute(invField, replacement);
-    if (newBase != base) {
-      return new SymVirtualInvoke(newBase, invField, this.returnsBoolean);
+  public SymExpr substitute(final String varName, final SymExpr replacement) {
+    SymExpr newBase = base.substitute(varName, replacement);
+    List<SymExpr> newArgs = args.stream()
+            .map(a -> a.substitute(varName, replacement))
+            .toList();
+
+    boolean baseChanged = newBase != base;
+    boolean argsChanged = !IntStream.range(0, args.size())
+            .allMatch(i -> args.get(i) == newArgs.get(i));
+
+    if (baseChanged || argsChanged) {
+      return new SymVirtualInvoke(newBase, invokeName, returnsBoolean, newArgs);
     }
     return this;
   }
 
   @Override
   public boolean contains(final String varName) {
-    return base.contains(varName);
+    return base.contains(varName) || args.stream().anyMatch(a -> a.contains(varName));
   }
 
   @Override
   public String toString() {
-    return base.toString() + "." + invokeName;
+    String argStr = args.stream().map(SymExpr::toString).collect(Collectors.joining(","));
+    return base.toString() + "." + invokeName + "(" + argStr + ")";
   }
 }

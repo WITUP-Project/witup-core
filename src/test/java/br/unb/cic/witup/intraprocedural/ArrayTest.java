@@ -1,3 +1,5 @@
+package br.unb.cic.witup.intraprocedural;
+
 import static br.unb.cic.witup.test.SymbolicTestHelper.solve;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,7 +18,7 @@ import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import br.unb.cic.witup.solver.model.ArrayValue;
 import br.unb.cic.witup.solver.model.ModelValue;
-import com.microsoft.z3.IntExpr;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;

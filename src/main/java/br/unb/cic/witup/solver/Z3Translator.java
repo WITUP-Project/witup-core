@@ -297,9 +297,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitDynamicInvoke(final SymDynamicInvoke d) {
     return exprMap.computeIfAbsent(
-            "dynamicinvoke_" + d.getSignature()
-                    .replaceAll("[^a-zA-Z0-9_]", "_"),
-            context::mkIntConst);
+        "dynamicinvoke_" + d.getSignature().replaceAll("[^a-zA-Z0-9_]", "_"), context::mkIntConst);
   }
 
   @Override
@@ -309,12 +307,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   private Expr<?> makeInvokeConst(final String key, final SymKind kind) {
     String typedKey = key + (kind == SymKind.BOOLEAN_METHOD ? BOOL_SUFFIX : INT_SUFFIX);
-    Expr<?> expr = exprMap.computeIfAbsent(
+    Expr<?> expr =
+        exprMap.computeIfAbsent(
             typedKey,
-            k -> kind == SymKind.BOOLEAN_METHOD
-                    ? context.mkBoolConst(k)
-                    : context.mkIntConst(k));
-    exprMap.put(key, expr);  // store under original key for model extraction
+            k -> kind == SymKind.BOOLEAN_METHOD ? context.mkBoolConst(k) : context.mkIntConst(k));
+    exprMap.put(key, expr); // store under original key for model extraction
     return expr;
   }
 
@@ -431,7 +428,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitClassConst(final SymClassConst c) {
     return exprMap.computeIfAbsent(
-            CLASS_PREFIX + c.getValue().replace("/", "_").replace(";", "").replace("[", ""),
-            context::mkIntConst);
+        CLASS_PREFIX + c.getValue().replace("/", "_").replace(";", "").replace("[", ""),
+        context::mkIntConst);
   }
 }
