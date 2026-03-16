@@ -16,8 +16,12 @@ public final class SymVirtualInvoke extends SymExpr {
 
   // we have access to getArgs, getArgCount, getMethodSignature, getType, getUses
 
-  public SymExpr getBase() { return base; }
-  public List<SymExpr> getArgs() { return args; }
+  public SymExpr getBase() {
+    return base;
+  }
+  public List<SymExpr> getArgs() {
+    return args;
+  }
 
   public static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
     SymExpr base = fromJimple(e.getBase());
@@ -33,7 +37,8 @@ public final class SymVirtualInvoke extends SymExpr {
   }
 
   public SymVirtualInvoke(
-      final SymExpr base, final String invokeName, final boolean returnsBoolean, final List<SymExpr> args) {
+      final SymExpr base, final String invokeName, final boolean returnsBoolean,
+      final List<SymExpr> args) {
     super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER);
     this.base = base;
     this.invokeName = invokeName;

@@ -34,6 +34,7 @@ public final class MethodSummariser implements SummaryResolver {
 
   /**
    * Intraproccedural summariser. Has no access to cached graphs or summaries
+   *
    * @param cpg WITUpGraph
    */
   public MethodSummariser(final WITUpGraph cpg) {
@@ -58,6 +59,7 @@ public final class MethodSummariser implements SummaryResolver {
 
   /**
    * Recursively produces MethodSummary.
+   *
    * @return
    */
   public MethodSummary summarise() {

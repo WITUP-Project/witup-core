@@ -1,6 +1,4 @@
-package br.unb.cic.witup.intraprocedural;
-
-import static org.junit.jupiter.api.Assertions.*;
+package br.unb.cic.witup.interprocedural;
 
 import br.unb.cic.witup.analysis.ClassAnalyser;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
@@ -13,45 +11,45 @@ import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import br.unb.cic.witup.solver.model.BoolValue;
 import br.unb.cic.witup.solver.model.IntValue;
-import br.unb.cic.witup.solver.model.StringValue;
+import org.jgrapht.GraphPath;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.jgrapht.GraphPath;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TextTest {
+  Logger log = LoggerFactory.getLogger(IntTest.class);
   Map<String, WITUpGraph> witupGraphs;
 
   @BeforeAll
   void setUp() {
     Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
     witupGraphs =
-        ProjectAnalyser.buildGraphsForClass(
-            new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Text").load());
+            ProjectAnalyser.buildGraphsForClass(
+                    new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Text").load());
   }
 
   @Test
-  public void buildSootUpPropertyGraphs() {
-    assertNotNull(witupGraphs);
-    assertEquals(4, witupGraphs.size());
-  }
-
-  @Test
-  public void invalidString() {
+  public void invalidStringLength() {
     String methodSignature =
-        "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
+            "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-        cpg.getConstraintPaths(throwNodes.get(0));
+            cpg.getConstraintPaths(throwNodes.get(0));
 
     SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
@@ -67,19 +65,19 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(new StringValue("abc"), sol0.modelValueMap().get("s"));
+    assertEquals(new IntValue(0), sol0.modelValueMap().get("s.length()"));
   }
 
   @Test
-  public void requireString() {
+  public void invalidEmptyString() {
     String methodSignature =
-        "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
+            "<br.unb.cic.witup.samples.Text: boolean invalidEmptyString(java.lang.String)>";
     WITUpGraph cpg = witupGraphs.get(methodSignature);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
 
     List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-        cpg.getConstraintPaths(throwNodes.get(0));
+            cpg.getConstraintPaths(throwNodes.get(0));
 
     SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
 
@@ -95,6 +93,6 @@ public class TextTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertFalse(sol0.getBool("s_instanceof_java_lang_String"));
+    assertEquals(new BoolValue(true), sol0.modelValueMap().get("s.isEmpty()"));
   }
 }

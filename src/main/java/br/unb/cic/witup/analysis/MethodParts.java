@@ -1,12 +1,7 @@
 package br.unb.cic.witup.analysis;
 
 public record MethodParts(
-        String pkg,
-        String clazz,
-        String method,
-        String returnType,
-        String params
-) {
+    String pkg, String clazz, String method, String returnType, String params) {
   public static MethodParts parseSignature(final String sig) {
 
     String inner = sig.substring(1, sig.length() - 1);
@@ -24,12 +19,9 @@ public record MethodParts(
     String nameAndParams = methodPart.substring(methodPart.indexOf(' ') + 1);
     String method = nameAndParams.substring(0, nameAndParams.indexOf('('));
 
-    String params = nameAndParams.substring(
-            nameAndParams.indexOf('(') + 1,
-            nameAndParams.lastIndexOf(')')
-    );
+    String params =
+        nameAndParams.substring(nameAndParams.indexOf('(') + 1, nameAndParams.lastIndexOf(')'));
 
     return new MethodParts(pkg, clazz, method, returnType, params);
   }
 }
-
