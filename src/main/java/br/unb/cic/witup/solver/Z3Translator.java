@@ -13,6 +13,7 @@ import br.unb.cic.witup.analysis.symbolic.SymDynamicInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymFloatConst;
+import br.unb.cic.witup.analysis.symbolic.SymITE;
 import br.unb.cic.witup.analysis.symbolic.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymInterfaceInvoke;
@@ -172,14 +173,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   private Expr<?> buildArithExpr(final BinOp op, final Expr<?> lhs, final Expr<?> rhs) {
     return switch (op) {
-      case LT -> context.mkLt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case LE -> context.mkLe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case GT -> context.mkGt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case GE -> context.mkGe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case ADD -> context.mkAdd((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case SUB -> context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case MUL -> context.mkMul((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case DIV -> context.mkDiv((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case LT -> context.mkLt(toArith(lhs), toArith(rhs));
+      case LE -> context.mkLe(toArith(lhs), toArith(rhs));
+      case GT -> context.mkGt(toArith(lhs), toArith(rhs));
+      case GE -> context.mkGe(toArith(lhs), toArith(rhs));
+      case ADD -> context.mkAdd(toArith(lhs), toArith(rhs));
+      case SUB -> context.mkSub(toArith(lhs), toArith(rhs));
+      case MUL -> context.mkMul(toArith(lhs), toArith(rhs));
+      case DIV -> context.mkDiv(toArith(lhs), toArith(rhs));
       case MOD -> context.mkMod((IntExpr) lhs, (IntExpr) rhs);
       case CMP, CMPG, CMPL -> context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
       case SHIFT_LEFT -> context.mkBV2Int(context.mkBVSHL(bv(lhs), bv(rhs)), true);
@@ -203,6 +204,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       case XOR -> context.mkBV2Int(context.mkBVXOR(bv(lhs), bv(rhs)), true);
       default -> throw new IllegalStateException("Unhandled op in arith path: " + op);
     };
+  }
+
+  @SuppressWarnings("unchecked")
+  private ArithExpr<IntSort> toArith(final Expr<?> expr) {
+    if (expr instanceof BoolExpr b) {
+      return (ArithExpr<IntSort>) context.mkITE(b, context.mkInt(1), context.mkInt(0));
+    }
+    return (ArithExpr<IntSort>) expr;
   }
 
   private BitVecExpr bv(final Expr<?> e) {
@@ -430,5 +439,25 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return exprMap.computeIfAbsent(
         CLASS_PREFIX + c.getValue().replace("/", "_").replace(";", "").replace("[", ""),
         context::mkIntConst);
+  }
+
+  @Override
+  public Expr<?> visitITE(final SymITE ite) {
+    Expr<?> condExprRaw = ite.getCondition().accept(this);
+    Expr<?> thenExpr = ite.getThenExpr().accept(this);
+    Expr<?> elseExpr = ite.getElseExpr().accept(this);
+
+    // coerce condition to BoolExpr if it is an IntExpr
+    BoolExpr condExpr;
+    if (condExprRaw instanceof BoolExpr b) {
+      condExpr = b;
+    } else if (condExprRaw instanceof ArithExpr<?> a) {
+      // condition is integer: nonzero -> true
+      condExpr = context.mkNot(context.mkEq(a, context.mkInt(0)));
+    } else {
+      throw new IllegalStateException("Unexpected ITE condition type: " + condExprRaw.getClass());
+    }
+
+    return context.mkITE(condExpr, thenExpr, elseExpr);
   }
 }
