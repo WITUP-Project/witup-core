@@ -32,10 +32,21 @@ public final class MethodSummariser implements SummaryResolver {
   private final GraphRepository graphRepository;
   private final SummaryRepository summaryRepository;
 
+  /**
+   * Intraproccedural summariser. Has no access to cached graphs or summaries
+   * @param cpg WITUpGraph
+   */
   public MethodSummariser(final WITUpGraph cpg) {
     this(cpg, null, null);
   }
 
+  /**
+   * Interprocedural MethodSummariser. As of now,
+   *
+   * @param cpg WITUpGraph of the method being analysed
+   * @param graphRepository GraphRepository
+   * @param summaryRepository SummaryRepository
+   */
   public MethodSummariser(
       final WITUpGraph cpg,
       final GraphRepository graphRepository,
@@ -45,6 +56,10 @@ public final class MethodSummariser implements SummaryResolver {
     this.summaryRepository = summaryRepository;
   }
 
+  /**
+   * Recursively produces MethodSummary.
+   * @return
+   */
   public MethodSummary summarise() {
     String sig = getMethodSignature();
 
