@@ -8,6 +8,7 @@ import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymCaughtExceptionRef;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymDoubleConst;
+import br.unb.cic.witup.analysis.symbolic.SymDynamicInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymFloatConst;
@@ -275,6 +276,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitInterfaceInvoke(final SymInterfaceInvoke i) {
     return makeInvokeConst(i.toString(), i.getKind());
+  }
+
+  @Override
+  public Expr<?> visitDynamicInvoke(final SymDynamicInvoke d) {
+    return exprMap.computeIfAbsent(
+            "dynamicinvoke_" + d.getSignature()
+                    .replaceAll("[^a-zA-Z0-9_]", "_"),
+            context::mkIntConst);
   }
 
   @Override

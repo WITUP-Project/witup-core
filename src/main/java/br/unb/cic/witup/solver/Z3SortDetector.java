@@ -7,6 +7,7 @@ import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymCaughtExceptionRef;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymDoubleConst;
+import br.unb.cic.witup.analysis.symbolic.SymDynamicInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymFloatConst;
@@ -110,6 +111,11 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   @Override
   public Sort visitSpecialInvoke(final SymSpecialInvoke i) {
     return i.getKind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
+  }
+
+  @Override
+  public Sort visitDynamicInvoke(final SymDynamicInvoke i) {
+    return context.getIntSort();
   }
 
   //  @Override
