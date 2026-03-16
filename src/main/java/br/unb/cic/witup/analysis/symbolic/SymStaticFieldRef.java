@@ -1,12 +1,11 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.common.ref.JStaticFieldRef;
 
-public class SymStaticFieldRef extends SymExpr {
+public final class SymStaticFieldRef extends SymExpr {
   private final String fieldSignature;
 
-  public SymStaticFieldRef(JStaticFieldRef r) {
+  public SymStaticFieldRef(final JStaticFieldRef r) {
     super(fromJimpleType(r.getType()));
     this.fieldSignature = r.getFieldSignature().toString();
   }
