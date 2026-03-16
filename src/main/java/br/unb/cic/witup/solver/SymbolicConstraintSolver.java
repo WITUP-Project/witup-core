@@ -33,7 +33,7 @@ public final class SymbolicConstraintSolver {
   // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
-  public static final int ONE_SECOND = 1000;
+  public static final int TWENTY_SECONDS = 20000;
   private Map<String, MethodSummary> methodSummaries = new HashMap<>();
   private final Context ctx = new Context();
   private final Solver solver = ctx.mkSolver();
@@ -46,7 +46,7 @@ public final class SymbolicConstraintSolver {
   public SymbolicConstraintSolver(final Map<String, MethodSummary> methodSummaries) {
     this.methodSummaries = methodSummaries;
     Params params = ctx.mkParams();
-    params.add("timeout", 20 * ONE_SECOND);
+    params.add("timeout", TWENTY_SECONDS);
     solver.setParameters(params);
   }
 
