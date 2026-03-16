@@ -81,8 +81,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       BoolExpr boolExpr = coerceToBool(expr);
       return constraint.getTruthValue() ? boolExpr : context.mkNot(boolExpr);
     } catch (Exception e) {
-      log.error("Failed on: " + constraint.getSymExpr().getClass().getSimpleName()
-              + " = " + constraint.getSymExpr());
+      log.error(
+          "Failed on: "
+              + constraint.getSymExpr().getClass().getSimpleName()
+              + " = "
+              + constraint.getSymExpr());
       throw e;
     }
   }
@@ -280,12 +283,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   private Expr<?> makeInvokeConst(final String key, final SymKind kind) {
-    String typedKey = key + (kind == SymKind.BOOLEAN_METHOD ? BOOL_SUFFIX : INT_SUFFIX);
-    return exprMap.computeIfAbsent(
+    String typedKey = key + (kind == SymKind.BOOLEAN_METHOD ? "_bool" : "_int");
+    Expr<?> expr = exprMap.computeIfAbsent(
             typedKey,
             k -> kind == SymKind.BOOLEAN_METHOD
                     ? context.mkBoolConst(k)
                     : context.mkIntConst(k));
+    exprMap.put(key, expr);  // store under original key for model extraction
+    return expr;
   }
 
   @Override
