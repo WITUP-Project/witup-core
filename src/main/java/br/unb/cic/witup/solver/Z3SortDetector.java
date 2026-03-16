@@ -215,7 +215,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   }
 
   @Override
-  public Sort visitClassConst(SymClassConst c) {
+  public Sort visitClassConst(final SymClassConst c) {
     return context.getIntSort();
   }
 }

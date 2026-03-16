@@ -152,7 +152,7 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
-  public Void visitClassConst(SymClassConst c) {
+  public Void visitClassConst(final SymClassConst c) {
     return null;
   }
 }

@@ -7,7 +7,7 @@ public final class SymClassConst extends SymExpr {
   private final String value;
   private final String type;
 
-  public SymClassConst(ClassConstant c) {
+  public SymClassConst(final ClassConstant c) {
     super(SymKind.OTHER);
     this.value = c.getValue();
     this.type = c.getType().toString();
