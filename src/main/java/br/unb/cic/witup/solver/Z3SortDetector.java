@@ -15,6 +15,7 @@ import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymInterfaceInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
+import br.unb.cic.witup.analysis.symbolic.SymNew;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
@@ -190,5 +191,10 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   @Override
   public Sort visitCaughtException(final SymCaughtExceptionRef e) {
     return context.getBoolSort();
+  }
+
+  @Override
+  public Sort visitNewRef(final SymNew n) {
+    return context.getIntSort();
   }
 }
