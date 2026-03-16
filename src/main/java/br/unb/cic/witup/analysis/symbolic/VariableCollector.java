@@ -135,4 +135,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitNewRef(final SymNew n) {
     return null;
   }
+
+  @Override
+  public Void visitStaticFieldRef(final SymStaticFieldRef r) {
+    return null;
+  }
 }

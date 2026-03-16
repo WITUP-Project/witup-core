@@ -19,6 +19,7 @@ import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNew;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.SymStaticFieldRef;
 import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymThisRef;
@@ -371,5 +372,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return exprMap.computeIfAbsent(
             "new_" + n.toString().replace(".", "_"),
             context::mkIntConst);
+  }
+
+  @Override
+  public Expr<?> visitStaticFieldRef(final SymStaticFieldRef r) {
+    return exprMap.computeIfAbsent(
+            r.getFieldSignature().replace(".", "_").replace(":", "_").replace(" ", "_"),
+            k -> r.getKind() == SymKind.BOOLEAN
+                    ? context.mkBoolConst(k)
+                    : context.mkIntConst(k));
   }
 }

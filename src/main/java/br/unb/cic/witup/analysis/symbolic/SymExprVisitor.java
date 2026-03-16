@@ -46,4 +46,6 @@ public interface SymExprVisitor<T> {
   T visitCaughtException(SymCaughtExceptionRef e);
 
   T visitNewRef(SymNew n);
+
+  T visitStaticFieldRef(SymStaticFieldRef r);
 }
