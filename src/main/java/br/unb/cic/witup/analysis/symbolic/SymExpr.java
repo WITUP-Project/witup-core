@@ -27,6 +27,7 @@ import sootup.core.jimple.common.expr.JLengthExpr;
 import sootup.core.jimple.common.expr.JLtExpr;
 import sootup.core.jimple.common.expr.JMulExpr;
 import sootup.core.jimple.common.expr.JNeExpr;
+import sootup.core.jimple.common.expr.JNegExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
 import sootup.core.jimple.common.expr.JOrExpr;
@@ -108,6 +109,7 @@ public abstract class SymExpr {
       case JCaughtExceptionRef r -> new SymCaughtExceptionRef(r);
       case JNewExpr e -> new SymNew(e);
       case JStaticFieldRef e -> new SymStaticFieldRef(e);
+      case JNegExpr e -> new SymNeg(e);
       default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }

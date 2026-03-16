@@ -16,15 +16,16 @@ import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymInterfaceInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
+import br.unb.cic.witup.analysis.symbolic.SymNeg;
 import br.unb.cic.witup.analysis.symbolic.SymNew;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStaticFieldRef;
 import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
-import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -43,6 +44,8 @@ import com.microsoft.z3.UninterpretedSort;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String JAVA_LANG_OBJECT = "java.lang.Object";
@@ -54,10 +57,13 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String NULL_STR = "__null__";
   public static final String THIS_STR = "__this__";
   public static final int BITS_32 = 32;
+  public static final String BOOL_SUFFIX = "_bool";
+  public static final String INT_SUFFIX = "_int";
   private final Context context;
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
+  private final Log log = LogFactory.getLog("Z3Translator");
 
   public Z3Translator(final Context context) {
     this.context = context;
@@ -70,9 +76,15 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   // entry point — translates a full constraint including truth value
   public BoolExpr translateConstraint(final SymbolicConstraint constraint) {
-    Expr<?> expr = constraint.getSymExpr().accept(this);
-    BoolExpr boolExpr = coerceToBool(expr);
-    return constraint.getTruthValue() ? boolExpr : context.mkNot(boolExpr);
+    try {
+      Expr<?> expr = constraint.getSymExpr().accept(this);
+      BoolExpr boolExpr = coerceToBool(expr);
+      return constraint.getTruthValue() ? boolExpr : context.mkNot(boolExpr);
+    } catch (Exception e) {
+      log.error("Failed on: " + constraint.getSymExpr().getClass().getSimpleName()
+              + " = " + constraint.getSymExpr());
+      throw e;
+    }
   }
 
   private BoolExpr coerceToBool(final Expr<?> expr) {
@@ -152,44 +164,25 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   private Expr<?> buildArithExpr(final BinOp op, final Expr<?> lhs, final Expr<?> rhs) {
-    switch (op) {
-      case LT:
-        return context.mkLt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case LE:
-        return context.mkLe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case GT:
-        return context.mkGt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case GE:
-        return context.mkGe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case ADD:
-        return context.mkAdd((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case SUB:
-        return context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case MUL:
-        return context.mkMul((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case DIV:
-        return context.mkDiv((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case MOD:
-        return context.mkMod((IntExpr) lhs, (IntExpr) rhs);
-      case CMP:
-      case CMPG:
-      case CMPL:
-        return context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
-      case SHIFT_LEFT:
-        return context.mkBV2Int(context.mkBVSHL(bv(lhs), bv(rhs)), true);
-      case SHIFT_RIGHT:
-        return context.mkBV2Int(context.mkBVASHR(bv(lhs), bv(rhs)), true);
-      case AND:
-        return context.mkBV2Int(context.mkBVAND(bv(lhs), bv(rhs)), true);
-      case OR:
-        return context.mkBV2Int(context.mkBVOR(bv(lhs), bv(rhs)), true);
-      case UNSIGNED_SHIFT_RIGHT:
-        return context.mkBV2Int(context.mkBVLSHR(bv(lhs), bv(rhs)), false);
-      case XOR:
-        return context.mkBV2Int(context.mkBVXOR(bv(lhs), bv(rhs)), true);
-      default:
-        throw new IllegalStateException("Unhandled op in arith path: " + op);
-    }
+    return switch (op) {
+      case LT -> context.mkLt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case LE -> context.mkLe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case GT -> context.mkGt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case GE -> context.mkGe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case ADD -> context.mkAdd((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case SUB -> context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case MUL -> context.mkMul((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case DIV -> context.mkDiv((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case MOD -> context.mkMod((IntExpr) lhs, (IntExpr) rhs);
+      case CMP, CMPG, CMPL -> context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case SHIFT_LEFT -> context.mkBV2Int(context.mkBVSHL(bv(lhs), bv(rhs)), true);
+      case SHIFT_RIGHT -> context.mkBV2Int(context.mkBVASHR(bv(lhs), bv(rhs)), true);
+      case AND -> context.mkBV2Int(context.mkBVAND(bv(lhs), bv(rhs)), true);
+      case OR -> context.mkBV2Int(context.mkBVOR(bv(lhs), bv(rhs)), true);
+      case UNSIGNED_SHIFT_RIGHT -> context.mkBV2Int(context.mkBVLSHR(bv(lhs), bv(rhs)), false);
+      case XOR -> context.mkBV2Int(context.mkBVXOR(bv(lhs), bv(rhs)), true);
+      default -> throw new IllegalStateException("Unhandled op in arith path: " + op);
+    };
   }
 
   private BitVecExpr bv(final Expr<?> e) {
@@ -204,7 +197,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     }
     return switch (c.getValue()) {
       case Integer i -> context.mkInt(i);
-      case Long l -> context.mkInt(l);
+      case Long l -> context.mkInt(Long.toString(l));
       case Double d -> context.mkReal(d.toString());
       case Float f -> context.mkReal(f.toString());
       default -> context.mkInt(c.getValue().toString());
@@ -213,7 +206,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitIntConst(final SymIntConst i) {
-    return context.mkInt(i.getValue());
+    return context.mkInt(Integer.toString(i.getValue()));
   }
 
   @Override
@@ -228,7 +221,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitLongConst(final SymLongConstant l) {
-    return context.mkInt(l.getValue());
+    return context.mkInt(Long.toString(l.getValue()));
   }
 
   @Override
@@ -265,44 +258,34 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   @Override
-  public Expr<?> visitVirtualInvoke(final SymVirtualInvoke inv) {
-    return exprMap.computeIfAbsent(
-        inv.toString(),
-        k ->
-            inv.getKind() == SymKind.BOOLEAN_METHOD
-                ? context.mkBoolConst(k)
-                : context.mkIntConst(k));
+  public Expr<?> visitVirtualInvoke(final SymVirtualInvoke i) {
+    return makeInvokeConst(i.toString(), i.getKind());
   }
 
   // Args are ignored for now since we're intraprocedural — the static invoke
   // is treated as an uninterpreted function returning a boolean or integer.
   @Override
-  public Expr<?> visitStaticInvoke(final SymStaticInvoke s) {
-    return exprMap.computeIfAbsent(
-            s.getInvokeName(),
-            k -> s.getKind() == SymKind.BOOLEAN_METHOD
-                    ? context.mkBoolConst(k)
-                    : context.mkIntConst(k));
+  public Expr<?> visitStaticInvoke(final SymStaticInvoke i) {
+    return makeInvokeConst(i.toString(), i.getKind());
   }
 
   @Override
   public Expr<?> visitInterfaceInvoke(final SymInterfaceInvoke i) {
-    return exprMap.computeIfAbsent(
-            i.toString(),
-            k ->
-                    i.getKind() == SymKind.BOOLEAN_METHOD
-                            ? context.mkBoolConst(k)
-                            : context.mkIntConst(k));
+    return makeInvokeConst(i.toString(), i.getKind());
   }
 
   @Override
   public Expr<?> visitSpecialInvoke(final SymSpecialInvoke i) {
+    return makeInvokeConst(i.toString(), i.getKind());
+  }
+
+  private Expr<?> makeInvokeConst(final String key, final SymKind kind) {
+    String typedKey = key + (kind == SymKind.BOOLEAN_METHOD ? BOOL_SUFFIX : INT_SUFFIX);
     return exprMap.computeIfAbsent(
-            i.toString(),
-            k ->
-                    i.getKind() == SymKind.BOOLEAN_METHOD
-                            ? context.mkBoolConst(k)
-                            : context.mkIntConst(k));
+            typedKey,
+            k -> kind == SymKind.BOOLEAN_METHOD
+                    ? context.mkBoolConst(k)
+                    : context.mkIntConst(k));
   }
 
   @Override
@@ -400,17 +383,18 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitNewRef(final SymNew n) {
-    return exprMap.computeIfAbsent(
-            "new_" + n.toString().replace(".", "_"),
-            context::mkIntConst);
+    return exprMap.computeIfAbsent("new_" + n.toString().replace(".", "_"), context::mkIntConst);
   }
 
   @Override
   public Expr<?> visitStaticFieldRef(final SymStaticFieldRef r) {
     return exprMap.computeIfAbsent(
-            r.getFieldSignature().replace(".", "_").replace(":", "_").replace(" ", "_"),
-            k -> r.getKind() == SymKind.BOOLEAN
-                    ? context.mkBoolConst(k)
-                    : context.mkIntConst(k));
+        r.getFieldSignature().replace(".", "_").replace(":", "_").replace(" ", "_"),
+        k -> r.getKind() == SymKind.BOOLEAN ? context.mkBoolConst(k) : context.mkIntConst(k));
+  }
+
+  @Override
+  public Expr<?> visitNeg(final SymNeg n) {
+    return context.mkUnaryMinus((ArithExpr<IntSort>) n.getOperand().accept(this));
   }
 }

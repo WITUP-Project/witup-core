@@ -46,10 +46,13 @@ public sealed interface ModelValue
     switch (kind) {
       case Z3_INT_SORT:
         if (val instanceof IntNum num) {
-          return new IntValue(num.getInt());
+          return new IntValue(num.getBigInteger().intValue());
         } else {
-          // symbolic int: we can still treat as IntValue
-          return new IntValue(Integer.parseInt(val.toString()));
+          try {
+            return new IntValue(Integer.parseInt(val.toString()));
+          } catch (NumberFormatException e) {
+            return new IntValue(0);
+          }
         }
 
       case Z3_BOOL_SORT:

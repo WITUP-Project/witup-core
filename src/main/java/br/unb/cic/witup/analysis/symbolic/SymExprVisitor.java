@@ -48,4 +48,6 @@ public interface SymExprVisitor<T> {
   T visitNewRef(SymNew n);
 
   T visitStaticFieldRef(SymStaticFieldRef r);
+
+  T visitNeg(SymNeg n);
 }

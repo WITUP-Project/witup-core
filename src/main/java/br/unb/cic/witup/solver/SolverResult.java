@@ -8,10 +8,7 @@ import br.unb.cic.witup.solver.model.StringValue;
 import com.microsoft.z3.Status;
 import java.util.Map;
 
-public record SolverResult(
-    String pathId,
-    Status status,
-    Map<String, ModelValue> modelValueMap) {
+public record SolverResult(String pathId, Status status, Map<String, ModelValue> modelValueMap) {
 
   public Status getStatus() {
     return status;

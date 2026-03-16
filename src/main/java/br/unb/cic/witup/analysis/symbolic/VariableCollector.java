@@ -140,4 +140,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitStaticFieldRef(final SymStaticFieldRef r) {
     return null;
   }
+
+  @Override
+  public Void visitNeg(final SymNeg n) {
+    return n.getOperand().accept(this);
+  }
 }
