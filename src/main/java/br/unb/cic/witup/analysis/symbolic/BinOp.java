@@ -17,7 +17,15 @@ public enum BinOp {
   // Special Jimple operations
   CMPG("cmpg"),
   CMPL("cmpl"),
-  CMP("cmp");
+  CMP("cmp"),
+
+  SHIFT_RIGHT(">>"),
+  UNSIGNED_SHIFT_RIGHT(">>>"),
+  SHIFT_LEFT("<<"),
+
+  AND("&&"),
+  OR("||"),
+  XOR("^"),;
 
   private final String symbol;
 

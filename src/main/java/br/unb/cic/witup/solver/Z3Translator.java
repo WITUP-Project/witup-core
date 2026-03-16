@@ -31,6 +31,7 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import com.microsoft.z3.ArithExpr;
 import com.microsoft.z3.ArrayExpr;
 import com.microsoft.z3.ArraySort;
+import com.microsoft.z3.BitVecExpr;
 import com.microsoft.z3.BoolExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
@@ -52,6 +53,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String IS_NULL = "_is_null";
   public static final String NULL_STR = "__null__";
   public static final String THIS_STR = "__this__";
+  public static final int BITS_32 = 32;
   private final Context context;
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
@@ -149,20 +151,49 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         expr + AS_STR_SUFFIX, k -> context.mkConst(k, context.getStringSort()));
   }
 
-  private Expr<?> buildArithExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
-    return switch (op) {
-      case LT -> context.mkLt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case LE -> context.mkLe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case GT -> context.mkGt((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case GE -> context.mkGe((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case ADD -> context.mkAdd((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case SUB -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case MUL -> context.mkMul((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case DIV -> context.mkDiv((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      case MOD -> context.mkMod((IntExpr) left, (IntExpr) right);
-      case CMP, CMPG, CMPL -> context.mkSub((ArithExpr<IntSort>) left, (ArithExpr<IntSort>) right);
-      default -> throw new IllegalStateException("Unhandled op in arith path: " + op);
-    };
+  private Expr<?> buildArithExpr(final BinOp op, final Expr<?> lhs, final Expr<?> rhs) {
+    switch (op) {
+      case LT:
+        return context.mkLt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case LE:
+        return context.mkLe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case GT:
+        return context.mkGt((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case GE:
+        return context.mkGe((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case ADD:
+        return context.mkAdd((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case SUB:
+        return context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case MUL:
+        return context.mkMul((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case DIV:
+        return context.mkDiv((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case MOD:
+        return context.mkMod((IntExpr) lhs, (IntExpr) rhs);
+      case CMP:
+      case CMPG:
+      case CMPL:
+        return context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
+      case SHIFT_LEFT:
+        return context.mkBV2Int(context.mkBVSHL(bv(lhs), bv(rhs)), true);
+      case SHIFT_RIGHT:
+        return context.mkBV2Int(context.mkBVASHR(bv(lhs), bv(rhs)), true);
+      case AND:
+        return context.mkBV2Int(context.mkBVAND(bv(lhs), bv(rhs)), true);
+      case OR:
+        return context.mkBV2Int(context.mkBVOR(bv(lhs), bv(rhs)), true);
+      case UNSIGNED_SHIFT_RIGHT:
+        return context.mkBV2Int(context.mkBVLSHR(bv(lhs), bv(rhs)), false);
+      case XOR:
+        return context.mkBV2Int(context.mkBVXOR(bv(lhs), bv(rhs)), true);
+      default:
+        throw new IllegalStateException("Unhandled op in arith path: " + op);
+    }
+  }
+
+  private BitVecExpr bv(final Expr<?> e) {
+    return context.mkInt2BV(BITS_32, (IntExpr) e);
   }
 
   @Override
