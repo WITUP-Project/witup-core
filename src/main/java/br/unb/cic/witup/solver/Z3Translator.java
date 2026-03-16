@@ -185,6 +185,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       case SHIFT_LEFT -> context.mkBV2Int(context.mkBVSHL(bv(lhs), bv(rhs)), true);
       case SHIFT_RIGHT -> context.mkBV2Int(context.mkBVASHR(bv(lhs), bv(rhs)), true);
       case AND -> {
+        // hacky but speeds up some Z3 paths massively. Need to come back here
+        // and reconsider when we have better understood the best ways to
+        // reprent each kind of symbolic constraint in Z3. Right now this
+        // entire layer might be sub-optimal
         if (rhs instanceof IntNum num) {
           int mask = num.getInt();
           if (mask > 0 && (mask & (mask + 1)) == 0) {
