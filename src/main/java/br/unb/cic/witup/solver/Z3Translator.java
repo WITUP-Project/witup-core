@@ -8,6 +8,7 @@ import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymCaughtExceptionRef;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymDoubleConst;
+import br.unb.cic.witup.analysis.symbolic.SymDynamicInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.SymFloatConst;
@@ -38,6 +39,7 @@ import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.FuncDecl;
 import com.microsoft.z3.IntExpr;
+import com.microsoft.z3.IntNum;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Sort;
 import com.microsoft.z3.UninterpretedSort;
@@ -180,7 +182,16 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       case CMP, CMPG, CMPL -> context.mkSub((ArithExpr<IntSort>) lhs, (ArithExpr<IntSort>) rhs);
       case SHIFT_LEFT -> context.mkBV2Int(context.mkBVSHL(bv(lhs), bv(rhs)), true);
       case SHIFT_RIGHT -> context.mkBV2Int(context.mkBVASHR(bv(lhs), bv(rhs)), true);
-      case AND -> context.mkBV2Int(context.mkBVAND(bv(lhs), bv(rhs)), true);
+      case AND -> {
+        if (rhs instanceof IntNum num) {
+          int mask = num.getInt();
+          if (mask > 0 && (mask & (mask + 1)) == 0) {
+            // mask is 2^n - 1 — model as mod
+            yield context.mkMod((IntExpr) lhs, context.mkInt(mask + 1));
+          }
+        }
+        yield context.mkBV2Int(context.mkBVAND(bv(lhs), bv(rhs)), true);
+      }
       case OR -> context.mkBV2Int(context.mkBVOR(bv(lhs), bv(rhs)), true);
       case UNSIGNED_SHIFT_RIGHT -> context.mkBV2Int(context.mkBVLSHR(bv(lhs), bv(rhs)), false);
       case XOR -> context.mkBV2Int(context.mkBVXOR(bv(lhs), bv(rhs)), true);
@@ -275,6 +286,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitInterfaceInvoke(final SymInterfaceInvoke i) {
     return makeInvokeConst(i.toString(), i.getKind());
+  }
+
+  @Override
+  public Expr<?> visitDynamicInvoke(final SymDynamicInvoke d) {
+    return exprMap.computeIfAbsent(
+            "dynamicinvoke_" + d.getSignature()
+                    .replaceAll("[^a-zA-Z0-9_]", "_"),
+            context::mkIntConst);
   }
 
   @Override

@@ -83,6 +83,11 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
+  public Void visitDynamicInvoke(final SymDynamicInvoke d) {
+    return null;
+  }
+
+  @Override
   public Void visitArray(final SymArray r) {
     return null;
   }

@@ -17,6 +17,7 @@ import sootup.core.jimple.common.expr.JCmpExpr;
 import sootup.core.jimple.common.expr.JCmpgExpr;
 import sootup.core.jimple.common.expr.JCmplExpr;
 import sootup.core.jimple.common.expr.JDivExpr;
+import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
 import sootup.core.jimple.common.expr.JEqExpr;
 import sootup.core.jimple.common.expr.JGeExpr;
 import sootup.core.jimple.common.expr.JGtExpr;
@@ -99,6 +100,7 @@ public abstract class SymExpr {
       case JStaticInvokeExpr e -> new SymStaticInvoke(e);
       case JInterfaceInvokeExpr e -> SymInterfaceInvoke.fromInterfaceInvokeExpr(e);
       case JSpecialInvokeExpr e -> SymSpecialInvoke.fromSpecialInvokeExpr(e);
+      case JDynamicInvokeExpr e -> new SymDynamicInvoke(e);
       case JArrayRef r -> SymArrayRef.fromArrayRef(r);
       case JLengthExpr e -> new SymLength(e);
       case JNewArrayExpr e -> new SymArray(e);
