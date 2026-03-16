@@ -15,15 +15,16 @@ import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymInterfaceInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
+import br.unb.cic.witup.analysis.symbolic.SymNeg;
 import br.unb.cic.witup.analysis.symbolic.SymNew;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStaticFieldRef;
 import br.unb.cic.witup.analysis.symbolic.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.SymVar;
-import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
 import br.unb.cic.witup.analysis.symbolic.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import com.microsoft.z3.ArraySort;
@@ -98,9 +99,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitStaticInvoke(final SymStaticInvoke s) {
-    return s.getKind() == SymKind.BOOLEAN_METHOD
-            ? context.getBoolSort()
-            : context.getIntSort();
+    return s.getKind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
   }
 
   @Override
@@ -111,7 +110,6 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
   @Override
   public Sort visitSpecialInvoke(final SymSpecialInvoke i) {
     return i.getKind() == SymKind.BOOLEAN_METHOD ? context.getBoolSort() : context.getIntSort();
-
   }
 
   //  @Override
@@ -201,8 +199,11 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitStaticFieldRef(final SymStaticFieldRef r) {
-    return r.getKind() == SymKind.BOOLEAN
-            ? context.getBoolSort()
-            : context.getIntSort();
+    return r.getKind() == SymKind.BOOLEAN ? context.getBoolSort() : context.getIntSort();
+  }
+
+  @Override
+  public Sort visitNeg(final SymNeg n) {
+    return n.getOperand().accept(this);
   }
 }

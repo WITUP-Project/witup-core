@@ -13,15 +13,15 @@ import com.microsoft.z3.FuncDecl;
 import com.microsoft.z3.FuncInterp;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
+import com.microsoft.z3.Params;
 import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Translates SymbolicConstraints into Z3, evaluates and returns a model if the constraints are
@@ -33,10 +33,10 @@ public final class SymbolicConstraintSolver {
   // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
+  public static final int TWENTY_SECONDS = 20000;
   private Map<String, MethodSummary> methodSummaries = new HashMap<>();
   private final Context ctx = new Context();
   private final Solver solver = ctx.mkSolver();
-
 
   public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {}
 
@@ -45,6 +45,9 @@ public final class SymbolicConstraintSolver {
   // we produce MethodSolutions, that map method name to solutions
   public SymbolicConstraintSolver(final Map<String, MethodSummary> methodSummaries) {
     this.methodSummaries = methodSummaries;
+    Params params = ctx.mkParams();
+    params.add("timeout", TWENTY_SECONDS);
+    solver.setParameters(params);
   }
 
   public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
@@ -60,6 +63,7 @@ public final class SymbolicConstraintSolver {
         }
         methodSolutions.put(sig, results);
       } catch (Exception e) {
+        log.warn("Failed to solve {}: {}", sig, e.getMessage(), e);
         failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
       }
     }
@@ -73,9 +77,10 @@ public final class SymbolicConstraintSolver {
     for (SymbolicConstraint c : constraints) {
       solver.add(translator.translateConstraint(c));
     }
-    Status status = solver.check();
 
+    Status status = solver.check();
     boolean isSat = status == Status.SATISFIABLE;
+
     Model model = isSat ? solver.getModel() : null;
     Map<String, ModelValue> modelValueMap = isSat ? extractModel(model, translator) : Map.of();
 
@@ -84,8 +89,7 @@ public final class SymbolicConstraintSolver {
     return new SolverResult(pathId, status, modelValueMap);
   }
 
-  private Map<String, ModelValue> extractModel(
-      final Model model, final Z3Translator translator) {
+  private Map<String, ModelValue> extractModel(final Model model, final Z3Translator translator) {
     Map<String, ModelValue> modelValueMap = new HashMap<>();
 
     // should cover variables, virtual invokes, lengths, casts, field accesses
