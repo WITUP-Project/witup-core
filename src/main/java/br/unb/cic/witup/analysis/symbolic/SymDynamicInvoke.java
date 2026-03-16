@@ -3,10 +3,10 @@ package br.unb.cic.witup.analysis.symbolic;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
 
-public class SymDynamicInvoke extends SymExpr {
+public final class SymDynamicInvoke extends SymExpr {
   private final String signature;
 
-  public SymDynamicInvoke(JDynamicInvokeExpr e) {
+  public SymDynamicInvoke(final JDynamicInvokeExpr e) {
     super(SymKind.OTHER);
     this.signature = e.toString();
   }
