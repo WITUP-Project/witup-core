@@ -11,6 +11,7 @@ import sootup.core.jimple.common.constant.NullConstant;
 import sootup.core.jimple.common.constant.StringConstant;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
 import sootup.core.jimple.common.expr.JAddExpr;
+import sootup.core.jimple.common.expr.JAndExpr;
 import sootup.core.jimple.common.expr.JCastExpr;
 import sootup.core.jimple.common.expr.JCmpExpr;
 import sootup.core.jimple.common.expr.JCmpgExpr;
@@ -28,11 +29,16 @@ import sootup.core.jimple.common.expr.JMulExpr;
 import sootup.core.jimple.common.expr.JNeExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.expr.JOrExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
+import sootup.core.jimple.common.expr.JShlExpr;
+import sootup.core.jimple.common.expr.JShrExpr;
 import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
+import sootup.core.jimple.common.expr.JUshrExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
+import sootup.core.jimple.common.expr.JXorExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
@@ -127,49 +133,29 @@ public abstract class SymExpr {
   }
 
   static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
-    if (expr instanceof JEqExpr) {
-      return BinOp.EQ;
-    }
-    if (expr instanceof JNeExpr) {
-      return BinOp.NE;
-    }
-    if (expr instanceof JLtExpr) {
-      return BinOp.LT;
-    }
-    if (expr instanceof JLeExpr) {
-      return BinOp.LE;
-    }
-    if (expr instanceof JGtExpr) {
-      return BinOp.GT;
-    }
-    if (expr instanceof JGeExpr) {
-      return BinOp.GE;
-    }
-    if (expr instanceof JAddExpr) {
-      return BinOp.ADD;
-    }
-    if (expr instanceof JSubExpr) {
-      return BinOp.SUB;
-    }
-    if (expr instanceof JMulExpr) {
-      return BinOp.MUL;
-    }
-    if (expr instanceof JDivExpr) {
-      return BinOp.DIV;
-    }
-    if (expr instanceof JRemExpr) {
-      return BinOp.MOD;
-    }
-    if (expr instanceof JCmpExpr) {
-      return BinOp.CMP;
-    }
-    if (expr instanceof JCmpgExpr) {
-      return BinOp.CMPG;
-    }
-    if (expr instanceof JCmplExpr) {
-      return BinOp.CMPL;
-    }
-    throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
+    return switch (expr) {
+      case JEqExpr e -> BinOp.EQ;
+      case JNeExpr e -> BinOp.NE;
+      case JLtExpr e -> BinOp.LT;
+      case JLeExpr e -> BinOp.LE;
+      case JGtExpr e -> BinOp.GT;
+      case JGeExpr e -> BinOp.GE;
+      case JAddExpr e -> BinOp.ADD;
+      case JSubExpr e -> BinOp.SUB;
+      case JMulExpr e -> BinOp.MUL;
+      case JDivExpr e -> BinOp.DIV;
+      case JRemExpr e -> BinOp.MOD;
+      case JCmpExpr e -> BinOp.CMP;
+      case JCmpgExpr e -> BinOp.CMPG;
+      case JCmplExpr e -> BinOp.CMPL;
+      case JShrExpr e -> BinOp.SHIFT_RIGHT;
+      case JUshrExpr e -> BinOp.UNSIGNED_SHIFT_RIGHT;
+      case JShlExpr e -> BinOp.SHIFT_LEFT;
+      case JAndExpr e -> BinOp.AND;
+      case JOrExpr e -> BinOp.OR;
+      case JXorExpr e -> BinOp.XOR;
+      default -> throw new IllegalArgumentException("Unknown binop expr: " + expr.getClass());
+    };
   }
 
   // Simplify patterns like (x cmpg y) >= 0 to x >= y
