@@ -3,6 +3,7 @@ package br.unb.cic.witup.analysis.symbolic;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
+import sootup.core.jimple.common.constant.ClassConstant;
 import sootup.core.jimple.common.constant.DoubleConstant;
 import sootup.core.jimple.common.constant.FloatConstant;
 import sootup.core.jimple.common.constant.IntConstant;
@@ -112,6 +113,7 @@ public abstract class SymExpr {
       case JNewExpr e -> new SymNew(e);
       case JStaticFieldRef e -> new SymStaticFieldRef(e);
       case JNegExpr e -> new SymNeg(e);
+      case ClassConstant c -> new SymClassConst(c);
       default -> throw new IllegalStateException("Unexpected value: " + value);
     };
   }
