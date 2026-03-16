@@ -150,4 +150,9 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitNeg(final SymNeg n) {
     return n.getOperand().accept(this);
   }
+
+  @Override
+  public Void visitClassConst(SymClassConst c) {
+    return null;
+  }
 }

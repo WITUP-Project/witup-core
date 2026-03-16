@@ -6,6 +6,7 @@ import br.unb.cic.witup.analysis.symbolic.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymCast;
 import br.unb.cic.witup.analysis.symbolic.SymCaughtExceptionRef;
+import br.unb.cic.witup.analysis.symbolic.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.SymConst;
 import br.unb.cic.witup.analysis.symbolic.SymDoubleConst;
 import br.unb.cic.witup.analysis.symbolic.SymDynamicInvoke;
@@ -61,6 +62,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final int BITS_32 = 32;
   public static final String BOOL_SUFFIX = "_bool";
   public static final String INT_SUFFIX = "_int";
+  public static final String CLASS_PREFIX = "class_";
   private final Context context;
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
@@ -302,7 +304,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   private Expr<?> makeInvokeConst(final String key, final SymKind kind) {
-    String typedKey = key + (kind == SymKind.BOOLEAN_METHOD ? "_bool" : "_int");
+    String typedKey = key + (kind == SymKind.BOOLEAN_METHOD ? BOOL_SUFFIX : INT_SUFFIX);
     Expr<?> expr = exprMap.computeIfAbsent(
             typedKey,
             k -> kind == SymKind.BOOLEAN_METHOD
@@ -420,5 +422,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitNeg(final SymNeg n) {
     return context.mkUnaryMinus((ArithExpr<IntSort>) n.getOperand().accept(this));
+  }
+
+  @Override
+  public Expr<?> visitClassConst(final SymClassConst c) {
+    return exprMap.computeIfAbsent(
+            CLASS_PREFIX + c.getValue().replace("/", "_").replace(";", "").replace("[", ""),
+            context::mkIntConst);
   }
 }

@@ -52,4 +52,6 @@ public interface SymExprVisitor<T> {
   T visitStaticFieldRef(SymStaticFieldRef r);
 
   T visitNeg(SymNeg n);
+
+  T visitClassConst(SymClassConst c);
 }
