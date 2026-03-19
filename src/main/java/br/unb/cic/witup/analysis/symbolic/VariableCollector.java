@@ -155,4 +155,12 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   public Void visitClassConst(final SymClassConst c) {
     return null;
   }
+
+  @Override
+  public Void visitITE(final SymITE ite) {
+    ite.getCondition().accept(this);
+    ite.getThenExpr().accept(this);
+    ite.getElseExpr().accept(this);
+    return null;
+  }
 }

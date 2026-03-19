@@ -77,4 +77,30 @@ public class IntTest {
     int b = sol0.getInt("b");
     assertTrue(a + b > 512, "Expected a + b > 512");
   }
+
+  @Test
+  public void negateValue() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int negateValue(int)>";
+    WITUpGraph cpg = witupGraphs.get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    GraphRepository graphRepo = sig -> Optional.ofNullable(witupGraphs.get(sig));
+    SummaryCache summaryCache = new SummaryCache();
+    MethodSummariser methodSummariser = new MethodSummariser(cpg, graphRepo, summaryCache);
+
+    List<List<SymbolicConstraint>> paths =
+            methodSummariser.buildSymbolicConstraintPaths(throwNodes.get(0));
+
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(paths);
+    List<SolverResult> results = new ArrayList<>();
+    for (int i = 0; i < paths.size(); i++) {
+      results.add(solver.checkPath(methodSignature + "#" + i, paths.get(i)));
+    }
+
+    SolverResult sol0 = results.getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("a") > 0);
+  }
 }

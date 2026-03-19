@@ -67,4 +67,22 @@ public class Int {
     }
     return result;
   }
+
+  public int negateValueCalee(int a) {
+    if (a == 0) {
+      throw new IllegalArgumentException("a must not be zero");
+    }
+    if (a > 0) {
+      return -1*a;
+    }
+    return a*-1;
+  }
+
+  public int negateValue(int a) {
+    int b = negateValueCalee(a);
+    if (b < 0) {
+      throw new IllegalArgumentException("a must not be negative");
+    }
+    return b;
+  }
 }

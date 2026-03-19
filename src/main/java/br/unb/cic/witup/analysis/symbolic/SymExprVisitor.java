@@ -54,4 +54,6 @@ public interface SymExprVisitor<T> {
   T visitNeg(SymNeg n);
 
   T visitClassConst(SymClassConst c);
+
+  T visitITE(SymITE i);
 }

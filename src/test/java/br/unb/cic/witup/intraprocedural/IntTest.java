@@ -44,7 +44,7 @@ public class IntTest {
   @Test
   public void buildSootUpPropertyGraphs() {
     assertNotNull(witupGraphs);
-    assertEquals(9, witupGraphs.size());
+    assertEquals(11, witupGraphs.size());
   }
 
   @Test

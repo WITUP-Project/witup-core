@@ -5,7 +5,11 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.symbolic.BinOp;
+import br.unb.cic.witup.analysis.symbolic.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.SymITE;
+import br.unb.cic.witup.analysis.symbolic.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
@@ -111,21 +115,61 @@ public final class MethodSummariser implements SummaryResolver {
   }
 
   private SymExpr traceReturnExpr() {
+    log.debug("traceReturnExpr called for {}", getMethodSignature());
     List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
     if (returnNodes.isEmpty()) {
       log.debug("No return nodes found for {}", getMethodSignature());
       return null;
     }
-    if (returnNodes.size() > 1) {
-      // encode multiple return nodes as Z3 If-Then-Else
-      log.debug("Multiple return nodes for {} — using first", getMethodSignature());
+
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, List.of(), null);
+
+    SymExpr result = null;
+
+    for (ReturnStatementNode returnNode : returnNodes) {
+      SymExpr returnExpr = sg.generateReturnExpression(returnNode);
+      if (returnExpr == null) {
+        continue;
+      }
+
+      if (result == null) {
+        // base case — last return in iteration becomes the else branch
+        result = returnExpr;
+      } else {
+        SymExpr pathCondition = buildPathCondition(returnNode);
+        result = new SymITE(pathCondition, returnExpr, result);
+      }
     }
-    ReturnStatementNode returnNode = returnNodes.get(0);
-    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getConstraintPaths(returnNode);
-    log.debug("traceReturnExpr for {} returnNode op: {}", getMethodSignature(), returnNode.getOp());
-    // null for resolver disables interprocedural
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, paths, null);
-    return sg.generateReturnExpression(returnNode);
+
+    log.debug("traceReturnExpr for {} — {}", getMethodSignature(), result);
+    return result;
+  }
+
+  private SymExpr buildPathCondition(final ReturnStatementNode returnNode) {
+    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
+    if (paths.isEmpty()) {
+      return SymIntConst.one();
+    }
+
+    List<List<SymbolicConstraint>> generated =
+        new SymbolicConstraintGenerator(cpg, List.of(paths.get(0)), null)
+            .generateSymbolicConstraintPaths();
+
+    if (generated.isEmpty() || generated.get(0).isEmpty()) {
+      return SymIntConst.one();
+    }
+
+    List<SymbolicConstraint> constraints = generated.get(0);
+    SymExpr result = SymIntConst.one();
+    for (int i = constraints.size() - 1; i >= 0; i--) {
+      SymbolicConstraint c = constraints.get(i);
+      SymExpr cond =
+          c.getTruthValue()
+              ? c.getSymExpr()
+              : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
+      result = new SymITE(cond, result, SymIntConst.zero());
+    }
+    return result;
   }
 
   @Override
@@ -161,7 +205,13 @@ public final class MethodSummariser implements SummaryResolver {
     summaryRepository.markInProgress(calleeSignature);
     MethodSummariser calleeAnalysis =
         new MethodSummariser(calleeGraph.get(), graphRepository, summaryRepository);
+
+    log.debug("Calling summarise() for callee {}", calleeSignature);
     MethodSummary calleeSummary = calleeAnalysis.summarise();
+    log.debug(
+        "summarise() returned for {} — returnExpr={}",
+        calleeSignature,
+        calleeSummary.getReturnExpr());
     summaryRepository.putSummary(calleeSignature, calleeSummary);
 
     // instantiate returnExpr with actuals when MethodSummary carries returnExpr
@@ -181,6 +231,9 @@ public final class MethodSummariser implements SummaryResolver {
       log.debug("Formal/actual mismatch for {}", summary.getMethodSignature());
       return Optional.empty();
     }
+
+    log.debug("instantiate: formals={} actuals={}", summary.getFormalParams(), actuals);
+
 
     SymExpr returnExpr = summary.getReturnExpr();
     for (int i = 0; i < formals.size(); i++) {
