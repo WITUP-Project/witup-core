@@ -35,6 +35,15 @@ public final class SymNeg extends SymExpr {
   }
 
   @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newOperand = operand.substituteParam(idx, actual);
+    if (newOperand != operand) {
+      return new SymNeg(newOperand, getKind());
+    }
+    return this;
+  }
+
+  @Override
   public boolean contains(final String varName) {
     return operand.contains(varName);
   }

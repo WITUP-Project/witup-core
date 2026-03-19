@@ -70,6 +70,4 @@ public final class SymDynamicInvoke extends SymExpr {
   public boolean contains(final String varName) {
     return args.stream().anyMatch(a -> a.contains(varName));
   }
-
-
 }

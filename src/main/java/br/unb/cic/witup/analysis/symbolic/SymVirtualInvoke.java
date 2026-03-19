@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 
 public final class SymVirtualInvoke extends SymExpr {
   private final SymExpr base; // e.g. s
-  private final String invokeName; // e.g. length
+  private final String signature; // e.g. length
   private final boolean returnsBoolean;
   private final List<SymExpr> args;
 
@@ -37,11 +37,11 @@ public final class SymVirtualInvoke extends SymExpr {
   }
 
   public SymVirtualInvoke(
-      final SymExpr base, final String invokeName, final boolean returnsBoolean,
-      final List<SymExpr> args) {
+          final SymExpr base, final String signature, final boolean returnsBoolean,
+          final List<SymExpr> args) {
     super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER);
     this.base = base;
-    this.invokeName = invokeName;
+    this.signature = signature;
     this.returnsBoolean = returnsBoolean;
     this.args = args;
   }
@@ -63,7 +63,7 @@ public final class SymVirtualInvoke extends SymExpr {
             .allMatch(i -> args.get(i) == newArgs.get(i));
 
     if (baseChanged || argsChanged) {
-      return new SymVirtualInvoke(newBase, invokeName, returnsBoolean, newArgs);
+      return new SymVirtualInvoke(newBase, signature, returnsBoolean, newArgs);
     }
     return this;
   }
@@ -80,7 +80,7 @@ public final class SymVirtualInvoke extends SymExpr {
             .allMatch(i -> args.get(i) == newArgs.get(i));
 
     if (baseChanged || argsChanged) {
-      return new SymVirtualInvoke(newBase, invokeName, returnsBoolean, newArgs);
+      return new SymVirtualInvoke(newBase, signature, returnsBoolean, newArgs);
     }
     return this;
   }
@@ -93,6 +93,6 @@ public final class SymVirtualInvoke extends SymExpr {
   @Override
   public String toString() {
     String argStr = args.stream().map(SymExpr::toString).collect(Collectors.joining(","));
-    return base.toString() + "." + invokeName + "(" + argStr + ")";
+    return base.toString() + "." + signature + "(" + argStr + ")";
   }
 }

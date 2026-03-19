@@ -5,8 +5,9 @@ import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.types.PrimitiveType;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
- public final class SymStaticInvoke extends SymExpr {
+public final class SymStaticInvoke extends SymExpr {
   private final String invokeName; // e.g. length
   private final boolean returnsBoolean;
   private final List<SymExpr> args;
@@ -68,6 +69,9 @@ import java.util.List;
 
   @Override
   public String toString() {
-    return invokeName;
+    String argStr = args.stream()
+            .map(SymExpr::toString)
+            .collect(Collectors.joining(","));
+    return invokeName + "(" + argStr + ")";
   }
  }
