@@ -100,14 +100,8 @@ public final class SymbolicConstraintGenerator {
     this.currentPath = p;
   }
 
-  private SymExpr substituteAndSimplify(final SymExpr initial, final WITUpNode startNode) {
+  private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
     SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false);
-    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
-    return SymExpr.stripBooleanEncoding(symExpr);
-  }
-
-  private SymExpr resolveAndSimplifyWithParams(final SymExpr initial, final WITUpNode startNode) {
-    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), true);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     return SymExpr.stripBooleanEncoding(symExpr);
   }
@@ -115,7 +109,7 @@ public final class SymbolicConstraintGenerator {
   public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
     StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
     if (n.getStmt() instanceof JIfStmt ifStmt) {
-      return substituteAndSimplify(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
+      return substitute(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
     }
     if (constraintNode instanceof CaughtExceptionNode caught) {
       return new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
@@ -129,8 +123,46 @@ public final class SymbolicConstraintGenerator {
     if (paths.isEmpty()) {
       return SymExpr.fromJimple(returnNode.getOp());
     }
-    this.currentPath = paths.get(0);
-    return resolveAndSimplifyWithParams(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+    if (paths.size() == 1) {
+      this.currentPath = paths.get(0);
+      return substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+    }
+
+    // multiple paths to same return — fold into ITE - fits Z3 well
+    this.currentPath = paths.getLast();
+    SymExpr result = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+
+    for (int i = paths.size() - 2; i >= 0; i--) {
+      this.currentPath = paths.get(i);
+      SymExpr pathExpr = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+      SymExpr pathCondition = buildPathConditionFromPath(paths.get(i));
+      result = new SymITE(pathCondition, pathExpr, result);
+    }
+
+    return result;
+  }
+
+  // effectively duplicates MethodSummariser.buildPathCondition
+  // still work to do in the boundaries between here and there.
+  private SymExpr buildPathConditionFromPath(
+          final GraphPath<WITUpNode, WITUpEdge> path) {
+    List<List<SymbolicConstraint>> generated = new SymbolicConstraintGenerator(
+            cpg, List.of(path), null).generateSymbolicConstraintPaths();
+
+    if (generated.isEmpty() || generated.get(0).isEmpty()) {
+      return SymIntConst.one();
+    }
+
+    List<SymbolicConstraint> constraints = generated.get(0);
+    SymExpr result = SymIntConst.one();
+    for (int i = constraints.size() - 1; i >= 0; i--) {
+      SymbolicConstraint c = constraints.get(i);
+      SymExpr cond = c.getTruthValue()
+              ? c.getSymExpr()
+              : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
+      result = new SymITE(cond, result, SymIntConst.zero());
+    }
+    return result;
   }
 
   // it's ok to reassign current in a recursive function
