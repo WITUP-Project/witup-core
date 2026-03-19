@@ -14,6 +14,7 @@ public final class SymITE extends SymExpr {
 
   public SymExpr getCondition() {
     return condition; }
+
   public SymExpr getThenExpr() {
     return thenExpr;
   }
@@ -31,6 +32,17 @@ public final class SymITE extends SymExpr {
     SymExpr newCond = condition.substitute(varName, replacement);
     SymExpr newThen = thenExpr.substitute(varName, replacement);
     SymExpr newElse = elseExpr.substitute(varName, replacement);
+    if (newCond != condition || newThen != thenExpr || newElse != elseExpr) {
+      return new SymITE(newCond, newThen, newElse);
+    }
+    return this;
+  }
+
+  @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newCond = condition.substituteParam(idx, actual);
+    SymExpr newThen = thenExpr.substituteParam(idx, actual);
+    SymExpr newElse = elseExpr.substituteParam(idx, actual);
     if (newCond != condition || newThen != thenExpr || newElse != elseExpr) {
       return new SymITE(newCond, newThen, newElse);
     }

@@ -69,6 +69,23 @@ public final class SymVirtualInvoke extends SymExpr {
   }
 
   @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newBase = base.substituteParam(idx, actual);
+    List<SymExpr> newArgs = args.stream()
+            .map(a -> a.substituteParam(idx, actual))
+            .toList();
+
+    boolean baseChanged = newBase != base;
+    boolean argsChanged = !IntStream.range(0, args.size())
+            .allMatch(i -> args.get(i) == newArgs.get(i));
+
+    if (baseChanged || argsChanged) {
+      return new SymVirtualInvoke(newBase, invokeName, returnsBoolean, newArgs);
+    }
+    return this;
+  }
+
+  @Override
   public boolean contains(final String varName) {
     return base.contains(varName) || args.stream().anyMatch(a -> a.contains(varName));
   }

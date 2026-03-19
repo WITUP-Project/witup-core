@@ -101,6 +101,6 @@ public class IntTest {
 
     SolverResult sol0 = results.getFirst();
     assertTrue(sol0.isSat());
-    assertEquals(0, sol0.getInt("a"));
+    assertTrue(sol0.getInt("a") > 0);
   }
 }
