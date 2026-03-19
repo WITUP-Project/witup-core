@@ -40,6 +40,16 @@ public final class SymArrayRef extends SymExpr {
   }
 
   @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newArr = array.substituteParam(idx, actual);
+    SymExpr newIndexRef = index.substituteParam(idx, actual);
+    if (newArr != array || newIndexRef != index) {
+      return new SymArrayRef(newArr, newIndexRef);
+    }
+    return this;
+  }
+
+  @Override
   public String toString() {
     return array.toString() + "[" + index + "]";
   }

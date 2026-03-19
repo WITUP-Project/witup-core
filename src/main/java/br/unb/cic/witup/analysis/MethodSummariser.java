@@ -234,7 +234,6 @@ public final class MethodSummariser implements SummaryResolver {
 
     log.debug("instantiate: formals={} actuals={}", summary.getFormalParams(), actuals);
 
-
     SymExpr returnExpr = summary.getReturnExpr();
     for (int i = 0; i < formals.size(); i++) {
       returnExpr = returnExpr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
