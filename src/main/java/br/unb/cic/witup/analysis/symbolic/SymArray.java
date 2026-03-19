@@ -4,6 +4,9 @@ import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.types.ArrayType;
 
+/**
+ * Represents an allocated array
+ */
 public final class SymArray extends SymExpr {
   private final String name;
   private final String objectType;

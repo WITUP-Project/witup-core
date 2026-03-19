@@ -291,8 +291,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return makeInvokeConst(i.toString(), i.getKind());
   }
 
-  // Args are ignored for now since we're intraprocedural — the static invoke
-  // is treated as an uninterpreted function returning a boolean or integer.
+  // const is enough for our purposes. the symbolic constraint generator
+  // resolves them recursively before we get here
   @Override
   public Expr<?> visitStaticInvoke(final SymStaticInvoke i) {
     return makeInvokeConst(i.toString(), i.getKind());
