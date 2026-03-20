@@ -1,6 +1,6 @@
 package br.unb.cic.witup.intraprocedural;
 
-import static br.unb.cic.witup.test.SymbolicTestHelper.solve;
+import static br.unb.cic.witup.testinfra.SymbolicTestHelper.solve;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
