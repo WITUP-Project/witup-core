@@ -40,43 +40,7 @@ public class ArrayTest {
         ProjectAnalyser.buildGraphsForClass(
             new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Array").load());
   }
-
-  @Test
-  public void sumUntilZero() {
-    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZero(int[])>";
-
-    WITUpGraph cpg = witupGraphs.get(methodSignature);
-
-    List<WITUpNode> throwNodes = cpg.getThrowNodes();
-    assertEquals(1, throwNodes.size());
-
-    List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
-    assertEquals(2, conditionNodes.size());
-
-    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-        cpg.getConstraintPaths(throwNodes.get(0));
-
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
-
-    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
-
-    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
-    List<SolverResult> results = new ArrayList<>();
-    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
-      String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
-      results.add(result);
-    }
-
-    SolverResult sol0 = results.getFirst();
-    assertTrue(sol0.isSat());
-
-    ArrayValue arrArray = sol0.getArray("arr");
-    ModelValue elementValue = arrArray.get("i");
-    assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
-  }
-
+  
   @Test
   public void sumUntilZeroWhile() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroWhile(int[])>";

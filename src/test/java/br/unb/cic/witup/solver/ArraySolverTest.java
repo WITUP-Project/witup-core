@@ -97,4 +97,15 @@ public class ArraySolverTest {
 
     assertTrue(fieldValue.getInt() > 10, "expected arr[0].value <= 10");
   }
+
+  @Test
+  public void sumUntilZeroSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZero(int[])>";
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    ArrayValue arrArray = sol0.getArray("arr");
+    ModelValue elementValue = arrArray.get("i");
+    assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
+  }
 }

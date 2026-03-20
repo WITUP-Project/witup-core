@@ -132,4 +132,23 @@ public class ArraySummaryTest {
 
     assertEquals("arr[i]", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void sumUntilZeroSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZero(int[])>";
+
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("0 >= arr.length"));
+
+    assertFalse(path0.get(1).getTruthValue());
+    assertTrue(path0.get(1).getSymExpr().toString().contains("arr[i] != 0"));
+
+    // returnExpr here is always giving 0 as we do not handle loop-carried acc
+  }
 }
