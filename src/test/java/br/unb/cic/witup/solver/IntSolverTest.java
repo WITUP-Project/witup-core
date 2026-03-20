@@ -69,4 +69,21 @@ public class IntSolverTest {
     assertTrue(solution.isSat());
     assertTrue(solution.getInt("a") <= 0);
   }
+
+  @Test
+  public void lessThanConstantRhsViaBoolanSolution() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isUnsat());
+
+    SolverResult sol1 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).get(1);
+
+    assertTrue(sol1.isSat());
+    assertTrue(sol1.getInt("a") < 0, "Expected a < 0");
+  }
 }
