@@ -22,4 +22,16 @@ public class ArraySolverTest {
     ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
+
+  @Test
+  public void checkLengthSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int checkLength(int[])>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+
+    assertEquals(0, sol0.getInt("arr.length"), "arr.length should be 0");
+  }
 }

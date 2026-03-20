@@ -33,4 +33,23 @@ public class ArraySummaryTest {
     // return expr
     assertEquals("arr[i]", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void checkLengthSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int checkLength(int[])>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+    // constraint paths
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("arr.length != 0"));
+    // formal params
+    assertEquals(1, summary.getFormalParams().size());
+    // is this correct? paramType is int[]
+    assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
+    // return expr
+    assertEquals("arr.length", summary.getReturnExpr().toString());
+  }
 }

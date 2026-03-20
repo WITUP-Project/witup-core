@@ -48,39 +48,6 @@ public class ArrayTest {
   }
 
   @Test
-  public void checkLength() {
-    String methodSignature = "<br.unb.cic.witup.samples.Array: int checkLength(int[])>";
-
-    WITUpGraph cpg = witupGraphs.get(methodSignature);
-
-    List<WITUpNode> throwNodes = cpg.getThrowNodes();
-    assertEquals(1, throwNodes.size());
-
-    List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
-    assertEquals(1, conditionNodes.size());
-
-    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-        cpg.getConstraintPaths(throwNodes.get(0));
-
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
-
-    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
-
-    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
-    List<SolverResult> results = new ArrayList<>();
-    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
-      String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
-      results.add(result);
-    }
-
-    SolverResult sol0 = results.getFirst();
-    assertTrue(sol0.isSat());
-    assertEquals(0, sol0.getInt("arr.length"));
-  }
-
-  @Test
   public void allocate() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int[] allocate(int)>";
 
