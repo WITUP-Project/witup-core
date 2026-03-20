@@ -34,4 +34,17 @@ public class ArraySolverTest {
 
     assertEquals(0, sol0.getInt("arr.length"), "arr.length should be 0");
   }
+
+  @Test
+  public void allocateSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[] allocate(int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+
+    assertTrue(sol0.getInt("n") < 0, "arr.length should be 0");
+
+  }
 }
