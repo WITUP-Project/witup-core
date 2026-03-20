@@ -15,7 +15,7 @@ public class IntSolverTest {
             .get(methodSignature).getFirst();
 
     assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") + solution.getInt("b") > 256);
+    assertTrue(solution.getInt("a") + solution.getInt("b") > 256, "expected a + b > 256");
   }
 
   @Test
@@ -25,7 +25,7 @@ public class IntSolverTest {
             .get(methodSignature).getFirst();
 
     assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") < 0);
+    assertTrue(solution.getInt("a") < 0, "expected a < 0");
   }
 
   @Test
@@ -35,7 +35,7 @@ public class IntSolverTest {
             .get(methodSignature).getFirst();
 
     assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") < 0);
+    assertTrue(solution.getInt("a") < 0, " expected a < 0");
   }
 
   @Test
@@ -46,7 +46,7 @@ public class IntSolverTest {
             .get(methodSignature).getFirst();
 
     assertTrue(solution.isSat());
-    assertEquals(0, solution.getInt("a"));
+    assertEquals(0, solution.getInt("a"), "expected a == 0");
   }
 
   @Test
@@ -57,7 +57,7 @@ public class IntSolverTest {
             .get(methodSignature).getFirst();
 
     assertTrue(solution.isSat());
-    assertEquals(0, solution.getInt("a"));
+    assertEquals(0, solution.getInt("a"), "expected a == 0");
   }
 
   @Test
@@ -67,7 +67,7 @@ public class IntSolverTest {
             .get(methodSignature).getFirst();
 
     assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") <= 0);
+    assertTrue(solution.getInt("a") <= 0, "expected a <= 0");
   }
 
   @Test
@@ -85,5 +85,22 @@ public class IntSolverTest {
 
     assertTrue(sol1.isSat());
     assertTrue(sol1.getInt("a") < 0, "Expected a < 0");
+  }
+
+  @Test
+  public void lessThanConstantRhsViaNegatedBooleanSolution() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("a") >= 0, "Expected a >= 0");
+
+    SolverResult sol1 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).get(1);
+
+    assertTrue(sol1.isUnsat());
   }
 }

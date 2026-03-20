@@ -148,4 +148,27 @@ public class IntSummaryTest {
     // (((a >= 0) ? ((0 == 0) ? 1 : 0) : 0) ? a : a)
     // but correct and z3 handles
   }
+
+  @Test
+  public void lessThanConstantRhsViaNegatedBooleanSummary() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(2, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertTrue(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("a >= 0"));
+
+    List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
+    assertFalse(path1.get(0).getTruthValue());
+    assertTrue(path1.get(0).getSymExpr().toString().contains("a >= 0"));
+    // formal params
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    // return expr
+    // (((a >= 0) ? ((0 != 0) ? 1 : 0) : 0) ? a : a)
+  }
 }
