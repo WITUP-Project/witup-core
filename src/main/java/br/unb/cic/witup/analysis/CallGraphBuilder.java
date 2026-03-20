@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class CallGraphBuilder {
+public final class CallGraphBuilder {
   private final JavaView view;
   private static final Logger log = LoggerFactory.getLogger("CallGraphBuilder");
 
@@ -58,7 +58,7 @@ public class CallGraphBuilder {
     return callGraph;
   }
 
-  public List<List<String>> buildAnalysisOrder(Graph<String, DefaultEdge> callGraph) {
+  public List<List<String>> buildAnalysisOrder(final Graph<String, DefaultEdge> callGraph) {
     KosarajuStrongConnectivityInspector<String, DefaultEdge> inspector =
             new KosarajuStrongConnectivityInspector<>(callGraph);
 

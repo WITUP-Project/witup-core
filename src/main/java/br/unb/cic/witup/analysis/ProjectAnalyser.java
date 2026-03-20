@@ -133,7 +133,9 @@ public final class ProjectAnalyser implements GraphRepository {
           final Map<String, MethodSummary> summaries,
           final Map<String, String> failures) {
     WITUpGraph graph = graphs.get(sig);
-    if (graph == null) return;
+    if (graph == null) {
+      return;
+    }
     try {
       MethodSummariser ms = new MethodSummariser(graph, this, summaryCache);
       summaries.put(sig, ms.summarise());
@@ -155,7 +157,9 @@ public final class ProjectAnalyser implements GraphRepository {
     // initialise all methods in SCC with empty summaries
     for (String sig : scc) {
       WITUpGraph graph = graphs.get(sig);
-      if (graph == null) continue;
+      if (graph == null) {
+        continue;
+      }
       summaryCache.putSummary(sig, MethodSummary.empty(sig));
     }
 
@@ -167,7 +171,9 @@ public final class ProjectAnalyser implements GraphRepository {
       iterations++;
       for (String sig : scc) {
         WITUpGraph graph = graphs.get(sig);
-        if (graph == null) continue;
+        if (graph == null) {
+          continue;
+        }
         try {
           MethodSummariser ms = new MethodSummariser(graph, this, summaryCache);
           MethodSummary newSummary = ms.summarise();

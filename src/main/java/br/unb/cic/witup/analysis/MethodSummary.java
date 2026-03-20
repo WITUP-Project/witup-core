@@ -27,7 +27,7 @@ public final class MethodSummary {
     this.returnExpr = returnExpr;
   }
 
-  public static MethodSummary empty(String sig) {
+  public static MethodSummary empty(final String sig) {
     return new MethodSummary(sig, null, null, null);
   }
 
