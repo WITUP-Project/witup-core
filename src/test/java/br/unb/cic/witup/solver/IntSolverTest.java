@@ -1,0 +1,29 @@
+package br.unb.cic.witup.solver;
+
+import br.unb.cic.witup.testinfra.TestAnalysisContext;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class IntSolverTest {
+  @Test
+  public void addOverflowSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int add(int,int)>";
+
+    SolverResult solution = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(solution.isSat());
+    assertTrue(solution.getInt("a") + solution.getInt("b") > 256);
+  }
+
+  @Test
+  public void greaterThanConstantRhsSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int greaterThanConstantRhs(int)>";
+    SolverResult solution = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(solution.isSat());
+    assertTrue(solution.getInt("a") < 0);
+  }
+}
