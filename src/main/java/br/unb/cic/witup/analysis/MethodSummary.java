@@ -27,6 +27,10 @@ public final class MethodSummary {
     this.returnExpr = returnExpr;
   }
 
+  public static MethodSummary empty(String sig) {
+    return new MethodSummary(sig, null, null, null);
+  }
+
   public String getMethodSignature() {
     return methodSignature;
   }

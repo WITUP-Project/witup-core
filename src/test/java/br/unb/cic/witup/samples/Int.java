@@ -68,7 +68,7 @@ public class Int {
     return result;
   }
 
-  public int negateValueCalee(int a) {
+  public int negateValueCallee(int a) {
     if (a == 0) {
       throw new IllegalArgumentException("a must not be zero");
     }
@@ -79,7 +79,7 @@ public class Int {
   }
 
   public int negateValue(int a) {
-    int b = negateValueCalee(a);
+    int b = negateValueCallee(a);
     if (b < 0) {
       throw new IllegalArgumentException("a must not be negative");
     }
