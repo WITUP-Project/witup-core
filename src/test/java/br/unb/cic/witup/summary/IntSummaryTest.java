@@ -69,4 +69,22 @@ public class IntSummaryTest {
     // return expr
     assertEquals("a", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void equalsConstantRhsSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantRhs(int)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+    // constraint paths
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("a != 0"));
+    // formal params
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    // return expr
+    assertEquals("a", summary.getReturnExpr().toString());
+  }
 }

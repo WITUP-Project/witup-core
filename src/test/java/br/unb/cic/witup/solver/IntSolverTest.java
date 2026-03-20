@@ -3,6 +3,7 @@ package br.unb.cic.witup.solver;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IntSolverTest {
@@ -35,5 +36,16 @@ public class IntSolverTest {
 
     assertTrue(solution.isSat());
     assertTrue(solution.getInt("a") < 0);
+  }
+
+  @Test
+  public void equalsConstantRhsSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantRhs(int)>";
+
+    SolverResult solution = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(solution.isSat());
+    assertEquals(0, solution.getInt("a"));
   }
 }
