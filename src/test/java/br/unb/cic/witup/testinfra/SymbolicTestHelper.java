@@ -1,4 +1,4 @@
-package br.unb.cic.witup.test;
+package br.unb.cic.witup.testinfra;
 
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
