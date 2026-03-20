@@ -2,10 +2,13 @@ package br.unb.cic.witup.solver;
 
 import br.unb.cic.witup.solver.model.ArrayValue;
 import br.unb.cic.witup.solver.model.ModelValue;
+import br.unb.cic.witup.solver.model.ObjectValue;
+import br.unb.cic.witup.solver.model.StringValue;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ArraySolverTest {
@@ -63,5 +66,21 @@ public class ArraySolverTest {
 
     assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
 
+  }
+
+  @Test
+  public void getObjectElementSolution() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+
+    ArrayValue arrArray = sol0.getArray("arr");
+    ModelValue elementValue = arrArray.get("i");
+    assertNotNull(elementValue);
+    assertTrue(elementValue instanceof ObjectValue || elementValue instanceof StringValue);
   }
 }

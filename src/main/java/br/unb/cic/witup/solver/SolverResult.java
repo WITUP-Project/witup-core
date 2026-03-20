@@ -4,6 +4,7 @@ import br.unb.cic.witup.solver.model.ArrayValue;
 import br.unb.cic.witup.solver.model.BoolValue;
 import br.unb.cic.witup.solver.model.IntValue;
 import br.unb.cic.witup.solver.model.ModelValue;
+import br.unb.cic.witup.solver.model.ObjectValue;
 import br.unb.cic.witup.solver.model.StringValue;
 import com.microsoft.z3.Status;
 import java.util.Map;
@@ -57,6 +58,16 @@ public record SolverResult(String pathId, Status status, Map<String, ModelValue>
               + (value == null ? "null" : value.getClass()));
     }
     return av;
+  }
+
+  public ObjectValue getObject(final String name) {
+    ModelValue value = modelValueMap.get(name);
+    if (!(value instanceof ObjectValue ov)) {
+      throw new IllegalStateException(
+              "Expected ObjectValue for " + name + ", got "
+                      + (value == null ? "null" : value.getClass()));
+    }
+    return ov;
   }
 
   @SuppressWarnings("unchecked")

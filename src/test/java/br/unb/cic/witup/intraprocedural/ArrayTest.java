@@ -40,7 +40,7 @@ public class ArrayTest {
         ProjectAnalyser.buildGraphsForClass(
             new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Array").load());
   }
-  
+
   @Test
   public void getObjectElement() {
     String methodSignature =
