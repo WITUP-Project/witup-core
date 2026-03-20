@@ -47,4 +47,21 @@ public class ArraySolverTest {
     assertTrue(sol0.getInt("n") < 0, "arr.length should be 0");
 
   }
+
+  @Test
+  public void getStringElementSolution() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+
+    ArrayValue arrArray = sol0.getArray("arr");
+    ModelValue elementValue = arrArray.get("i");
+
+    assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
+
+  }
 }

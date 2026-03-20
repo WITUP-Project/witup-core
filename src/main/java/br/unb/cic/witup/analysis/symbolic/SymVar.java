@@ -4,10 +4,12 @@ import sootup.core.jimple.basic.Local;
 
 public final class SymVar extends SymExpr {
   private final String name;
+  private final String typeName;
 
   public SymVar(final Local l) {
     super(fromJimpleType(l.getType()));
     this.name = l.getName();
+    this.typeName = l.getType().toString();
   }
 
   @Override
@@ -17,6 +19,10 @@ public final class SymVar extends SymExpr {
 
   public String getName() {
     return name;
+  }
+
+  public String getTypeName() {
+    return typeName;
   }
 
   @Override

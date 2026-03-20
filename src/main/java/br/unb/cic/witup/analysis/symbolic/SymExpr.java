@@ -86,8 +86,6 @@ public abstract class SymExpr {
   // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
-      case Local l when l.getType() instanceof ArrayType -> new SymArray(l);
-
       case Local l -> new SymVar(l);
       case IntConstant c -> new SymIntConst(c);
       case DoubleConstant c -> new SymDoubleConst(c);

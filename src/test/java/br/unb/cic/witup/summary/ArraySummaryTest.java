@@ -72,4 +72,23 @@ public class ArraySummaryTest {
     // return expr
     assertEquals("newarray(int[])[n]", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void getStringElementSummary() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("arr[0] != 'abc'"));
+
+    assertEquals(2, summary.getFormalParams().size());
+    assertEquals("java.lang.String[]", summary.getFormalParams().get(0).getParamType());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
+    assertEquals("arr[i]", summary.getReturnExpr().toString());
+  }
 }
