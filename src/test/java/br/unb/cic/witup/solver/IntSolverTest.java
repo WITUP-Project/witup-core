@@ -59,4 +59,14 @@ public class IntSolverTest {
     assertTrue(solution.isSat());
     assertEquals(0, solution.getInt("a"));
   }
+
+  @Test
+  public void negatedLessThanConstantRhsSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int negatedLessThanConstantRhs(int)>";
+    SolverResult solution = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(solution.isSat());
+    assertTrue(solution.getInt("a") <= 0);
+  }
 }

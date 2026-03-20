@@ -46,39 +46,6 @@ public class IntTest {
     assertNotNull(witupGraphs);
     assertEquals(11, witupGraphs.size());
   }
-  
-  @Test
-  public void negatedLessThanConstantRhs() {
-    String methodSignature = "<br.unb.cic.witup.samples.Int: int negatedLessThanConstantRhs(int)>";
-    WITUpGraph cpg = witupGraphs.get(methodSignature);
-
-    List<WITUpNode> throwNodes = cpg.getThrowNodes();
-    assertEquals(1, throwNodes.size());
-
-    List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
-    assertEquals(1, conditionNodes.size());
-
-    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-        cpg.getConstraintPaths(throwNodes.get(0));
-
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
-
-    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
-
-    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
-
-    List<SolverResult> results = new ArrayList<>();
-    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
-      String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
-      results.add(result);
-    }
-
-    SolverResult solution = results.getFirst();
-    assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") <= 0, "Expected a <= 0");
-  }
 
   @Test
   public void lessThanConstantRhsViaBoolean() {
