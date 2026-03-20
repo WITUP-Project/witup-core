@@ -41,7 +41,7 @@ public final class SymbolicConstraintGenerator {
   private GraphPath<WITUpNode, WITUpEdge> currentPath;
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
-  private static final Logger log = LoggerFactory.getLogger("BackwardSymbolicGenerator");
+  private static final Logger log = LoggerFactory.getLogger("SymbolicConstraintGenerator");
 
   public SymbolicConstraintGenerator(
       final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {

@@ -53,7 +53,7 @@ import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
-  public static final int MAX_PATH_LENGTH = 20;
+  public static final int MAX_PATH_LENGTH = 50;
   private String methodSignature;
   private JavaSootMethod method;
   // dot for debugging purposes
@@ -255,7 +255,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     WITUpNode entry = findEntryNode();
     AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
     AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
-    return allPaths.getAllPaths(entry, returnNode, true, null);
+    return allPaths.getAllPaths(entry, returnNode, true, MAX_PATH_LENGTH);
   }
 
   // The Jimple pattern seems very consitent (hopefully an invariant):
