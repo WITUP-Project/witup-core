@@ -71,4 +71,17 @@ public class IntGraphTest {
             new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
     assertEquals(1, paths.size());
   }
+
+  @Test public void equalsConstantLhsGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantLhs(int)>";
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<List<SymbolicConstraint>> paths =
+            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
+    assertEquals(1, paths.size());
+  }
 }

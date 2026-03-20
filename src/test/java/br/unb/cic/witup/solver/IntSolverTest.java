@@ -48,4 +48,15 @@ public class IntSolverTest {
     assertTrue(solution.isSat());
     assertEquals(0, solution.getInt("a"));
   }
+
+  @Test
+  public void equalsConstantLhsSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantLhs(int)>";
+
+    SolverResult solution = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(solution.isSat());
+    assertEquals(0, solution.getInt("a"));
+  }
 }
