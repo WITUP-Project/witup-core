@@ -26,4 +26,14 @@ public class IntSolverTest {
     assertTrue(solution.isSat());
     assertTrue(solution.getInt("a") < 0);
   }
+
+  @Test
+  public void lesserThanConstantLhsSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int lesserThanConstantLhs(int)>";
+    SolverResult solution = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(solution.isSat());
+    assertTrue(solution.getInt("a") < 0);
+  }
 }
