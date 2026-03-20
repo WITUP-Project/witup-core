@@ -110,4 +110,26 @@ public class ArraySummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals("arr[i]", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void getObjectFromArraySummary() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
+
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("arr[0].value <= 10"));
+
+    assertEquals(2, summary.getFormalParams().size());
+    assertEquals("br.unb.cic.witup.samples.Array$MyObject[]", summary.getFormalParams().get(0).getParamType());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
+
+    assertEquals("arr[i]", summary.getReturnExpr().toString());
+  }
 }

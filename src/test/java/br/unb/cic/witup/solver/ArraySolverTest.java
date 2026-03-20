@@ -83,4 +83,18 @@ public class ArraySolverTest {
     assertNotNull(elementValue);
     assertTrue(elementValue instanceof ObjectValue || elementValue instanceof StringValue);
   }
+
+  @Test
+  public void getObjectFromArraySolution() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    ArrayValue arrArray = sol0.getArray("arr");
+    ModelValue elementValue = arrArray.get("i");
+    ModelValue fieldValue = elementValue.getField("value");
+
+    assertTrue(fieldValue.getInt() > 10, "expected arr[0].value <= 10");
+  }
 }

@@ -86,4 +86,20 @@ public class ArrayGraphTest {
             new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
     assertEquals(1, paths.size());
   }
+
+  @Test
+  public void getObjectFromArrayGraph() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
+
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<List<SymbolicConstraint>> paths =
+            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
+    assertEquals(1, paths.size());
+  }
 }
