@@ -23,6 +23,10 @@ public final class SymParamRef extends SymExpr {
     return index;
   }
 
+  public String getParamType() {
+    return paramType;
+  }
+
   @Override
   public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitParamRef(this);
