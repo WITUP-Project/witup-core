@@ -112,7 +112,7 @@ public final class ProjectAnalyser implements GraphRepository {
       String sig = witUpGraph.getKey();
       try {
         // tweak here to do intra or inter. should probably become a setting
-        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue());
+        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue(), this, summaryCache);
         MethodSummary summary = ms.summarise();
         methodSummaries.put(sig, summary);
       } catch (Exception e) {
