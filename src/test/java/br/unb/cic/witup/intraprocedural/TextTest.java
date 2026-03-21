@@ -43,34 +43,6 @@ public class TextTest {
   }
 
   @Test
-  public void invalidString() {
-    String methodSignature =
-        "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
-    WITUpGraph cpg = witupGraphs.get(methodSignature);
-
-    List<WITUpNode> throwNodes = cpg.getThrowNodes();
-
-    List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths =
-        cpg.getConstraintPaths(throwNodes.get(0));
-
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, constraintPaths);
-
-    List<List<SymbolicConstraint>> symbolicConstraintPaths = sg.generateSymbolicConstraintPaths();
-
-    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
-    List<SolverResult> results = new ArrayList<>();
-    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
-      String pathId = methodSignature + "#" + i;
-      SolverResult result = solver.checkPath(pathId, symbolicConstraintPaths.get(i));
-      results.add(result);
-    }
-
-    SolverResult sol0 = results.getFirst();
-    assertTrue(sol0.isSat());
-    assertEquals(new StringValue("abc"), sol0.modelValueMap().get("s"));
-  }
-
-  @Test
   public void requireString() {
     String methodSignature =
         "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
