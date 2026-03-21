@@ -1,8 +1,7 @@
-package br.unb.cic.witup.intraprocedural;
+package br.unb.cic.witup;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import br.unb.cic.witup.Driver;
 import org.junit.jupiter.api.Test;
 
 class DriverTest {
