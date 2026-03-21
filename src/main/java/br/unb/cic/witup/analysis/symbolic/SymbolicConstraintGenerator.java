@@ -11,6 +11,7 @@ import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,7 @@ import sootup.core.jimple.common.stmt.Stmt;
 public final class SymbolicConstraintGenerator {
   private final WITUpGraph cpg;
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
-  private GraphPath<WITUpNode, WITUpEdge> currentPath;
+  private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
   private static final Logger log = LoggerFactory.getLogger("SymbolicConstraintGenerator");
@@ -96,7 +97,7 @@ public final class SymbolicConstraintGenerator {
   }
 
   private void setCurrentPath(final GraphPath<WITUpNode, WITUpEdge> p) {
-    this.currentPath = p;
+    this.currentPathNodes = new HashSet<>(p.getVertexList());
   }
 
   private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
@@ -123,16 +124,16 @@ public final class SymbolicConstraintGenerator {
       return SymExpr.fromJimple(returnNode.getOp());
     }
     if (paths.size() == 1) {
-      this.currentPath = paths.get(0);
+      setCurrentPath(paths.get(0));
       return substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
     }
 
     // multiple paths to same return — fold into ITE - fits Z3 well
-    this.currentPath = paths.getLast();
+    setCurrentPath(paths.getLast());
     SymExpr result = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
 
     for (int i = paths.size() - 2; i >= 0; i--) {
-      this.currentPath = paths.get(i);
+      setCurrentPath(paths.get(i));
       SymExpr pathExpr = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
       SymExpr pathCondition = buildPathConditionFromPath(paths.get(i));
       result = new SymITE(pathCondition, pathExpr, result);
@@ -256,15 +257,11 @@ public final class SymbolicConstraintGenerator {
   }
 
   private boolean isNodeInPath(final WITUpNode node) {
-    return this.getCurrentPath().getVertexList().contains(node);
+    return currentPathNodes.contains(node);
   }
 
   private static String getVariableName(final Value value) {
     return value.toString();
-  }
-
-  private GraphPath<WITUpNode, WITUpEdge> getCurrentPath() {
-    return this.currentPath;
   }
 
   private boolean isStackVariable(final LValue value) {
