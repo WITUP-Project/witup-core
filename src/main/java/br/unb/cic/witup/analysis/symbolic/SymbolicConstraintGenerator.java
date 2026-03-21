@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Value;
@@ -257,16 +256,7 @@ public final class SymbolicConstraintGenerator {
   }
 
   private boolean isNodeInPath(final WITUpNode node) {
-    PropertyGraphNode targetNode = node.getNode();
-
-    Set<WITUpNode> nodesInPath = new HashSet<>(this.getCurrentPath().getVertexList());
-    for (WITUpNode pathNode : nodesInPath) {
-      if (pathNode.getNode().equals(targetNode)) {
-        return true;
-      }
-    }
-
-    return false;
+    return this.getCurrentPath().getVertexList().contains(node);
   }
 
   private static String getVariableName(final Value value) {

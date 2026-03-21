@@ -1,6 +1,5 @@
 package br.unb.cic.witup.analysis.graph.node;
 
-import java.util.Objects;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 
 /** Abstract base class for WITUpGraph nodes. */
@@ -18,19 +17,12 @@ public abstract class WITUpNode {
 
   @Override
   public final boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    WITUpNode node1 = (WITUpNode) o;
-    return Objects.equals(node, node1.node);
+    return this == o;
   }
 
   @Override
   public final int hashCode() {
-    return Objects.hash(node);
+    return System.identityHashCode(this);
   }
 
   public final PropertyGraphNode getNode() {
