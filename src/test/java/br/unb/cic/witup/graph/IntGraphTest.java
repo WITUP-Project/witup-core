@@ -145,4 +145,17 @@ public class IntGraphTest {
             cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
   }
+
+  @Test
+  public void negateValueGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int negateValue(int)>";
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+  }
 }

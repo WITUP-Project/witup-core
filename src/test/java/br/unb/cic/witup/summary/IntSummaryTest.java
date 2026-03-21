@@ -188,4 +188,20 @@ public class IntSummaryTest {
 
     assertTrue(summary.getReturnExpr().toString().contains("a + b"));
   }
+
+  @Test
+  public void negateValueSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int negateValue(int)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    // too hard to assert on ITE trees when doing interprocedural.
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+  }
 }

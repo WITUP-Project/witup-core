@@ -114,4 +114,15 @@ public class IntSolverTest {
 
     assertTrue(sol0.getInt("a") + sol0.getInt("b") > 512, "Expected a + b > 512");
   }
+
+  @Test
+  public void negateValueSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int negateValue(int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+
+    assertTrue(sol0.getInt("a") > 0);
+  }
 }

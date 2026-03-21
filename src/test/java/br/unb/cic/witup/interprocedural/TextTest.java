@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TextTest {
-  Logger log = LoggerFactory.getLogger(IntTest.class);
   Map<String, WITUpGraph> witupGraphs;
 
   @BeforeAll
