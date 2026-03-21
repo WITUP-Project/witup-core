@@ -10,7 +10,7 @@ public final class SymArrayRef extends SymExpr {
   // we have access to getType, getUses
 
   public static SymExpr fromArrayRef(final JArrayRef r) {
-    SymArray base = (SymArray) fromJimple(r.getBase());
+    SymExpr base = fromJimple(r.getBase());
     SymExpr indexExpr = fromJimple(r.getIndex());
     return new SymArrayRef(base, indexExpr);
   }

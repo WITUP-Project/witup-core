@@ -212,7 +212,8 @@ public final class SymbolicConstraintGenerator {
         rhsOp = assign.getRightOp();
         lhsOp = assign.getLeftOp();
 
-        // this is the interprocedural hook
+        // this is the interprocedural hook.
+        // need to add hooks for other invokes
         if (rhsOp instanceof JVirtualInvokeExpr invoke && resolver != null) {
           String calleeSig = invoke.getMethodSignature().toString();
           log.debug("Interprocedural hook fired for: {}", calleeSig);

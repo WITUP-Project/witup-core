@@ -88,6 +88,20 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitVar(final SymVar v) {
+    // feels bad to compare typenames and then kinds.
+    // need to unify this after splitting tests.
+    String typeStr = v.getTypeName();
+    if (typeStr != null && typeStr.endsWith("[]")) {
+      String elementType = typeStr.substring(0, typeStr.length() - 2);
+      Sort elementSort = switch (elementType) {
+        case "int", "short", "byte", "long", "char" -> context.getIntSort();
+        case "boolean" -> context.getBoolSort();
+        case "float", "double" -> context.mkRealSort();
+        case "java.lang.String" -> context.getStringSort();
+        default -> context.mkUninterpretedSort("java.lang.Object");
+      };
+      return context.mkArraySort(context.getIntSort(), elementSort);
+    }
     return switch (v.getKind()) {
       case BOOLEAN, BOOLEAN_METHOD -> context.getBoolSort();
       case STRING -> context.getStringSort();

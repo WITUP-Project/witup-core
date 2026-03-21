@@ -36,7 +36,6 @@ public final class CallGraphBuilder {
     log.debug("Building CHA call graph with {} entry points", entryPoints.size());
     CallGraphAlgorithm cha = new ClassHierarchyAnalysisAlgorithm(view);
     CallGraph cg = cha.initialize(entryPoints);
-    log.debug("Call graph built — {} methods reachable", cg.getMethodSignatures().size());
 
     DefaultDirectedGraph<String, DefaultEdge> callGraph =
             new DefaultDirectedGraph<>(DefaultEdge.class);

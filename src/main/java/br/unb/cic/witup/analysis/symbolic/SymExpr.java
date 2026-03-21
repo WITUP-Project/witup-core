@@ -86,8 +86,6 @@ public abstract class SymExpr {
   // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
-      case Local l when l.getType() instanceof ArrayType -> new SymArray(l);
-
       case Local l -> new SymVar(l);
       case IntConstant c -> new SymIntConst(c);
       case DoubleConstant c -> new SymDoubleConst(c);
@@ -170,16 +168,16 @@ public abstract class SymExpr {
       return expr;
     }
 
-    SymExpr left = simplifyCmpPatterns(binOp.getLhs());
-    SymExpr right = simplifyCmpPatterns(binOp.getRhs());
+    SymExpr lhs = simplifyCmpPatterns(binOp.getLhs());
+    SymExpr rhs = simplifyCmpPatterns(binOp.getRhs());
 
     // Pattern: (x cmpg/cmpl y) op 0
-    if (left instanceof SymBinOp leftBinOp
-        && right instanceof SymConst rightConst
+    if (lhs instanceof SymBinOp leftBinOp
+        && isZeroConst(rhs)
         && (leftBinOp.getOp() == BinOp.CMPG
             || leftBinOp.getOp() == BinOp.CMPL
             || leftBinOp.getOp() == BinOp.CMP)
-        && rightConst.getValue().equals(0)) {
+        ) {
 
       // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
       // So: (x cmpg y) >= 0 means x >= y
@@ -191,8 +189,8 @@ public abstract class SymExpr {
     }
 
     // Return with simplified children
-    if (left != binOp.getLhs() || right != binOp.getRhs()) {
-      return new SymBinOp(binOp.getOp(), left, right);
+    if (lhs != binOp.getLhs() || rhs != binOp.getRhs()) {
+      return new SymBinOp(binOp.getOp(), lhs, rhs);
     }
 
     return expr;
@@ -215,12 +213,14 @@ public abstract class SymExpr {
   }
 
   private static boolean isZeroConst(final SymExpr expr) {
-    if (expr instanceof SymConst c) {
-      return Integer.valueOf(0).equals(c.getValue());
-    }
-    if (expr instanceof SymIntConst ic) {
-      return ic.getValue() == 0;
-    }
-    return false;
+    return switch (expr) {
+      case SymConst c -> Integer.valueOf(0).equals(c.getValue())
+              || Double.valueOf(0.0).equals(c.getValue())
+              || Float.valueOf(0.0f).equals(c.getValue());
+      case SymIntConst ic -> ic.getValue() == 0;
+      case SymDoubleConst dc -> dc.getValue() == 0.0;
+      case SymFloatConst fc -> fc.getValue() == 0.0f;
+      default -> false;
+    };
   }
 }

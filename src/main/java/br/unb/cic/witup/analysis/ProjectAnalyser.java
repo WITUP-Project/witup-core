@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 
 //import guru.nidi.graphviz.engine.Format;
 //import guru.nidi.graphviz.engine.Graphviz;
+import br.unb.cic.witup.solver.SolverResult;
+import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
@@ -46,9 +48,9 @@ public final class ProjectAnalyser implements GraphRepository {
     AnalysisInputLocation inputLocation =
         new JavaClassPathAnalysisInputLocation(jarPath.toAbsolutePath().toString());
     view = new JavaView(inputLocation);
+
     List<JavaSootClass> classes = view.getClasses().toList();
     log.info("Found {} classes", classes.size());
-    log.info(classes.toString());
 
     Map<String, WITUpGraph> methodGraph = analyseClasses(classes);
     methodGraphs.putAll(methodGraph);
@@ -65,6 +67,41 @@ public final class ProjectAnalyser implements GraphRepository {
   public Map<String, WITUpGraph> analyseClass(final JavaSootClass sootClass) {
     return buildGraphsForClass(sootClass);
   }
+
+  public AnalysisResult analyseMethod(final String methodSignature) {
+    WITUpGraph graph = methodGraphs.get(methodSignature);
+    if (graph == null) {
+      throw new IllegalArgumentException("No graph for: " + methodSignature);
+    }
+
+    SummaryCache summaryCache = new SummaryCache();
+    Map<String, String> failures = new LinkedHashMap<>();
+
+    // build topological order for just this method and its transitive callees
+    CallGraphBuilder cgBuilder = new CallGraphBuilder(view);
+    DefaultDirectedGraph<String, DefaultEdge> order = cgBuilder.build(methodGraphs.keySet());
+    List<List<String>> analysisOrder =
+            cgBuilder.buildAnalysisOrder(order);
+
+
+    Map<String, MethodSummary> summaries = new LinkedHashMap<>();
+    for (List<String> scc : analysisOrder) {
+      for (String sig : scc) {
+        if (methodGraphs.containsKey(sig)) {
+          summariseMethod(sig, methodGraphs, summaryCache, summaries, failures);
+        }
+      }
+    }
+
+    MethodSummary summary = summaries.get(methodSignature);
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(
+            Map.of(methodSignature, summary));
+    Map<String, List<SolverResult>> solutions = solver.solveConstraintsSafe(failures);
+
+    return new AnalysisResult(graph, summary, solutions.get(methodSignature), failures);
+  }
+
+
 
   public static Map<String, WITUpGraph> buildGraphsForClass(final JavaSootClass sootClass) {
     return sootClass.getMethods().stream()
@@ -102,10 +139,8 @@ public final class ProjectAnalyser implements GraphRepository {
       if (scc.size() == 1) {
         // singleton — one pass
         String sig = scc.get(0);
-        log.info("summariseMethod called :" + sig);
         summariseMethod(sig, graphs, summaryCache, methodSummaries, failures);
       } else {
-        log.info("SCC of size {} detected — iterating to fixpoint", scc.size());
         summariseSCC(scc, graphs, summaryCache, methodSummaries, failures);
       }
     }
@@ -114,7 +149,7 @@ public final class ProjectAnalyser implements GraphRepository {
       String sig = witUpGraph.getKey();
       try {
         // tweak here to do intra or inter. should probably become a setting
-        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue());
+        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue(), this, summaryCache);
         MethodSummary summary = ms.summarise();
         methodSummaries.put(sig, summary);
       } catch (Exception e) {
