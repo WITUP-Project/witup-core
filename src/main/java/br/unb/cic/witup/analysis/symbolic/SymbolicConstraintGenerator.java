@@ -171,18 +171,19 @@ public final class SymbolicConstraintGenerator {
   }
 
   private Optional<SymExpr> tryResolveLambda(
-          final JInterfaceInvokeExpr invoke,
-          final WITUpNode node) {
+      final JInterfaceInvokeExpr invoke, final WITUpNode node) {
     if (resolver == null) {
       return Optional.empty();
     }
 
     String receiverName = invoke.getBase().toString();
 
-    log.debug("tryResolveLambda: receiver={} incoming edges={}",
-            receiverName, cpg.getIncomingDDGEdges(node).size());
-    cpg.getIncomingDDGEdges(node).forEach(e ->
-            log.debug("  edge source: {}", cpg.getEdgeSource(e)));
+    log.debug(
+        "tryResolveLambda: receiver={} incoming edges={}",
+        receiverName,
+        cpg.getIncomingDDGEdges(node).size());
+    cpg.getIncomingDDGEdges(node)
+        .forEach(e -> log.debug("  edge source: {}", cpg.getEdgeSource(e)));
 
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(node)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
@@ -211,13 +212,12 @@ public final class SymbolicConstraintGenerator {
           return Optional.empty();
         }
 
-        String className = mh.getReferenceSignature().getDeclClassType()
-                .getFullyQualifiedName();
+        String className = mh.getReferenceSignature().getDeclClassType().getFullyQualifiedName();
         String subSig = mh.getReferenceSignature().getSubSignature().toString();
         String lambdaSig = "<" + className + ": " + subSig + ">";
 
-        List<SymExpr> actuals = dynInvoke.getArgs().stream()
-                .map(SymExpr::fromJimple).collect(Collectors.toList());
+        List<SymExpr> actuals =
+            dynInvoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
 
         log.debug("Lambda resolution: {} with actuals {}", lambdaSig, actuals);
         return resolver.resolveReturnExpr(lambdaSig, actuals);
@@ -270,6 +270,11 @@ public final class SymbolicConstraintGenerator {
       Value rhsOp;
 
       if (stmt instanceof JAssignStmt assign) {
+        log.debug(
+            "assign lhs={} isStack={} rhs={}",
+            assign.getLeftOp(),
+            isStackVariable(assign.getLeftOp()),
+            assign.getRightOp().getClass().getSimpleName());
         if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
           continue;
         }
@@ -289,8 +294,10 @@ public final class SymbolicConstraintGenerator {
           String definedVar = getVariableName(assign.getLeftOp());
           if (freeVars.contains(definedVar)) {
             symExpr = symExpr.substitute(definedVar, resolved.get());
-            log.debug("after substitute: freeVars={} symExpr={}",
-                    new VariableCollector().collect(symExpr), symExpr);
+            log.debug(
+                "after substitute: freeVars={} symExpr={}",
+                new VariableCollector().collect(symExpr),
+                symExpr);
             symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
           }
           continue;
@@ -333,31 +340,27 @@ public final class SymbolicConstraintGenerator {
     switch (rhsOp) {
       case JVirtualInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream()
-                .map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
       }
       case JStaticInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream()
-                .map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
       }
       case JInterfaceInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream()
-                .map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
       }
       case JSpecialInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream()
-                .map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
       }
       case JDynamicInvokeExpr invoke -> {
-        log.debug("DynamicInvoke: method={} bootstrapArgs={}",
-                invoke.getMethodSignature(),
-                invoke.getBootstrapArgs());
+        log.debug(
+            "DynamicInvoke: method={} bootstrapArgs={}",
+            invoke.getMethodSignature(),
+            invoke.getBootstrapArgs());
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream()
-                .map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
       }
       case null, default -> {
         return Optional.empty();

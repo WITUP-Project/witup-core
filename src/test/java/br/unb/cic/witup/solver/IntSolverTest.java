@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
+import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
@@ -125,10 +126,12 @@ public class IntSolverTest {
 
   @Test
   public void applyAndCheckSolution() {
-    String lambdaSig = "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
+    String lambdaSig =
+        "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions()
-            .get(lambdaSig).getFirst();
+    ProjectAnalyser pa = TestAnalysisContext.getAnalyser();
+    AnalysisResult analysis = pa.analyseMethod(lambdaSig);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     System.out.println("model: " + sol0.getModelValueMap());
     assertTrue(sol0.getInt("x") < 0, "Expected x < 0");

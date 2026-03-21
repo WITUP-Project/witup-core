@@ -89,12 +89,13 @@ public class Int {
   }
 
   public int applyAndCheck(int x) {
-    Supplier<Integer> s = () -> {
-      if (x < 0) {
-        throw new IllegalArgumentException("x must not be negative");
-      }
-      return x * 2;
-    };
+    Supplier<Integer> s =
+        () -> {
+          if (x < 0) {
+            throw new IllegalArgumentException("x must not be negative");
+          }
+          return x * 2;
+        };
     return s.get();
   }
 

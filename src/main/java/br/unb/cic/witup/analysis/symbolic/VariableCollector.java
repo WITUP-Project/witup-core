@@ -108,6 +108,7 @@ public final class VariableCollector implements SymExprVisitor<Void> {
 
   @Override
   public Void visitCast(final SymCast c) {
+    c.getOp().accept(this);
     return null;
   }
 

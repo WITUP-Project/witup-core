@@ -4,7 +4,6 @@ import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.solver.SolverResult;
-import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
@@ -29,10 +28,8 @@ public final class TestAnalysisContext {
     graphs = projectAnalyser.analyseProject();
 
     failures = new LinkedHashMap<>();
-    summaries = projectAnalyser.summariseAll(graphs, failures);
-
-    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(summaries);
-    solutions = solver.solveConstraintsSafe(failures);
+    summaries = new LinkedHashMap<>();
+    solutions = new LinkedHashMap<>();
   }
 
   public static Map<String, WITUpGraph> getGraphs() {

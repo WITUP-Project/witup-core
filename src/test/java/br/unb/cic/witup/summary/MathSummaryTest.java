@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
@@ -17,7 +18,10 @@ public class MathSummaryTest {
   @Test
   public void invalidFieldSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: double circleArea()>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+
+    ProjectAnalyser pa = TestAnalysisContext.getAnalyser();
+    AnalysisResult analysis = pa.analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
@@ -35,8 +39,11 @@ public class MathSummaryTest {
   public void invalidParameterSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int invalidParameter(int,int)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    ProjectAnalyser pa = TestAnalysisContext.getAnalyser();
+    AnalysisResult analysis = pa.analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
+    ;
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
@@ -56,7 +63,9 @@ public class MathSummaryTest {
     String methodSignature =
         "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    ProjectAnalyser pa = TestAnalysisContext.getAnalyser();
+    AnalysisResult analysis = pa.analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
     assertEquals(2, summary.getSymbolicConstraintPaths().size());
