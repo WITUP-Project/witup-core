@@ -24,7 +24,7 @@ public class MathSolverTest {
   }
 
   @Test
-  public void invalidParameterConjunctionSsolution() {
+  public void invalidParameterConjunctionSolution() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
     SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();

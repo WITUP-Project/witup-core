@@ -46,6 +46,7 @@ public final class ProjectAnalyser implements GraphRepository {
     AnalysisInputLocation inputLocation =
         new JavaClassPathAnalysisInputLocation(jarPath.toAbsolutePath().toString());
     view = new JavaView(inputLocation);
+
     List<JavaSootClass> classes = view.getClasses().toList();
     log.info("Found {} classes", classes.size());
 

@@ -28,7 +28,7 @@ import sootup.core.types.Type;
  * Given a method that throws, build the symbolic constraints for each path leading to throw nodes.
  */
 public final class MethodSummariser implements SummaryResolver {
-  private static final Logger log = LoggerFactory.getLogger("MethodConstraintAnalysis");
+  private static final Logger log = LoggerFactory.getLogger("MethodSummariser");
 
   private final WITUpGraph cpg;
   private final Map<WITUpNode, List<List<SymbolicConstraint>>> symbolicThrowConstraints =
@@ -114,7 +114,6 @@ public final class MethodSummariser implements SummaryResolver {
   }
 
   private SymExpr traceReturnExpr() {
-    log.debug("traceReturnExpr called for {}", getMethodSignature());
     List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
     if (returnNodes.isEmpty()) {
       log.debug("No return nodes found for {}", getMethodSignature());
@@ -183,9 +182,6 @@ public final class MethodSummariser implements SummaryResolver {
   @Override
   public Optional<SymExpr> resolveReturnExpr(
       final String calleeSignature, final List<SymExpr> actuals) {
-    log.debug("resolveReturnExpr called for: {}", calleeSignature);
-    log.debug("summaryRepository null: {}", summaryRepository == null);
-    log.debug("graphRepository null: {}", graphRepository == null);
 
     log.debug("resolveReturnExpr: cache present={} inProgress={}",
             summaryRepository.getSummary(calleeSignature).isPresent(),
