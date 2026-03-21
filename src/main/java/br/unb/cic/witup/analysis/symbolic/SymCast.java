@@ -13,6 +13,12 @@ public final class SymCast extends SymExpr {
     type = c.getType().toString();
   }
 
+  private SymCast(final SymExpr op, final String type) {
+    super(SymKind.CAST);
+    this.op = op;
+    this.type = type;
+  }
+
   public SymExpr getOp() {
     return op;
   }
@@ -28,6 +34,19 @@ public final class SymCast extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
+    SymExpr newOp = op.substitute(varName, replacement);
+    if (newOp != op) {
+      return new SymCast(newOp, type);
+    }
+    return this;
+  }
+
+  @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newOp = op.substituteParam(idx, actual);
+    if (newOp != op) {
+      return new SymCast(newOp, type);
+    }
     return this;
   }
 

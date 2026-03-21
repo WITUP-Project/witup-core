@@ -122,4 +122,15 @@ public class IntSolverTest {
 
     assertTrue(sol0.getInt("a") > 0);
   }
+
+  @Test
+  public void applyAndCheckSolution() {
+    String lambdaSig = "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(lambdaSig).getFirst();
+    assertTrue(sol0.isSat());
+    System.out.println("model: " + sol0.getModelValueMap());
+    assertTrue(sol0.getInt("x") < 0, "Expected x < 0");
+  }
 }

@@ -1,5 +1,7 @@
 package br.unb.cic.witup.samples;
 
+import java.util.function.Supplier;
+
 // test operations on the primitive type int
 public class Int {
   public int add(int a, int b) {
@@ -84,5 +86,24 @@ public class Int {
       throw new IllegalArgumentException("a must not be negative");
     }
     return b;
+  }
+
+  public int applyAndCheck(int x) {
+    Supplier<Integer> s = () -> {
+      if (x < 0) {
+        throw new IllegalArgumentException("x must not be negative");
+      }
+      return x * 2;
+    };
+    return s.get();
+  }
+
+  public int applyAndCheckResult(int x) {
+    Supplier<Integer> s = () -> x * 2;
+    int result = s.get();
+    if (result < 0) {
+      throw new IllegalArgumentException("negative result");
+    }
+    return result;
   }
 }
