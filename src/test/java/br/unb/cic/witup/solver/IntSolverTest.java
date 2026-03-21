@@ -103,4 +103,15 @@ public class IntSolverTest {
 
     assertTrue(sol1.isUnsat());
   }
+
+  @Test
+  public void addAndCheckSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int addAndCheck(int,int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+
+    assertTrue(sol0.getInt("a") + sol0.getInt("b") > 512, "Expected a + b > 512");
+  }
 }

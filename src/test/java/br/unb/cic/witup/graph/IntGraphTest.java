@@ -2,6 +2,7 @@ package br.unb.cic.witup.graph;
 
 import br.unb.cic.witup.analysis.MethodSummariser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
@@ -23,9 +24,9 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -38,9 +39,9 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -53,9 +54,9 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -67,9 +68,9 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test public void equalsConstantLhsGraph() {
@@ -80,9 +81,9 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test public void negatedLessThanConstantRhsGraph() {
@@ -93,9 +94,9 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -108,9 +109,9 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(2, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(2, conditionNodes.size());
   }
 
   @Test
@@ -124,8 +125,24 @@ public class IntGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-            new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(2, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(2, conditionNodes.size());
+  }
+
+  @Test
+  public void addAndCheckGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int addAndCheck(int,int)>";
+
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
   }
 }

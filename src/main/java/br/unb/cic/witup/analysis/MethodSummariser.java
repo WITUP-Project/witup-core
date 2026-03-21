@@ -121,7 +121,7 @@ public final class MethodSummariser implements SummaryResolver {
       return null;
     }
 
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, List.of(), null);
+    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, List.of(), this);
 
     SymExpr result = null;
 
@@ -156,7 +156,7 @@ public final class MethodSummariser implements SummaryResolver {
 
     for (int p = paths.size() - 1; p >= 0; p--) {
       List<List<SymbolicConstraint>> generated =
-              new SymbolicConstraintGenerator(cpg, List.of(paths.get(p)), null)
+              new SymbolicConstraintGenerator(cpg, List.of(paths.get(p)), this)
                       .generateSymbolicConstraintPaths();
 
       if (generated.isEmpty() || generated.get(0).isEmpty()) {
@@ -186,6 +186,11 @@ public final class MethodSummariser implements SummaryResolver {
     log.debug("resolveReturnExpr called for: {}", calleeSignature);
     log.debug("summaryRepository null: {}", summaryRepository == null);
     log.debug("graphRepository null: {}", graphRepository == null);
+
+    log.debug("resolveReturnExpr: cache present={} inProgress={}",
+            summaryRepository.getSummary(calleeSignature).isPresent(),
+            summaryRepository.isInProgress(calleeSignature));
+
     if (summaryRepository == null || graphRepository == null) {
       log.debug("Interprocedural resolution skipped — no repository for {}", calleeSignature);
       return Optional.empty();

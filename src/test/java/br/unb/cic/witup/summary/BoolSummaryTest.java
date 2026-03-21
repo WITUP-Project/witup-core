@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BoolSummaryTest {
   @Test
-  public void toBooleanGraph() {
+  public void toBooleanSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Bool: boolean toBoolean(java.lang.Integer,java.lang.Integer,java.lang.Integer)>";
 
     MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);

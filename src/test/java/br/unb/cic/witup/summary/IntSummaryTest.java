@@ -3,7 +3,6 @@ package br.unb.cic.witup.summary;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
@@ -170,5 +169,23 @@ public class IntSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
     // return expr
     // (((a >= 0) ? ((0 != 0) ? 1 : 0) : 0) ? a : a)
+  }
+
+  @Test
+  public void addAndCheckSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int addAndCheck(int,int)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("(a + b) <= 512"));
+
+    assertEquals(2, summary.getFormalParams().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
+
+    assertTrue(summary.getReturnExpr().toString().contains("a + b"));
   }
 }

@@ -41,43 +41,7 @@ public class IntTest {
             ProjectAnalyser.buildGraphsForClass(
                     new ClassAnalyser(testClassesDir.toString(), "br.unb.cic.witup.samples.Int").load());
   }
-
-  @Test
-  public void addAndCheck() {
-    // If we go via here ProjectAnalser for now, we will only do intra atm
-    String methodSignature = "<br.unb.cic.witup.samples.Int: int addAndCheck(int,int)>";
-    WITUpGraph cpg = witupGraphs.get(methodSignature);
-
-    List<WITUpNode> throwNodes = cpg.getThrowNodes();
-    assertEquals(1, throwNodes.size());
-
-    List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
-    assertEquals(1, conditionNodes.size());
-
-    // wire repositories for interprocedural resolution
-    GraphRepository graphRepo = sig -> Optional.ofNullable(witupGraphs.get(sig));
-    SummaryCache summaryCache = new SummaryCache();
-
-    MethodSummariser methodSummariser = new MethodSummariser(cpg, graphRepo, summaryCache);
-
-    List<List<SymbolicConstraint>> symbolicConstraintPaths =
-            methodSummariser.buildSymbolicConstraintPaths(throwNodes.get(0));
-
-    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(symbolicConstraintPaths);
-    List<SolverResult> results = new ArrayList<>();
-    for (int i = 0; i < symbolicConstraintPaths.size(); i++) {
-      String pathId = methodSignature + "#" + i;
-      results.add(solver.checkPath(pathId, symbolicConstraintPaths.get(i)));
-    }
-
-    SolverResult sol0 = results.getFirst();
-    assertTrue(sol0.isSat());
-    int a = sol0.getInt("a");
-    int b = sol0.getInt("b");
-    assertTrue(a + b > 512, "Expected a + b > 512");
-  }
-
+  
   @Test
   public void negateValue() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int negateValue(int)>";

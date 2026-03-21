@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BoolSolverTest {
   @Test
-  public void toBooleanGraphSolution() {
+  public void toBooleanSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Bool: boolean toBoolean(java.lang.Integer,java.lang.Integer,java.lang.Integer)>";
 
     SolverResult sol0 = TestAnalysisContext.getSolutions()

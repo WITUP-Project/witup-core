@@ -48,7 +48,6 @@ public final class ProjectAnalyser implements GraphRepository {
     view = new JavaView(inputLocation);
     List<JavaSootClass> classes = view.getClasses().toList();
     log.info("Found {} classes", classes.size());
-    log.info(classes.toString());
 
     Map<String, WITUpGraph> methodGraph = analyseClasses(classes);
     methodGraphs.putAll(methodGraph);
@@ -102,10 +101,8 @@ public final class ProjectAnalyser implements GraphRepository {
       if (scc.size() == 1) {
         // singleton — one pass
         String sig = scc.get(0);
-        log.info("summariseMethod called :" + sig);
         summariseMethod(sig, graphs, summaryCache, methodSummaries, failures);
       } else {
-        log.info("SCC of size {} detected — iterating to fixpoint", scc.size());
         summariseSCC(scc, graphs, summaryCache, methodSummaries, failures);
       }
     }

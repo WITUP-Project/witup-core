@@ -14,7 +14,8 @@ import java.util.Map;
 
 /**
  * Analyses all of our sample classes and makes them available to
- * our tests. Fine if we are running on a single thread
+ * our tests. Fine if we are running on a single thread.
+ * Probably should scope this to class level
  */
 public final class TestAnalysisContext {
   private static final Map<String, WITUpGraph> graphs;
