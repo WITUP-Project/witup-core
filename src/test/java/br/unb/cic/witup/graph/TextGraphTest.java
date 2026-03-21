@@ -27,4 +27,20 @@ public class TextGraphTest {
             cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
   }
+
+  @Test
+  public void requireStringGraph() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
+
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+  }
 }

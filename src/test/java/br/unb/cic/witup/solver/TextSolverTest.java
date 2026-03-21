@@ -5,6 +5,7 @@ import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TextSolverTest {
@@ -16,5 +17,15 @@ public class TextSolverTest {
     SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
     assertTrue(sol0.isSat());
     assertEquals(new StringValue("abc"), sol0.modelValueMap().get("s"));
+  }
+
+  @Test
+  public void requireStringSolution() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+    assertFalse(sol0.getBool("s_instanceof_java_lang_String"));
   }
 }
