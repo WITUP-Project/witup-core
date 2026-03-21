@@ -35,4 +35,20 @@ public class MathSolverTest {
     assertTrue(sol1.isSat());
     assertTrue(sol1.getInt("p") > 1, "Expected p > 1");
   }
+
+  @Test
+  public void truncateSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncate(double)>";
+    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("truncated") < 0, "Expected truncated < 0");
+  }
+
+  @Test
+  public void truncateInlineSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
+    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("(int)d") < 0, "Expected (int)d < 0");
+  }
 }

@@ -77,4 +77,40 @@ public class MathSummaryTest {
 
     assertEquals("p", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void truncateSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncate(double)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+
+    assertNotNull(summary);
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("truncated >= 0"));
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(SymKind.REAL, summary.getFormalParams().get(0).getKind());
+
+    assertEquals("truncated", summary.getReturnExpr().toString());
+  }
+
+  @Test
+  public void truncateInlineSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+
+    assertNotNull(summary);
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("(int)d >= 0"));
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(SymKind.REAL, summary.getFormalParams().get(0).getKind());
+
+    assertEquals("(int)d", summary.getReturnExpr().toString());
+  }
 }

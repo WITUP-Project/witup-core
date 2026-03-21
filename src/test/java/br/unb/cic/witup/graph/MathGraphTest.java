@@ -57,4 +57,34 @@ public class MathGraphTest {
             cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(2, conditionNodes.size());
   }
+
+  @Test
+  public void truncateGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncate(double)>";
+
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+  }
+
+  @Test
+  public void truncateInlineGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
+
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+  }
 }
