@@ -180,4 +180,19 @@ public class ArrayGraphTest {
             cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
   }
+
+  @Test
+  public void getCheckedGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int getChecked(int[],int)>";
+
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(3, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+  }
 }

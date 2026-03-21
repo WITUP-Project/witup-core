@@ -246,4 +246,44 @@ public class ArraySummaryTest {
 
     assertEquals("arr", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void getCheckedSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int getChecked(int[],int)>";
+
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+
+    assertEquals(3, summary.getSymbolicConstraintPaths().size());
+    // first path: arr == null
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("arr != null"));
+
+    // second path: arr != null && i < 0.
+    List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
+    assertTrue(path1.get(0).getTruthValue());
+    assertTrue(path1.get(0).getSymExpr().toString().contains("arr != null"));
+
+    assertFalse(path1.get(1).getTruthValue());
+    assertTrue(path1.get(1).getSymExpr().toString().contains("i >= 0"));
+
+    List<SymbolicConstraint> path3 = summary.getSymbolicConstraintPaths().get(2);
+    assertTrue(path3.get(0).getTruthValue());
+    assertTrue(path3.get(0).getSymExpr().toString().contains("arr != null"));
+
+    assertTrue(path3.get(1).getTruthValue());
+    assertTrue(path3.get(1).getSymExpr().toString().contains("i >= 0"));
+
+    assertFalse(path3.get(2).getTruthValue());
+    assertTrue(path3.get(2).getSymExpr().toString().contains("i < arr.length"));
+
+    assertEquals(2, summary.getFormalParams().size());
+    assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
+
+    assertEquals("arr[i]", summary.getReturnExpr().toString());
+  }
 }

@@ -8,6 +8,7 @@ import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -164,4 +165,28 @@ public class ArraySolverTest {
     assertTrue(sol0.getBool("arr_is_null"), "arr_is_null to be true");
   }
 
+  @Test
+  public void getCheckedSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int getChecked(int[],int)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getBool("arr_is_null"), "arr must be null");
+
+    SolverResult sol1 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).get(1);
+
+    assertTrue(sol1.isSat());
+    assertTrue(sol1.getInt("i") < 0, "expected i < 0");
+
+    SolverResult sol2 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).get(2);
+
+    assertTrue(sol2.isSat());
+    assertFalse(sol2.getBool("arr_is_null"), "arr must not be null");
+    assertTrue(sol2.getInt("i") >= 0, "i must be non-negative");
+    assertTrue(sol2.getInt("i") >= sol2.getInt("arr.length"), "expected i >= arr.length");
+  }
 }
