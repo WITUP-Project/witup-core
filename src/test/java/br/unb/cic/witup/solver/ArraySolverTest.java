@@ -91,6 +91,8 @@ public class ArraySolverTest {
     SolverResult sol0 = TestAnalysisContext.getSolutions()
             .get(methodSignature).getFirst();
 
+    assertTrue(sol0.isSat());
+
     ArrayValue arrArray = sol0.getArray("arr");
     ModelValue elementValue = arrArray.get("i");
     ModelValue fieldValue = elementValue.getField("value");
@@ -104,6 +106,8 @@ public class ArraySolverTest {
     SolverResult sol0 = TestAnalysisContext.getSolutions()
             .get(methodSignature).getFirst();
 
+    assertTrue(sol0.isSat());
+
     ArrayValue arrArray = sol0.getArray("arr");
     ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
@@ -115,6 +119,8 @@ public class ArraySolverTest {
 
     SolverResult sol0 = TestAnalysisContext.getSolutions()
             .get(methodSignature).getFirst();
+
+    assertTrue(sol0.isSat());
 
     ArrayValue arrArray = sol0.getArray("arr");
     ModelValue elementValue = arrArray.get("i");
@@ -128,9 +134,34 @@ public class ArraySolverTest {
     SolverResult sol0 = TestAnalysisContext.getSolutions()
             .get(methodSignature).getFirst();
 
+    assertTrue(sol0.isSat());
+
     ArrayValue arrArray = sol0.getArray("arr");
     ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
+  }
+
+  @Test
+  public void requireNonNullObjectSolution() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    assertTrue(sol0.isSat());
+    assertEquals(0, sol0.getInt("o"), "o to be 0 (encoding for null)");
+  }
+
+  @Test
+  public void requireNonNullArraySolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[] requireNonNullArray(int[])>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+    assertTrue(sol0.isSat());
+
+    assertTrue(sol0.getBool("arr_is_null"), "arr_is_null to be true");
   }
 
 }

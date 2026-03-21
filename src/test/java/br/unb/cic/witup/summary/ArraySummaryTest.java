@@ -178,6 +178,7 @@ public class ArraySummaryTest {
     // returnExpr here is always giving 0 as we do not handle loop-carried acc
   }
 
+  // might be worth writing about this case.
   @Test
   public void sumUntilZeroForEachSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroForEach(int[])>";
@@ -197,7 +198,52 @@ public class ArraySummaryTest {
     assertFalse(path0.get(1).getTruthValue());
     // we can't "know" which temporary/local we'll get here with
     // before we process loops more thoroughly, so for now we'll
-    // just assert there is a reference to some index in the array..
-    assertTrue(path0.get(1).getSymExpr().toString().contains("arr["));
+    // just assert there is a reference to some index in the array.
+    // very cool that Z3 does not "care" about the jimple local not
+    // tracing back fully; it still asserts on arr[i] and chooses i properly
+    assertTrue(path0.get(1).getSymExpr().toString().matches(".*arr\\[.*\\].*"),
+            "Expected array access, got: " + path0.get(1).getSymExpr());
+  }
+
+  @Test
+  public void requireNonNullObjectSummary() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
+
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("o != null"));
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals("java.lang.Object", summary.getFormalParams().get(0).getParamType());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
+
+    assertTrue(path0.get(0).getSymExpr().toString().contains("o != null"),
+            "Expected o != null");
+  }
+
+  @Test
+  public void requireNonNullArraySummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[] requireNonNullArray(int[])>";
+
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("arr != null"));
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+
+    assertEquals("arr", summary.getReturnExpr().toString());
   }
 }
