@@ -1,5 +1,6 @@
 package br.unb.cic.witup.summary;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -18,7 +19,8 @@ public class IntSummaryTest {
   public void addOverFlowSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int add(int,int)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -36,7 +38,8 @@ public class IntSummaryTest {
   @Test
   public void greaterThanConstantRhsSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int greaterThanConstantRhs(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -54,7 +57,8 @@ public class IntSummaryTest {
   @Test
   public void lesserThanConstantLhsSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int lesserThanConstantLhs(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -72,7 +76,8 @@ public class IntSummaryTest {
   @Test
   public void equalsConstantRhsSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantRhs(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -90,7 +95,8 @@ public class IntSummaryTest {
   @Test
   public void equalsConstantLhsSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantLhs(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -108,7 +114,8 @@ public class IntSummaryTest {
   @Test
   public void negatedLessThanConstantRhsSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int negatedLessThanConstantRhs(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -127,7 +134,8 @@ public class IntSummaryTest {
   public void lessThanConstantRhsViaBooleanSummary() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -152,7 +160,8 @@ public class IntSummaryTest {
   public void lessThanConstantRhsViaNegatedBooleanSummary() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     assertEquals(2, summary.getSymbolicConstraintPaths().size());
@@ -174,7 +183,8 @@ public class IntSummaryTest {
   @Test
   public void addAndCheckSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int addAndCheck(int,int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
@@ -192,7 +202,8 @@ public class IntSummaryTest {
   @Test
   public void negateValueSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int negateValue(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());

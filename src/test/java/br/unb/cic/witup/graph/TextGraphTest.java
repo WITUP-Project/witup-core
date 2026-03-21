@@ -1,5 +1,6 @@
 package br.unb.cic.witup.graph;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class TextGraphTest {
   @Test
@@ -17,8 +17,8 @@ public class TextGraphTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
-    assertNotNull(cpg);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
@@ -33,8 +33,8 @@ public class TextGraphTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
-    assertNotNull(cpg);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
@@ -48,8 +48,8 @@ public class TextGraphTest {
   public void invalidStringLengthGraph() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
-    assertNotNull(cpg);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());

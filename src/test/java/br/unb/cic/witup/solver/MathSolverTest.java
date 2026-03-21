@@ -1,5 +1,6 @@
 package br.unb.cic.witup.solver;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +11,8 @@ public class MathSolverTest {
   @Test
   public void invalidFieldSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: double circleArea()>";
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("this.radius") < 0, "Expected radius <= 0");
   }
@@ -18,7 +20,8 @@ public class MathSolverTest {
   @Test
   public void invalidParameterSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int invalidParameter(int,int)>";
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertEquals(0, sol0.getInt("y"), "Expected y == 0");
   }
@@ -27,7 +30,8 @@ public class MathSolverTest {
   public void invalidParameterConjunctionSolution() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("p") < 0, "Expected p < 0");
 
@@ -39,7 +43,8 @@ public class MathSolverTest {
   @Test
   public void truncateSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int truncate(double)>";
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("truncated") < 0, "Expected truncated < 0");
   }
@@ -47,7 +52,8 @@ public class MathSolverTest {
   @Test
   public void truncateInlineSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("(int)d") < 0, "Expected (int)d < 0");
   }

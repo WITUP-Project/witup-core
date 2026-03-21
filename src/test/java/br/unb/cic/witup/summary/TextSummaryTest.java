@@ -1,5 +1,6 @@
 package br.unb.cic.witup.summary;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -19,7 +20,8 @@ public class TextSummaryTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
@@ -39,7 +41,8 @@ public class TextSummaryTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
@@ -57,7 +60,8 @@ public class TextSummaryTest {
   public void invalidStringLengthSummary() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());

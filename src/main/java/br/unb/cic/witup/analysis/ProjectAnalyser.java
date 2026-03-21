@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 
 //import guru.nidi.graphviz.engine.Format;
 //import guru.nidi.graphviz.engine.Graphviz;
+import br.unb.cic.witup.solver.SolverResult;
+import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
@@ -65,6 +67,41 @@ public final class ProjectAnalyser implements GraphRepository {
   public Map<String, WITUpGraph> analyseClass(final JavaSootClass sootClass) {
     return buildGraphsForClass(sootClass);
   }
+
+  public AnalysisResult analyseMethod(final String methodSignature) {
+    WITUpGraph graph = methodGraphs.get(methodSignature);
+    if (graph == null) {
+      throw new IllegalArgumentException("No graph for: " + methodSignature);
+    }
+
+    SummaryCache summaryCache = new SummaryCache();
+    Map<String, String> failures = new LinkedHashMap<>();
+
+    // build topological order for just this method and its transitive callees
+    CallGraphBuilder cgBuilder = new CallGraphBuilder(view);
+    DefaultDirectedGraph<String, DefaultEdge> order = cgBuilder.build(methodGraphs.keySet());
+    List<List<String>> analysisOrder =
+            cgBuilder.buildAnalysisOrder(order);
+
+
+    Map<String, MethodSummary> summaries = new LinkedHashMap<>();
+    for (List<String> scc : analysisOrder) {
+      for (String sig : scc) {
+        if (methodGraphs.containsKey(sig)) {
+          summariseMethod(sig, methodGraphs, summaryCache, summaries, failures);
+        }
+      }
+    }
+
+    MethodSummary summary = summaries.get(methodSignature);
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(
+            Map.of(methodSignature, summary));
+    Map<String, List<SolverResult>> solutions = solver.solveConstraintsSafe(failures);
+
+    return new AnalysisResult(graph, summary, solutions.get(methodSignature), failures);
+  }
+
+
 
   public static Map<String, WITUpGraph> buildGraphsForClass(final JavaSootClass sootClass) {
     return sootClass.getMethods().stream()

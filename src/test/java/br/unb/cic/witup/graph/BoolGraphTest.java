@@ -1,5 +1,6 @@
 package br.unb.cic.witup.graph;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
@@ -16,8 +17,8 @@ public class BoolGraphTest {
   public void toBooleanGraph() {
     String methodSignature = "<br.unb.cic.witup.samples.Bool: boolean toBoolean(java.lang.Integer,java.lang.Integer,java.lang.Integer)>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
-    assertNotNull(cpg);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());

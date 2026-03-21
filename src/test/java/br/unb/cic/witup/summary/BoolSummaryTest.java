@@ -1,5 +1,6 @@
 package br.unb.cic.witup.summary;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
@@ -17,7 +18,8 @@ public class BoolSummaryTest {
   public void toBooleanSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Bool: boolean toBoolean(java.lang.Integer,java.lang.Integer,java.lang.Integer)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 

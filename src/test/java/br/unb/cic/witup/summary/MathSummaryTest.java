@@ -1,5 +1,6 @@
 package br.unb.cic.witup.summary;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -81,9 +82,10 @@ public class MathSummaryTest {
   @Test
   public void truncateSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int truncate(double)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
-
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
+
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
@@ -99,9 +101,10 @@ public class MathSummaryTest {
   @Test
   public void truncateInlineSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
-
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
+
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);

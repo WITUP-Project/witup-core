@@ -1,5 +1,6 @@
 package br.unb.cic.witup.solver;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.solver.model.IntValue;
 import br.unb.cic.witup.solver.model.StringValue;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
@@ -15,7 +16,8 @@ public class TextSolverTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidString(java.lang.String)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertEquals(new StringValue("abc"), sol0.modelValueMap().get("s"));
   }
@@ -25,7 +27,8 @@ public class TextSolverTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: java.lang.String requireString(java.lang.Object)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertFalse(sol0.getBool("s_instanceof_java_lang_String"));
   }
@@ -35,7 +38,8 @@ public class TextSolverTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions().get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertEquals(new IntValue(0), sol0.modelValueMap().get("s.length()"));
   }

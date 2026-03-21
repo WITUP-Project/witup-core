@@ -1,6 +1,8 @@
 package br.unb.cic.witup.summary;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
@@ -17,7 +19,8 @@ public class ArraySummaryTest {
   @Test
   public void getElementSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int getElement(int[],int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -37,7 +40,8 @@ public class ArraySummaryTest {
   @Test
   public void checkLengthSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int checkLength(int[])>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -56,8 +60,8 @@ public class ArraySummaryTest {
   @Test
   public void allocateSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int[] allocate(int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
-
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
@@ -77,7 +81,8 @@ public class ArraySummaryTest {
   public void getStringElementSummary() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -96,7 +101,8 @@ public class ArraySummaryTest {
   public void getObjectElementSummary() {
     String methodSignature =
             "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -116,7 +122,8 @@ public class ArraySummaryTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -137,7 +144,8 @@ public class ArraySummaryTest {
   public void sumUntilZeroSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZero(int[])>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -160,7 +168,8 @@ public class ArraySummaryTest {
   public void sumUntilZeroWhileSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroWhile(int[])>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -182,7 +191,8 @@ public class ArraySummaryTest {
   @Test
   public void sumUntilZeroForEachSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroForEach(int[])>";
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -210,7 +220,8 @@ public class ArraySummaryTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -230,8 +241,8 @@ public class ArraySummaryTest {
   @Test
   public void requireNonNullArraySummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int[] requireNonNullArray(int[])>";
-
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 
@@ -251,7 +262,8 @@ public class ArraySummaryTest {
   public void getCheckedSummary() {
     String methodSignature = "<br.unb.cic.witup.samples.Array: int getChecked(int[],int)>";
 
-    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
 

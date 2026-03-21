@@ -1,5 +1,6 @@
 package br.unb.cic.witup.solver;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
@@ -10,64 +11,63 @@ public class IntSolverTest {
   @Test
   public void addOverflowSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int add(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
 
-    SolverResult solution = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
-
-    assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") + solution.getInt("b") > 256, "expected a + b > 256");
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("a") + sol0.getInt("b") > 256, "expected a + b > 256");
   }
 
   @Test
   public void greaterThanConstantRhsSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int greaterThanConstantRhs(int)>";
-    SolverResult solution = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
 
-    assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") < 0, "expected a < 0");
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("a") < 0, "expected a < 0");
   }
 
   @Test
   public void lesserThanConstantLhsSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int lesserThanConstantLhs(int)>";
-    SolverResult solution = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
 
-    assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") < 0, " expected a < 0");
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("a") < 0, " expected a < 0");
   }
 
   @Test
   public void equalsConstantRhsSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantRhs(int)>";
 
-    SolverResult solution = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
 
-    assertTrue(solution.isSat());
-    assertEquals(0, solution.getInt("a"), "expected a == 0");
+    assertTrue(sol0.isSat());
+    assertEquals(0, sol0.getInt("a"), "expected a == 0");
   }
 
   @Test
   public void equalsConstantLhsSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int equalsConstantLhs(int)>";
 
-    SolverResult solution = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
 
-    assertTrue(solution.isSat());
-    assertEquals(0, solution.getInt("a"), "expected a == 0");
+    assertTrue(sol0.isSat());
+    assertEquals(0, sol0.getInt("a"), "expected a == 0");
   }
 
   @Test
   public void negatedLessThanConstantRhsSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int negatedLessThanConstantRhs(int)>";
-    SolverResult solution = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
 
-    assertTrue(solution.isSat());
-    assertTrue(solution.getInt("a") <= 0, "expected a <= 0");
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("a") <= 0, "expected a <= 0");
   }
 
   @Test
@@ -75,13 +75,11 @@ public class IntSolverTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions()
-
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isUnsat());
 
-    SolverResult sol1 = TestAnalysisContext.getSolutions()
-            .get(methodSignature).get(1);
+    SolverResult sol1 = analysis.solutions().get(1);
 
     assertTrue(sol1.isSat());
     assertTrue(sol1.getInt("a") < 0, "Expected a < 0");
@@ -92,14 +90,13 @@ public class IntSolverTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions()
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
 
-            .get(methodSignature).getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("a") >= 0, "Expected a >= 0");
 
-    SolverResult sol1 = TestAnalysisContext.getSolutions()
-            .get(methodSignature).get(1);
+    SolverResult sol1 = analysis.solutions().get(1);
 
     assertTrue(sol1.isUnsat());
   }
@@ -108,8 +105,8 @@ public class IntSolverTest {
   public void addAndCheckSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int addAndCheck(int,int)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
 
     assertTrue(sol0.getInt("a") + sol0.getInt("b") > 512, "Expected a + b > 512");
@@ -119,8 +116,8 @@ public class IntSolverTest {
   public void negateValueSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Int: int negateValue(int)>";
 
-    SolverResult sol0 = TestAnalysisContext.getSolutions()
-            .get(methodSignature).getFirst();
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
 
     assertTrue(sol0.getInt("a") > 0);

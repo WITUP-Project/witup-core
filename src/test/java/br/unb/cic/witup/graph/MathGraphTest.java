@@ -1,5 +1,6 @@
 package br.unb.cic.witup.graph;
 
+import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
@@ -16,7 +17,8 @@ public class MathGraphTest {
   public void invalidFieldGraph() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: double circleArea()>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
     assertNotNull(cpg);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
@@ -31,7 +33,8 @@ public class MathGraphTest {
   public void invalidParameterGraph() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int invalidParameter(int,int)>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
     assertNotNull(cpg);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
@@ -47,7 +50,8 @@ public class MathGraphTest {
     String methodSignature =
             "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
     assertNotNull(cpg);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
@@ -62,7 +66,8 @@ public class MathGraphTest {
   public void truncateGraph() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int truncate(double)>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
     assertNotNull(cpg);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
@@ -77,7 +82,8 @@ public class MathGraphTest {
   public void truncateInlineGraph() {
     String methodSignature = "<br.unb.cic.witup.samples.Math: int truncateInline(double)>";
 
-    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
     assertNotNull(cpg);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
