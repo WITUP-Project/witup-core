@@ -1,9 +1,9 @@
 package br.unb.cic.witup.analysis.graph;
 
-//
-// import guru.nidi.graphviz.engine.Format;
-// import guru.nidi.graphviz.engine.Graphviz;
-// import java.io.File;
+
+//import guru.nidi.graphviz.engine.Format;
+//import guru.nidi.graphviz.engine.Graphviz;
+//import java.io.File;
 import sootup.codepropertygraph.cdg.CdgCreator;
 import sootup.codepropertygraph.cfg.CfgCreator;
 import sootup.codepropertygraph.ddg.DdgCreator;
@@ -18,22 +18,22 @@ public final class CPGBuilder {
 
   public static WITUpGraph buildForMethod(final JavaSootMethod method) {
     PropertyGraph cpg = buildCpg(method);
-    //        String dot = cpg.toDotGraph();
-    //        try {
-    //          File graphsDir = new File("graphs");
-    //
-    //          if (!graphsDir.exists() && !graphsDir.mkdirs()) {
-    //            throw new RuntimeException("Could not create graphs directory");
-    //          }
-    //
-    //          File output = new File(graphsDir, method.getSignature() + ".svg");
-    //
-    //          Graphviz.fromString(dot)
-    //                  .render(Format.SVG)
-    //                  .toFile(output);
-    //        } catch (Exception e) {
-    //          e.printStackTrace();
-    //        }
+//            String dot = cpg.toDotGraph();
+//            try {
+//              File graphsDir = new File("graphs");
+//
+//              if (!graphsDir.exists() && !graphsDir.mkdirs()) {
+//                throw new RuntimeException("Could not create graphs directory");
+//              }
+//
+//              File output = new File(graphsDir, method.getSignature() + ".svg");
+//
+//              Graphviz.fromString(dot)
+//                      .render(Format.SVG)
+//                      .toFile(output);
+//            } catch (Exception e) {
+//              e.printStackTrace();
+//            }
 
     return WITUpGraph.fromPropertyGraph(cpg, method);
   }

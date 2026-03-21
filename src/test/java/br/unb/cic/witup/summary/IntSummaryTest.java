@@ -214,4 +214,38 @@ public class IntSummaryTest {
     assertEquals(1, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
   }
+
+  @Test
+  public void applyAndCheckSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    // too hard to assert on ITE trees when doing interprocedural.
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+  }
+
+  @Test
+  public void applyAndCheckResultSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int applyAndCheckResult(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    // too hard to assert on ITE trees when doing interprocedural.
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+  }
 }

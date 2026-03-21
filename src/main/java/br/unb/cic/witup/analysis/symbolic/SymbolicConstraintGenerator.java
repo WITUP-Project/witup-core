@@ -21,9 +21,15 @@ import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
+import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Value;
+import sootup.core.jimple.common.constant.MethodHandle;
 import sootup.core.jimple.common.expr.JCastExpr;
+import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
+import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
+import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
+import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
@@ -164,6 +170,64 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
+  private Optional<SymExpr> tryResolveLambda(
+          final JInterfaceInvokeExpr invoke,
+          final WITUpNode node) {
+    if (resolver == null) {
+      return Optional.empty();
+    }
+
+    String receiverName = invoke.getBase().toString();
+
+    log.debug("tryResolveLambda: receiver={} incoming edges={}",
+            receiverName, cpg.getIncomingDDGEdges(node).size());
+    cpg.getIncomingDDGEdges(node).forEach(e ->
+            log.debug("  edge source: {}", cpg.getEdgeSource(e)));
+
+    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(node)) {
+      WITUpNode sourceNode = cpg.getEdgeSource(edge);
+      if (!isNodeInPath(sourceNode)) {
+        continue;
+      }
+      if (!(sourceNode instanceof SimpleNode sn)) {
+        continue;
+      }
+      if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
+        continue;
+      }
+      if (!assign.getLeftOp().toString().equals(receiverName)) {
+        continue;
+      }
+
+      if (assign.getRightOp() instanceof JDynamicInvokeExpr dynInvoke) {
+        List<Immediate> bootstrapArgs = dynInvoke.getBootstrapArgs();
+        if (bootstrapArgs.size() < 2) {
+          return Optional.empty();
+        }
+        if (!(bootstrapArgs.get(1) instanceof MethodHandle mh)) {
+          return Optional.empty();
+        }
+
+        String className = mh.getReferenceSignature().getDeclClassType()
+                .getFullyQualifiedName();
+        String subSig = mh.getReferenceSignature().getSubSignature().toString();
+        String lambdaSig = "<" + className + ": " + subSig + ">";
+
+        List<SymExpr> actuals = dynInvoke.getArgs().stream()
+                .map(SymExpr::fromJimple).collect(Collectors.toList());
+
+        log.debug("Lambda resolution: {} with actuals {}", lambdaSig, actuals);
+        return resolver.resolveReturnExpr(lambdaSig, actuals);
+      }
+      // not a dynamic invoke — skip
+    }
+
+    return Optional.empty();
+  }
+
   // it's ok to reassign current in a recursive function
   // given a Jimple statement, produces a SymExpr by backwards
   // tracing temporaries back to their origins
@@ -179,6 +243,7 @@ public final class SymbolicConstraintGenerator {
     visited.add(currentNode);
 
     Set<String> freeVars = new VariableCollector().collect(symExpr);
+    log.debug("backwardSubstitute freeVars={} at node={}", freeVars, currentNode);
 
     if (freeVars.isEmpty()) {
       return symExpr;
@@ -213,22 +278,22 @@ public final class SymbolicConstraintGenerator {
 
         // this is the interprocedural hook.
         // need to add hooks for other invokes
-        if (rhsOp instanceof JVirtualInvokeExpr invoke && resolver != null) {
-          String calleeSig = invoke.getMethodSignature().toString();
-          log.debug("Interprocedural hook fired for: {}", calleeSig);
+        Optional<SymExpr> resolved = tryResolveInterprocedural(rhsOp);
 
-          List<SymExpr> actuals =
-              invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
+        if (resolved.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
+          log.debug("trying lambda resolution for: {}", ifaceInvoke);
+          resolved = tryResolveLambda(ifaceInvoke, sourceNode);
+        }
 
-          Optional<SymExpr> resolvedRet = resolver.resolveReturnExpr(calleeSig, actuals);
-          if (resolvedRet.isPresent()) {
-            String definedVar = getVariableName(assign.getLeftOp());
-            if (freeVars.contains(definedVar)) {
-              symExpr = symExpr.substitute(definedVar, resolvedRet.get());
-              symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
-            }
-            continue;
+        if (resolved.isPresent()) {
+          String definedVar = getVariableName(assign.getLeftOp());
+          if (freeVars.contains(definedVar)) {
+            symExpr = symExpr.substitute(definedVar, resolved.get());
+            log.debug("after substitute: freeVars={} symExpr={}",
+                    new VariableCollector().collect(symExpr), symExpr);
+            symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
           }
+          continue;
         }
       } else if (stmt instanceof JIdentityStmt identity) {
         if (!followIdentity) {
@@ -253,6 +318,54 @@ public final class SymbolicConstraintGenerator {
     }
 
     return symExpr;
+  }
+
+  private Optional<SymExpr> tryResolveInterprocedural(final Value rhsOp) {
+    if (resolver == null) {
+      return Optional.empty();
+    }
+
+    log.debug("tryResolveInterprocedural: {}", rhsOp.getClass().getSimpleName());
+
+    String calleeSig;
+    List<SymExpr> actuals;
+
+    switch (rhsOp) {
+      case JVirtualInvokeExpr invoke -> {
+        calleeSig = invoke.getMethodSignature().toString();
+        actuals = invoke.getArgs().stream()
+                .map(SymExpr::fromJimple).collect(Collectors.toList());
+      }
+      case JStaticInvokeExpr invoke -> {
+        calleeSig = invoke.getMethodSignature().toString();
+        actuals = invoke.getArgs().stream()
+                .map(SymExpr::fromJimple).collect(Collectors.toList());
+      }
+      case JInterfaceInvokeExpr invoke -> {
+        calleeSig = invoke.getMethodSignature().toString();
+        actuals = invoke.getArgs().stream()
+                .map(SymExpr::fromJimple).collect(Collectors.toList());
+      }
+      case JSpecialInvokeExpr invoke -> {
+        calleeSig = invoke.getMethodSignature().toString();
+        actuals = invoke.getArgs().stream()
+                .map(SymExpr::fromJimple).collect(Collectors.toList());
+      }
+      case JDynamicInvokeExpr invoke -> {
+        log.debug("DynamicInvoke: method={} bootstrapArgs={}",
+                invoke.getMethodSignature(),
+                invoke.getBootstrapArgs());
+        calleeSig = invoke.getMethodSignature().toString();
+        actuals = invoke.getArgs().stream()
+                .map(SymExpr::fromJimple).collect(Collectors.toList());
+      }
+      case null, default -> {
+        return Optional.empty();
+      }
+    }
+
+    log.debug("Interprocedural hook fired for: {}", calleeSig);
+    return resolver.resolveReturnExpr(calleeSig, actuals);
   }
 
   private boolean isNodeInPath(final WITUpNode node) {
