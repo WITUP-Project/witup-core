@@ -1,5 +1,9 @@
 package br.unb.cic.witup.analysis;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.jgrapht.Graph;
 import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
 import org.jgrapht.graph.DefaultDirectedGraph;
@@ -13,11 +17,6 @@ import sootup.callgraph.ClassHierarchyAnalysisAlgorithm;
 import sootup.core.signatures.MethodSignature;
 import sootup.java.core.views.JavaView;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 public final class CallGraphBuilder {
   private final JavaView view;
   private static final Logger log = LoggerFactory.getLogger("CallGraphBuilder");
@@ -29,7 +28,8 @@ public final class CallGraphBuilder {
   // we'll start with only keeping track of method signatures and use better types
   // if necessary
   public DefaultDirectedGraph<String, DefaultEdge> build(final Set<String> methodSignatures) {
-    List<MethodSignature> entryPoints = methodSignatures.stream()
+    List<MethodSignature> entryPoints =
+        methodSignatures.stream()
             .map(sig -> view.getIdentifierFactory().parseMethodSignature(sig))
             .collect(Collectors.toList());
 
@@ -38,7 +38,7 @@ public final class CallGraphBuilder {
     CallGraph cg = cha.initialize(entryPoints);
 
     DefaultDirectedGraph<String, DefaultEdge> callGraph =
-            new DefaultDirectedGraph<>(DefaultEdge.class);
+        new DefaultDirectedGraph<>(DefaultEdge.class);
 
     for (String sig : methodSignatures) {
       callGraph.addVertex(sig);
@@ -46,12 +46,14 @@ public final class CallGraphBuilder {
 
     for (String sig : methodSignatures) {
       MethodSignature ms = view.getIdentifierFactory().parseMethodSignature(sig);
-      cg.callsFrom(ms).forEach(callee -> {
-        String calleeSig = callee.toString();
-        if (methodSignatures.contains(calleeSig)) {
-          callGraph.addEdge(sig, calleeSig);
-        }
-      });
+      cg.callsFrom(ms)
+          .forEach(
+              callee -> {
+                String calleeSig = callee.toString();
+                if (methodSignatures.contains(calleeSig)) {
+                  callGraph.addEdge(sig, calleeSig);
+                }
+              });
     }
 
     return callGraph;
@@ -59,13 +61,12 @@ public final class CallGraphBuilder {
 
   public List<List<String>> buildAnalysisOrder(final Graph<String, DefaultEdge> callGraph) {
     KosarajuStrongConnectivityInspector<String, DefaultEdge> inspector =
-            new KosarajuStrongConnectivityInspector<>(callGraph);
+        new KosarajuStrongConnectivityInspector<>(callGraph);
 
-    Graph<Graph<String, DefaultEdge>, DefaultEdge> condensation =
-            inspector.getCondensation();
+    Graph<Graph<String, DefaultEdge>, DefaultEdge> condensation = inspector.getCondensation();
 
     TopologicalOrderIterator<Graph<String, DefaultEdge>, DefaultEdge> topoIter =
-            new TopologicalOrderIterator<>(condensation);
+        new TopologicalOrderIterator<>(condensation);
 
     List<List<String>> analysisOrder = new ArrayList<>();
     while (topoIter.hasNext()) {
@@ -74,9 +75,7 @@ public final class CallGraphBuilder {
     }
 
     log.info("Analysis order: {} SCCs", analysisOrder.size());
-    long nonSingletons = analysisOrder.stream()
-            .filter(scc -> scc.size() > 1)
-            .count();
+    long nonSingletons = analysisOrder.stream().filter(scc -> scc.size() > 1).count();
     log.info("Non-singleton SCCs (genuine recursion): {}", nonSingletons);
     return analysisOrder;
   }

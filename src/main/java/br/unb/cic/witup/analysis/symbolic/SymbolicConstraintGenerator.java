@@ -11,6 +11,7 @@ import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,6 @@ import java.util.stream.Collectors;
 import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.LValue;
 import sootup.core.jimple.basic.Value;
@@ -38,7 +38,7 @@ import sootup.core.jimple.common.stmt.Stmt;
 public final class SymbolicConstraintGenerator {
   private final WITUpGraph cpg;
   private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
-  private GraphPath<WITUpNode, WITUpEdge> currentPath;
+  private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
   private static final Logger log = LoggerFactory.getLogger("SymbolicConstraintGenerator");
@@ -52,10 +52,9 @@ public final class SymbolicConstraintGenerator {
    * Interprocedural constructor.
    *
    * @param cpg a WITUpGraph with the CPG of the method under analysis
-   * @param constraintPaths List<GraphPath<WITUpNode, WITUpEdge>> paths that
-   *                        represent symbolic constraints
-   * @param resolver a MethodSummariser that recursively resolves
-   *                 interprocedural calls.
+   * @param constraintPaths List<GraphPath<WITUpNode, WITUpEdge>> paths that represent symbolic
+   *     constraints
+   * @param resolver a MethodSummariser that recursively resolves interprocedural calls.
    */
   public SymbolicConstraintGenerator(
       final WITUpGraph cpg,
@@ -97,7 +96,7 @@ public final class SymbolicConstraintGenerator {
   }
 
   private void setCurrentPath(final GraphPath<WITUpNode, WITUpEdge> p) {
-    this.currentPath = p;
+    this.currentPathNodes = new HashSet<>(p.getVertexList());
   }
 
   private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
@@ -124,16 +123,16 @@ public final class SymbolicConstraintGenerator {
       return SymExpr.fromJimple(returnNode.getOp());
     }
     if (paths.size() == 1) {
-      this.currentPath = paths.get(0);
+      setCurrentPath(paths.get(0));
       return substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
     }
 
     // multiple paths to same return — fold into ITE - fits Z3 well
-    this.currentPath = paths.getLast();
+    setCurrentPath(paths.getLast());
     SymExpr result = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
 
     for (int i = paths.size() - 2; i >= 0; i--) {
-      this.currentPath = paths.get(i);
+      setCurrentPath(paths.get(i));
       SymExpr pathExpr = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
       SymExpr pathCondition = buildPathConditionFromPath(paths.get(i));
       result = new SymITE(pathCondition, pathExpr, result);
@@ -144,10 +143,9 @@ public final class SymbolicConstraintGenerator {
 
   // effectively duplicates MethodSummariser.buildPathCondition
   // still work to do in the boundaries between here and there.
-  private SymExpr buildPathConditionFromPath(
-          final GraphPath<WITUpNode, WITUpEdge> path) {
-    List<List<SymbolicConstraint>> generated = new SymbolicConstraintGenerator(
-            cpg, List.of(path), null).generateSymbolicConstraintPaths();
+  private SymExpr buildPathConditionFromPath(final GraphPath<WITUpNode, WITUpEdge> path) {
+    List<List<SymbolicConstraint>> generated =
+        new SymbolicConstraintGenerator(cpg, List.of(path), null).generateSymbolicConstraintPaths();
 
     if (generated.isEmpty() || generated.get(0).isEmpty()) {
       return SymIntConst.one();
@@ -157,7 +155,8 @@ public final class SymbolicConstraintGenerator {
     SymExpr result = SymIntConst.one();
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
-      SymExpr cond = c.getTruthValue()
+      SymExpr cond =
+          c.getTruthValue()
               ? c.getSymExpr()
               : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());
@@ -257,24 +256,11 @@ public final class SymbolicConstraintGenerator {
   }
 
   private boolean isNodeInPath(final WITUpNode node) {
-    PropertyGraphNode targetNode = node.getNode();
-
-    Set<WITUpNode> nodesInPath = new HashSet<>(this.getCurrentPath().getVertexList());
-    for (WITUpNode pathNode : nodesInPath) {
-      if (pathNode.getNode().equals(targetNode)) {
-        return true;
-      }
-    }
-
-    return false;
+    return currentPathNodes.contains(node);
   }
 
   private static String getVariableName(final Value value) {
     return value.toString();
-  }
-
-  private GraphPath<WITUpNode, WITUpEdge> getCurrentPath() {
-    return this.currentPath;
   }
 
   private boolean isStackVariable(final LValue value) {

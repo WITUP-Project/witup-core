@@ -64,8 +64,10 @@ public record SolverResult(String pathId, Status status, Map<String, ModelValue>
     ModelValue value = modelValueMap.get(name);
     if (!(value instanceof ObjectValue ov)) {
       throw new IllegalStateException(
-              "Expected ObjectValue for " + name + ", got "
-                      + (value == null ? "null" : value.getClass()));
+          "Expected ObjectValue for "
+              + name
+              + ", got "
+              + (value == null ? "null" : value.getClass()));
     }
     return ov;
   }

@@ -73,9 +73,9 @@ public class Int {
       throw new IllegalArgumentException("a must not be zero");
     }
     if (a > 0) {
-      return -1*a;
+      return -1 * a;
     }
-    return a*-1;
+    return a * -1;
   }
 
   public int negateValue(int a) {

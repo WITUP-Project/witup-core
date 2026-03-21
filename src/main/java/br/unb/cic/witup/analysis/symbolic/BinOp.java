@@ -25,7 +25,7 @@ public enum BinOp {
 
   AND("&&"),
   OR("||"),
-  XOR("^"),;
+  XOR("^");
 
   private final String symbol;
 

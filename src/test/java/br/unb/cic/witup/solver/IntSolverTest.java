@@ -1,11 +1,11 @@
 package br.unb.cic.witup.solver;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IntSolverTest {
   @Test
@@ -73,7 +73,7 @@ public class IntSolverTest {
   @Test
   public void lessThanConstantRhsViaBoolanSolution() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
+        "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol0 = analysis.solutions().getFirst();
@@ -88,7 +88,7 @@ public class IntSolverTest {
   @Test
   public void lessThanConstantRhsViaNegatedBooleanSolution() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
+        "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol0 = analysis.solutions().getFirst();

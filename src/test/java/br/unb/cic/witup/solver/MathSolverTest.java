@@ -1,11 +1,11 @@
 package br.unb.cic.witup.solver;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MathSolverTest {
   @Test
@@ -29,7 +29,7 @@ public class MathSolverTest {
   @Test
   public void invalidParameterConjunctionSolution() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
+        "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());

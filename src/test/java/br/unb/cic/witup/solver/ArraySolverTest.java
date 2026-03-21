@@ -1,5 +1,10 @@
 package br.unb.cic.witup.solver;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.solver.model.ArrayValue;
 import br.unb.cic.witup.solver.model.ModelValue;
@@ -7,11 +12,6 @@ import br.unb.cic.witup.solver.model.ObjectValue;
 import br.unb.cic.witup.solver.model.StringValue;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ArraySolverTest {
   @Test
@@ -47,13 +47,12 @@ public class ArraySolverTest {
     assertTrue(sol0.isSat());
 
     assertTrue(sol0.getInt("n") < 0, "arr.length should be 0");
-
   }
 
   @Test
   public void getStringElementSolution() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
+        "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol0 = analysis.solutions().getFirst();
@@ -63,13 +62,12 @@ public class ArraySolverTest {
     ModelValue elementValue = arrArray.get("i");
 
     assertEquals("abc", elementValue.getString(), "arr[i] should be 0");
-
   }
 
   @Test
   public void getObjectElementSolution() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
+        "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol0 = analysis.solutions().getFirst();
@@ -84,7 +82,7 @@ public class ArraySolverTest {
   @Test
   public void getObjectFromArraySolution() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
+        "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol0 = analysis.solutions().getFirst();
 
@@ -141,7 +139,7 @@ public class ArraySolverTest {
   @Test
   public void requireNonNullObjectSolution() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
+        "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol0 = analysis.solutions().getFirst();
@@ -176,7 +174,8 @@ public class ArraySolverTest {
     assertTrue(sol1.isSat());
     assertTrue(sol1.getInt("i") < 0, "expected i < 0");
 
-    SolverResult sol2 = analysis.solutions().get(2);;
+    SolverResult sol2 = analysis.solutions().get(2);
+    ;
 
     assertTrue(sol2.isSat());
     assertFalse(sol2.getBool("arr_is_null"), "arr must not be null");
