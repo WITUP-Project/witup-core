@@ -2,6 +2,7 @@ package br.unb.cic.witup.graph;
 
 import br.unb.cic.witup.analysis.MethodSummariser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
@@ -132,6 +133,20 @@ public class ArrayGraphTest {
     List<List<SymbolicConstraint>> paths =
             new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
     assertEquals(1, paths.size());
+  }
 
+  @Test
+  public void sumUntilZeroForEachGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroForEach(int[])>";
+
+    WITUpGraph cpg = TestAnalysisContext.getGraphs().get(methodSignature);
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(2, conditionNodes.size());
   }
 }

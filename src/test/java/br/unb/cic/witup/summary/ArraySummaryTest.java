@@ -175,7 +175,29 @@ public class ArraySummaryTest {
 
     assertFalse(path0.get(1).getTruthValue());
     assertTrue(path0.get(1).getSymExpr().toString().contains("arr[i] != 0"));
-
     // returnExpr here is always giving 0 as we do not handle loop-carried acc
+  }
+
+  @Test
+  public void sumUntilZeroForEachSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroForEach(int[])>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+    assertEquals(methodSignature, summary.getMethodSignature());
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("0 >= arr.length"));
+
+    assertEquals(1, summary.getFormalParams().size());
+    assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+
+    assertFalse(path0.get(1).getTruthValue());
+    // we can't "know" which temporary/local we'll get here with
+    // before we process loops more thoroughly, so for now we'll
+    // just assert there is a reference to some index in the array..
+    assertTrue(path0.get(1).getSymExpr().toString().contains("arr["));
   }
 }

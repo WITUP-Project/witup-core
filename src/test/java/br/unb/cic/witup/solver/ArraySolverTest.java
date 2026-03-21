@@ -120,4 +120,17 @@ public class ArraySolverTest {
     ModelValue elementValue = arrArray.get("i");
     assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
   }
+
+  @Test
+  public void sumUntilZeroForEachSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int sumUntilZeroForEach(int[])>";
+
+    SolverResult sol0 = TestAnalysisContext.getSolutions()
+            .get(methodSignature).getFirst();
+
+    ArrayValue arrArray = sol0.getArray("arr");
+    ModelValue elementValue = arrArray.get("i");
+    assertEquals(0, elementValue.getInt(), "arr[i] should be 0");
+  }
+
 }
