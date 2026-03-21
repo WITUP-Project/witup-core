@@ -58,6 +58,12 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private JavaSootMethod method;
   // dot for debugging purposes
   private String dot;
+  private WITUpNode entryNode;
+  private AllDirectedPaths<WITUpNode, WITUpEdge> allDirectedPaths;
+  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedConstraintPaths
+          = new HashMap<>();
+  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedReturnPaths
+          = new HashMap<>();
 
   public String getMethodSignature() {
     return methodSignature;
@@ -161,14 +167,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<GraphPath<WITUpNode, WITUpEdge>> getConstraintPaths(final WITUpNode throwNode) {
+    return cachedConstraintPaths.computeIfAbsent(throwNode, this::computeConstraintPaths);
+  }
+
+  private List<GraphPath<WITUpNode, WITUpEdge>> computeConstraintPaths(final WITUpNode throwNode) {
     WITUpNode entry = findEntryNode();
-
-    // Getting the CFG here removes all redundancy (hundreds less paths)
-    AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
-
-    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
-        allPaths.getAllPaths(entry, throwNode, true, null);
+            getAllDirectedPaths().getAllPaths(entry, throwNode, true, null);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConstraints = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
@@ -182,6 +187,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return pathsWithConstraints;
   }
 
+  private AllDirectedPaths<WITUpNode, WITUpEdge> getAllDirectedPaths() {
+    if (allDirectedPaths == null) {
+      allDirectedPaths = new AllDirectedPaths<>(getCfg());
+    }
+    return allDirectedPaths;
+  }
+
   private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
     return new AsSubgraph<>(
         this,
@@ -192,6 +204,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   private WITUpNode findEntryNode() {
+    if (entryNode != null) {
+      return entryNode;
+    }
+
     Set<WITUpNode> hasIncoming = new HashSet<>(this.vertexSet().size());
 
     for (WITUpEdge e : this.edgeSet()) {
@@ -204,19 +220,18 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
 
       PropertyGraphNode pgNode = witNode.getNode();
-
       if (pgNode instanceof StmtGraphNode stmtNode && stmtNode.getStmt() instanceof JIdentityStmt) {
+        entryNode = witNode;
         return witNode;
       }
     }
-
     // lambdas and static initializers with no parameters
     for (WITUpNode witNode : this.vertexSet()) {
       if (!hasIncoming.contains(witNode)) {
+        entryNode = witNode;
         return witNode;
       }
     }
-
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
@@ -252,10 +267,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<GraphPath<WITUpNode, WITUpEdge>> getAllPathsToReturn(final WITUpNode returnNode) {
+    return cachedReturnPaths.computeIfAbsent(returnNode, this::computeAllPathsToReturn);
+  }
+
+  private List<GraphPath<WITUpNode, WITUpEdge>> computeAllPathsToReturn(
+          final WITUpNode returnNode) {
     WITUpNode entry = findEntryNode();
-    AsSubgraph<WITUpNode, WITUpEdge> cfg = getCfg();
-    AllDirectedPaths<WITUpNode, WITUpEdge> allPaths = new AllDirectedPaths<>(cfg);
-    return allPaths.getAllPaths(entry, returnNode, true, MAX_PATH_LENGTH);
+    return getAllDirectedPaths().getAllPaths(entry, returnNode, true, MAX_PATH_LENGTH);
   }
 
   // The Jimple pattern seems very consitent (hopefully an invariant):
