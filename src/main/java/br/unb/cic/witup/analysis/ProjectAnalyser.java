@@ -9,18 +9,21 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.core.inputlocation.AnalysisInputLocation;
-import sootup.core.jimple.common.stmt.JThrowStmt;
 import sootup.java.bytecode.frontend.inputlocation.JavaClassPathAnalysisInputLocation;
 import sootup.java.core.JavaSootClass;
 import sootup.java.core.JavaSootMethod;
@@ -32,6 +35,8 @@ public final class ProjectAnalyser implements GraphRepository {
   private static final Logger log = LoggerFactory.getLogger("ProjectAnalyser");
   private final Map<String, WITUpGraph> methodGraphs = new HashMap<>();
   private JavaView view;
+  private DefaultDirectedGraph<String, DefaultEdge> callGraph;
+  private List<List<String>> analysisOrder;
 
   public JavaView getView() {
     return view;
@@ -73,24 +78,31 @@ public final class ProjectAnalyser implements GraphRepository {
       throw new IllegalArgumentException("No graph for: " + methodSignature);
     }
 
+    if (callGraph == null) {
+      CallGraphBuilder builder = new CallGraphBuilder(view);
+      callGraph = builder.build(methodGraphs.keySet());
+      analysisOrder = builder.buildAnalysisOrder(callGraph);
+    }
+
+    Set<String> reachable = findReachable(methodSignature);
     SummaryCache summaryCache = new SummaryCache();
     Map<String, String> failures = new LinkedHashMap<>();
+    Map<String, MethodSummary> localSummaries = new LinkedHashMap<>();
 
     // build topological order for just this method and its transitive callees
-    CallGraphBuilder cgBuilder = new CallGraphBuilder(view);
-    DefaultDirectedGraph<String, DefaultEdge> order = cgBuilder.build(methodGraphs.keySet());
-    List<List<String>> analysisOrder = cgBuilder.buildAnalysisOrder(order);
-
-    Map<String, MethodSummary> summaries = new LinkedHashMap<>();
     for (List<String> scc : analysisOrder) {
-      for (String sig : scc) {
-        if (methodGraphs.containsKey(sig)) {
-          summariseMethod(sig, methodGraphs, summaryCache, summaries, failures);
-        }
+      List<String> relevant = scc.stream().filter(reachable::contains).collect(Collectors.toList());
+      if (relevant.isEmpty()) {
+        continue;
+      }
+      if (relevant.size() == 1) {
+        summariseMethod(relevant.get(0), methodGraphs, summaryCache, localSummaries, failures);
+      } else {
+        summariseSCC(relevant, methodGraphs, summaryCache, localSummaries, failures);
       }
     }
 
-    MethodSummary summary = summaries.get(methodSignature);
+    MethodSummary summary = localSummaries.get(methodSignature);
     SymbolicConstraintSolver solver =
         new SymbolicConstraintSolver(Map.of(methodSignature, summary));
     Map<String, List<SolverResult>> solutions = solver.solveConstraintsSafe(failures);
@@ -98,17 +110,50 @@ public final class ProjectAnalyser implements GraphRepository {
     return new AnalysisResult(graph, summary, solutions.get(methodSignature), failures);
   }
 
+  private Set<String> findReachable(final String root) {
+    Set<String> reachable = new HashSet<>();
+    Deque<String> worklist = new ArrayDeque<>();
+    worklist.add(root);
+
+    String className = root.substring(1, root.indexOf(':'));
+
+    methodGraphs.keySet().stream()
+        .filter(sig -> sig.startsWith("<" + className + ": ") && sig.contains("lambda$"))
+        .forEach(reachable::add);
+
+    while (!worklist.isEmpty()) {
+      String sig = worklist.pop();
+      if (!reachable.add(sig)) {
+        continue;
+      }
+      if (!callGraph.containsVertex(sig)) {
+        continue;
+      }
+      callGraph
+          .outgoingEdgesOf(sig)
+          .forEach(
+              e -> {
+                String callee = callGraph.getEdgeTarget(e);
+                if (methodGraphs.containsKey(callee)) {
+                  worklist.add(callee);
+                }
+              });
+      log.debug("reachable for {}: {}", sig, reachable);
+    }
+    return reachable;
+  }
+
   public static Map<String, WITUpGraph> buildGraphsForClass(final JavaSootClass sootClass) {
     return sootClass.getMethods().stream()
         .filter(JavaSootMethod::hasBody)
-        .filter(ProjectAnalyser::methodHasThrow)
+        //        .filter(ProjectAnalyser::methodHasThrow)
         .collect(Collectors.toMap(m -> m.getSignature().toString(), CPGBuilder::buildForMethod));
   }
 
-  private static boolean methodHasThrow(final JavaSootMethod method) {
-    return method.getBody().getStmtGraph().getNodes().stream()
-        .anyMatch(s -> s instanceof JThrowStmt);
-  }
+  //  private static boolean methodHasThrow(final JavaSootMethod method) {
+  //    return method.getBody().getStmtGraph().getNodes().stream()
+  //        .anyMatch(s -> s instanceof JThrowStmt);
+  //  }
 
   @Override
   public Optional<WITUpGraph> getGraph(final String methodSignature) {
@@ -123,11 +168,11 @@ public final class ProjectAnalyser implements GraphRepository {
 
     CallGraphBuilder builder = new CallGraphBuilder(view);
 
-    DefaultDirectedGraph<String, DefaultEdge> cg = builder.build(graphs.keySet());
+    callGraph = builder.build(graphs.keySet());
 
-    List<List<String>> analysisOrder = builder.buildAnalysisOrder(cg);
+    analysisOrder = builder.buildAnalysisOrder(callGraph);
 
-    log.info("analysis order :{}", analysisOrder.toString());
+    log.info("analysis order :{}", analysisOrder);
     for (List<String> scc : analysisOrder) {
       if (scc.size() == 1) {
         // singleton — one pass
@@ -138,19 +183,6 @@ public final class ProjectAnalyser implements GraphRepository {
       }
     }
 
-    for (Map.Entry<String, WITUpGraph> witUpGraph : graphs.entrySet()) {
-      String sig = witUpGraph.getKey();
-      try {
-        // tweak here to do intra or inter. should probably become a setting
-        MethodSummariser ms = new MethodSummariser(witUpGraph.getValue(), this, summaryCache);
-        MethodSummary summary = ms.summarise();
-        methodSummaries.put(sig, summary);
-      } catch (Exception e) {
-        log.warn("Failed to summarise {}: {}", sig, e.getMessage());
-        //        dumpGraph(witUpGraph.getValue(), sig);
-        failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
-      }
-    }
     return methodSummaries;
   }
 

@@ -217,7 +217,8 @@ public class IntSummaryTest {
 
   @Test
   public void applyAndCheckSummary() {
-    String methodSignature = "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
+    String methodSignature =
+        "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);

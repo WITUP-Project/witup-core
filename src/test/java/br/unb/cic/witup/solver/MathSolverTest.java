@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
+import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
@@ -30,12 +31,14 @@ public class MathSolverTest {
   public void invalidParameterConjunctionSolution() {
     String methodSignature =
         "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
-    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    ProjectAnalyser pa = TestAnalysisContext.getAnalyser();
+    AnalysisResult analysis = pa.analyseMethod(methodSignature);
+
     SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("p") < 0, "Expected p < 0");
 
-    SolverResult sol1 = TestAnalysisContext.getSolutions().get(methodSignature).get(1);
+    SolverResult sol1 = analysis.solutions().get(1);
     assertTrue(sol1.isSat());
     assertTrue(sol1.getInt("p") > 1, "Expected p > 1");
   }

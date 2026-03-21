@@ -9,12 +9,10 @@ import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
-
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.common.constant.MethodHandle;
-import sootup.core.jimple.common.constant.MethodType;
 import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 
@@ -178,7 +176,8 @@ public class IntGraphTest {
 
   @Test
   public void applyAndCheckGraph() {
-    String methodSignature = "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
+    String methodSignature =
+        "<br.unb.cic.witup.samples.Int: java.lang.Integer lambda$applyAndCheck$0(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     WITUpGraph cpg = analysis.graph();
 
@@ -186,7 +185,7 @@ public class IntGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
   }
 
@@ -200,27 +199,41 @@ public class IntGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
 
-    cpg.vertexSet().forEach(node -> {
-      if (node instanceof SimpleNode sn
-              && sn.getNode() instanceof StmtGraphNode stmtNode
-              && stmtNode.getStmt() instanceof JAssignStmt assign
-              && assign.getRightOp() instanceof JDynamicInvokeExpr invoke) {
-        System.out.println("DynamicInvoke: " + invoke);
-        invoke.getBootstrapArgs().forEach(arg ->
-                System.out.println("  bootstrap arg: " + arg.getClass().getName() + " = " + arg));
-        invoke.getArgs().forEach(arg ->
-                System.out.println("  arg: " + arg.getClass().getName() + " = " + arg));
-        invoke.getBootstrapArgs().forEach(arg -> {
-          if (arg instanceof MethodHandle mh) {
-            System.out.println("MethodHandle methods:");
-            System.out.println("  toString: " + mh);
-            System.out.println("  getReferenceSignature: " + mh.getReferenceSignature().getSubSignature());
-          }
-        });
-      }
-    });
+    cpg.vertexSet()
+        .forEach(
+            node -> {
+              if (node instanceof SimpleNode sn
+                  && sn.getNode() instanceof StmtGraphNode stmtNode
+                  && stmtNode.getStmt() instanceof JAssignStmt assign
+                  && assign.getRightOp() instanceof JDynamicInvokeExpr invoke) {
+                System.out.println("DynamicInvoke: " + invoke);
+                invoke
+                    .getBootstrapArgs()
+                    .forEach(
+                        arg ->
+                            System.out.println(
+                                "  bootstrap arg: " + arg.getClass().getName() + " = " + arg));
+                invoke
+                    .getArgs()
+                    .forEach(
+                        arg ->
+                            System.out.println("  arg: " + arg.getClass().getName() + " = " + arg));
+                invoke
+                    .getBootstrapArgs()
+                    .forEach(
+                        arg -> {
+                          if (arg instanceof MethodHandle mh) {
+                            System.out.println("MethodHandle methods:");
+                            System.out.println("  toString: " + mh);
+                            System.out.println(
+                                "  getReferenceSignature: "
+                                    + mh.getReferenceSignature().getSubSignature());
+                          }
+                        });
+              }
+            });
   }
 }
