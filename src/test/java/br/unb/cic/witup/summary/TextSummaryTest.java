@@ -53,4 +53,18 @@ public class TextSummaryTest {
     assertTrue(summary.getReturnExpr().toString().contains("(java.lang.String)s"));
   }
 
+  @Test
+  public void invalidStringLengthSummary() {
+    String methodSignature =
+            "<br.unb.cic.witup.samples.Text: boolean invalidStringLength(java.lang.String)>";
+    MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
+    assertNotNull(summary);
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("s.length() != 0"));
+
+    assertEquals(1, Integer.parseInt(summary.getReturnExpr().toString()));
+  }
 }
