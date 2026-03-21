@@ -1,10 +1,13 @@
 package br.unb.cic.witup.analysis;
 
+// import guru.nidi.graphviz.engine.Format;
+// import guru.nidi.graphviz.engine.Graphviz;
+// import java.io.File;
 import br.unb.cic.witup.analysis.graph.CPGBuilder;
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
-
-//import java.io.File;
+import br.unb.cic.witup.solver.SolverResult;
+import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -12,11 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-//import guru.nidi.graphviz.engine.Format;
-//import guru.nidi.graphviz.engine.Graphviz;
-import br.unb.cic.witup.solver.SolverResult;
-import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.slf4j.Logger;
@@ -38,6 +36,7 @@ public final class ProjectAnalyser implements GraphRepository {
   public JavaView getView() {
     return view;
   }
+
   //  private final SummaryCache summaryCache = new SummaryCache();
 
   public ProjectAnalyser(final Path jarPath) {
@@ -80,9 +79,7 @@ public final class ProjectAnalyser implements GraphRepository {
     // build topological order for just this method and its transitive callees
     CallGraphBuilder cgBuilder = new CallGraphBuilder(view);
     DefaultDirectedGraph<String, DefaultEdge> order = cgBuilder.build(methodGraphs.keySet());
-    List<List<String>> analysisOrder =
-            cgBuilder.buildAnalysisOrder(order);
-
+    List<List<String>> analysisOrder = cgBuilder.buildAnalysisOrder(order);
 
     Map<String, MethodSummary> summaries = new LinkedHashMap<>();
     for (List<String> scc : analysisOrder) {
@@ -94,14 +91,12 @@ public final class ProjectAnalyser implements GraphRepository {
     }
 
     MethodSummary summary = summaries.get(methodSignature);
-    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(
-            Map.of(methodSignature, summary));
+    SymbolicConstraintSolver solver =
+        new SymbolicConstraintSolver(Map.of(methodSignature, summary));
     Map<String, List<SolverResult>> solutions = solver.solveConstraintsSafe(failures);
 
     return new AnalysisResult(graph, summary, solutions.get(methodSignature), failures);
   }
-
-
 
   public static Map<String, WITUpGraph> buildGraphsForClass(final JavaSootClass sootClass) {
     return sootClass.getMethods().stream()
@@ -128,11 +123,9 @@ public final class ProjectAnalyser implements GraphRepository {
 
     CallGraphBuilder builder = new CallGraphBuilder(view);
 
-    DefaultDirectedGraph<String, DefaultEdge> cg =
-            builder.build(graphs.keySet());
+    DefaultDirectedGraph<String, DefaultEdge> cg = builder.build(graphs.keySet());
 
-    List<List<String>> analysisOrder =
-            builder.buildAnalysisOrder(cg);
+    List<List<String>> analysisOrder = builder.buildAnalysisOrder(cg);
 
     log.info("analysis order :{}", analysisOrder.toString());
     for (List<String> scc : analysisOrder) {
@@ -154,7 +147,7 @@ public final class ProjectAnalyser implements GraphRepository {
         methodSummaries.put(sig, summary);
       } catch (Exception e) {
         log.warn("Failed to summarise {}: {}", sig, e.getMessage());
-//        dumpGraph(witUpGraph.getValue(), sig);
+        //        dumpGraph(witUpGraph.getValue(), sig);
         failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
       }
     }
@@ -162,11 +155,11 @@ public final class ProjectAnalyser implements GraphRepository {
   }
 
   private void summariseMethod(
-          final String sig,
-          final Map<String, WITUpGraph> graphs,
-          final SummaryCache summaryCache,
-          final Map<String, MethodSummary> summaries,
-          final Map<String, String> failures) {
+      final String sig,
+      final Map<String, WITUpGraph> graphs,
+      final SummaryCache summaryCache,
+      final Map<String, MethodSummary> summaries,
+      final Map<String, String> failures) {
     WITUpGraph graph = graphs.get(sig);
     if (graph == null) {
       return;
@@ -180,15 +173,13 @@ public final class ProjectAnalyser implements GraphRepository {
     }
   }
 
-  /**
-   * We land here when there is mutual or direct recursion.
-   */
+  /** We land here when there is mutual or direct recursion. */
   private void summariseSCC(
-          final List<String> scc,
-          final Map<String, WITUpGraph> graphs,
-          final SummaryCache summaryCache,
-          final Map<String, MethodSummary> summaries,
-          final Map<String, String> failures) {
+      final List<String> scc,
+      final Map<String, WITUpGraph> graphs,
+      final SummaryCache summaryCache,
+      final Map<String, MethodSummary> summaries,
+      final Map<String, String> failures) {
     // initialise all methods in SCC with empty summaries
     for (String sig : scc) {
       WITUpGraph graph = graphs.get(sig);
@@ -229,19 +220,19 @@ public final class ProjectAnalyser implements GraphRepository {
     }
   }
 
-//  private void dumpGraph(final WITUpGraph graph, final String sig) {
-//    try {
-//      String safeName = sig.replaceAll("[<>:()\\s,]", "_");
-//      File graphsDir = new File("graphs/failures");
-//      if (!graphsDir.exists()) {
-//        graphsDir.mkdirs();
-//      }
-//      Graphviz.fromString(graph.getDot())
-//              .render(Format.SVG)
-//              .toFile(new File(graphsDir, safeName + ".svg"));
-//      log.info("Dumped failure graph for {}", sig);
-//    } catch (Exception e) {
-//      log.warn("Could not dump graph for {}: {}", sig, e.getMessage());
-//    }
-//  }
+  //  private void dumpGraph(final WITUpGraph graph, final String sig) {
+  //    try {
+  //      String safeName = sig.replaceAll("[<>:()\\s,]", "_");
+  //      File graphsDir = new File("graphs/failures");
+  //      if (!graphsDir.exists()) {
+  //        graphsDir.mkdirs();
+  //      }
+  //      Graphviz.fromString(graph.getDot())
+  //              .render(Format.SVG)
+  //              .toFile(new File(graphsDir, safeName + ".svg"));
+  //      log.info("Dumped failure graph for {}", sig);
+  //    } catch (Exception e) {
+  //      log.warn("Could not dump graph for {}: {}", sig, e.getMessage());
+  //    }
+  //  }
 }

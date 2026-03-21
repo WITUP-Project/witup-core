@@ -1,18 +1,17 @@
 package br.unb.cic.witup.summary;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class IntSummaryTest {
   @Test
@@ -133,7 +132,7 @@ public class IntSummaryTest {
   @Test
   public void lessThanConstantRhsViaBooleanSummary() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
+        "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
@@ -159,7 +158,7 @@ public class IntSummaryTest {
   @Test
   public void lessThanConstantRhsViaNegatedBooleanSummary() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
+        "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);

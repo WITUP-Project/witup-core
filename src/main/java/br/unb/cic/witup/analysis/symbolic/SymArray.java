@@ -5,9 +5,7 @@ import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.types.ArrayType;
 
-/**
- * Represents an allocated array
- */
+/** Represents an allocated array */
 public final class SymArray extends SymExpr {
   private final String name;
   private final String objectType;
@@ -27,8 +25,8 @@ public final class SymArray extends SymExpr {
     this.size = fromJimple(newArrExpr.getSize());
   }
 
-  private SymArray(final String name, final String objectType,
-                   final SymExpr size, final SymKind kind) {
+  private SymArray(
+      final String name, final String objectType, final SymExpr size, final SymKind kind) {
     super(kind);
     this.name = name;
     this.objectType = objectType;

@@ -13,11 +13,13 @@ public final class SymITE extends SymExpr {
   }
 
   public SymExpr getCondition() {
-    return condition; }
+    return condition;
+  }
 
   public SymExpr getThenExpr() {
     return thenExpr;
   }
+
   public SymExpr getElseExpr() {
     return elseExpr;
   }
@@ -51,9 +53,7 @@ public final class SymITE extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return condition.contains(varName)
-            || thenExpr.contains(varName)
-            || elseExpr.contains(varName);
+    return condition.contains(varName) || thenExpr.contains(varName) || elseExpr.contains(varName);
   }
 
   @Override

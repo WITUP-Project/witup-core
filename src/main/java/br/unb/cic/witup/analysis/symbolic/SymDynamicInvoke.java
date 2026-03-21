@@ -1,11 +1,10 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
 
 public final class SymDynamicInvoke extends SymExpr {
   private final String signature;
@@ -14,9 +13,7 @@ public final class SymDynamicInvoke extends SymExpr {
   public SymDynamicInvoke(final JDynamicInvokeExpr e) {
     super(SymKind.OTHER);
     this.signature = e.toString();
-    this.args = e.getArgs().stream()
-            .map(SymExpr::fromJimple)
-            .collect(Collectors.toList());
+    this.args = e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
   }
 
   private SymDynamicInvoke(final String signature, final List<SymExpr> args, final SymKind kind) {
@@ -40,29 +37,23 @@ public final class SymDynamicInvoke extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    List<SymExpr> newArgs = args.stream()
-            .map(a -> a.substitute(varName, replacement))
-            .collect(Collectors.toList());
-    boolean changed = IntStream.range(0, args.size())
-            .anyMatch(i -> args.get(i) != newArgs.get(i));
+    List<SymExpr> newArgs =
+        args.stream().map(a -> a.substitute(varName, replacement)).collect(Collectors.toList());
+    boolean changed = IntStream.range(0, args.size()).anyMatch(i -> args.get(i) != newArgs.get(i));
     return changed ? new SymDynamicInvoke(signature, newArgs, getKind()) : this;
   }
 
   @Override
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
-    List<SymExpr> newArgs = args.stream()
-            .map(a -> a.substituteParam(idx, actual))
-            .collect(Collectors.toList());
-    boolean changed = IntStream.range(0, args.size())
-            .anyMatch(i -> args.get(i) != newArgs.get(i));
+    List<SymExpr> newArgs =
+        args.stream().map(a -> a.substituteParam(idx, actual)).collect(Collectors.toList());
+    boolean changed = IntStream.range(0, args.size()).anyMatch(i -> args.get(i) != newArgs.get(i));
     return changed ? new SymDynamicInvoke(signature, newArgs, getKind()) : this;
   }
 
   @Override
   public String toString() {
-    String argStr = args.stream()
-            .map(SymExpr::toString)
-            .collect(Collectors.joining(","));
+    String argStr = args.stream().map(SymExpr::toString).collect(Collectors.joining(","));
     return "dynamicinvoke_" + signature + "(" + argStr + ")";
   }
 

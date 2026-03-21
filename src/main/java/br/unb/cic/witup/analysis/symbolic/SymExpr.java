@@ -176,8 +176,7 @@ public abstract class SymExpr {
         && isZeroConst(rhs)
         && (leftBinOp.getOp() == BinOp.CMPG
             || leftBinOp.getOp() == BinOp.CMPL
-            || leftBinOp.getOp() == BinOp.CMP)
-        ) {
+            || leftBinOp.getOp() == BinOp.CMP)) {
 
       // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
       // So: (x cmpg y) >= 0 means x >= y
@@ -214,7 +213,8 @@ public abstract class SymExpr {
 
   private static boolean isZeroConst(final SymExpr expr) {
     return switch (expr) {
-      case SymConst c -> Integer.valueOf(0).equals(c.getValue())
+      case SymConst c ->
+          Integer.valueOf(0).equals(c.getValue())
               || Double.valueOf(0.0).equals(c.getValue())
               || Float.valueOf(0.0f).equals(c.getValue());
       case SymIntConst ic -> ic.getValue() == 0;

@@ -52,10 +52,9 @@ public final class SymbolicConstraintGenerator {
    * Interprocedural constructor.
    *
    * @param cpg a WITUpGraph with the CPG of the method under analysis
-   * @param constraintPaths List<GraphPath<WITUpNode, WITUpEdge>> paths that
-   *                        represent symbolic constraints
-   * @param resolver a MethodSummariser that recursively resolves
-   *                 interprocedural calls.
+   * @param constraintPaths List<GraphPath<WITUpNode, WITUpEdge>> paths that represent symbolic
+   *     constraints
+   * @param resolver a MethodSummariser that recursively resolves interprocedural calls.
    */
   public SymbolicConstraintGenerator(
       final WITUpGraph cpg,
@@ -144,10 +143,9 @@ public final class SymbolicConstraintGenerator {
 
   // effectively duplicates MethodSummariser.buildPathCondition
   // still work to do in the boundaries between here and there.
-  private SymExpr buildPathConditionFromPath(
-          final GraphPath<WITUpNode, WITUpEdge> path) {
-    List<List<SymbolicConstraint>> generated = new SymbolicConstraintGenerator(
-            cpg, List.of(path), null).generateSymbolicConstraintPaths();
+  private SymExpr buildPathConditionFromPath(final GraphPath<WITUpNode, WITUpEdge> path) {
+    List<List<SymbolicConstraint>> generated =
+        new SymbolicConstraintGenerator(cpg, List.of(path), null).generateSymbolicConstraintPaths();
 
     if (generated.isEmpty() || generated.get(0).isEmpty()) {
       return SymIntConst.one();
@@ -157,7 +155,8 @@ public final class SymbolicConstraintGenerator {
     SymExpr result = SymIntConst.one();
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
-      SymExpr cond = c.getTruthValue()
+      SymExpr cond =
+          c.getTruthValue()
               ? c.getSymExpr()
               : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());

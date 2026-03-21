@@ -1,12 +1,11 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
-import sootup.core.types.PrimitiveType;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
+import sootup.core.types.PrimitiveType;
 
 public final class SymInterfaceInvoke extends SymExpr {
   private final SymExpr base; // e.g. s
@@ -24,18 +23,18 @@ public final class SymInterfaceInvoke extends SymExpr {
     SymExpr base = fromJimple(e.getBase());
     String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
     boolean returnsBoolean =
-            e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
+        e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
 
-    List<SymExpr> args = e.getArgs().stream()
-            .map(SymExpr::fromJimple)
-            .collect(Collectors.toList());
+    List<SymExpr> args = e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
 
     return new SymInterfaceInvoke(base, invokedMethodName, returnsBoolean, args);
   }
 
   public SymInterfaceInvoke(
-          final SymExpr base, final String signature, final boolean returnsBoolean,
-          final List<SymExpr> args) {
+      final SymExpr base,
+      final String signature,
+      final boolean returnsBoolean,
+      final List<SymExpr> args) {
     super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER);
     this.base = base;
     this.signature = signature;
@@ -51,13 +50,11 @@ public final class SymInterfaceInvoke extends SymExpr {
   @Override
   public SymExpr substitute(final String invField, final SymExpr replacement) {
     SymExpr newBase = base.substitute(invField, replacement);
-    List<SymExpr> newArgs = args.stream()
-            .map(a -> a.substitute(invField, replacement))
-            .toList();
+    List<SymExpr> newArgs = args.stream().map(a -> a.substitute(invField, replacement)).toList();
 
     boolean baseChanged = newBase != base;
-    boolean argsChanged = !IntStream.range(0, args.size())
-            .allMatch(i -> args.get(i) == newArgs.get(i));
+    boolean argsChanged =
+        !IntStream.range(0, args.size()).allMatch(i -> args.get(i) == newArgs.get(i));
 
     if (baseChanged || argsChanged) {
       return new SymInterfaceInvoke(newBase, signature, returnsBoolean, newArgs);
@@ -68,13 +65,11 @@ public final class SymInterfaceInvoke extends SymExpr {
   @Override
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
     SymExpr newBase = base.substituteParam(idx, actual);
-    List<SymExpr> newArgs = args.stream()
-            .map(a -> a.substituteParam(idx, actual))
-            .toList();
+    List<SymExpr> newArgs = args.stream().map(a -> a.substituteParam(idx, actual)).toList();
 
     boolean baseChanged = newBase != base;
-    boolean argsChanged = !IntStream.range(0, args.size())
-            .allMatch(i -> args.get(i) == newArgs.get(i));
+    boolean argsChanged =
+        !IntStream.range(0, args.size()).allMatch(i -> args.get(i) == newArgs.get(i));
 
     if (baseChanged || argsChanged) {
       return new SymInterfaceInvoke(newBase, signature, returnsBoolean, newArgs);
@@ -93,4 +88,3 @@ public final class SymInterfaceInvoke extends SymExpr {
     return base.toString() + "." + signature + "(" + argStr + ")";
   }
 }
-

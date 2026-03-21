@@ -61,10 +61,7 @@ public final class MethodSummariser implements SummaryResolver {
     this.summaryRepository = summaryRepository;
   }
 
-  /**
-   * Recursively produces MethodSummary.
-   *
-   */
+  /** Recursively produces MethodSummary. */
   public MethodSummary summarise() {
     String sig = getMethodSignature();
 
@@ -155,8 +152,8 @@ public final class MethodSummariser implements SummaryResolver {
 
     for (int p = paths.size() - 1; p >= 0; p--) {
       List<List<SymbolicConstraint>> generated =
-              new SymbolicConstraintGenerator(cpg, List.of(paths.get(p)), this)
-                      .generateSymbolicConstraintPaths();
+          new SymbolicConstraintGenerator(cpg, List.of(paths.get(p)), this)
+              .generateSymbolicConstraintPaths();
 
       if (generated.isEmpty() || generated.get(0).isEmpty()) {
         return SymIntConst.one(); // unconditional path exists — always reachable
@@ -166,7 +163,8 @@ public final class MethodSummariser implements SummaryResolver {
       SymExpr pathCond = SymIntConst.one();
       for (int i = constraints.size() - 1; i >= 0; i--) {
         SymbolicConstraint c = constraints.get(i);
-        SymExpr cond = c.getTruthValue()
+        SymExpr cond =
+            c.getTruthValue()
                 ? c.getSymExpr()
                 : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
         pathCond = new SymITE(cond, pathCond, SymIntConst.zero());
@@ -183,9 +181,10 @@ public final class MethodSummariser implements SummaryResolver {
   public Optional<SymExpr> resolveReturnExpr(
       final String calleeSignature, final List<SymExpr> actuals) {
 
-    log.debug("resolveReturnExpr: cache present={} inProgress={}",
-            summaryRepository.getSummary(calleeSignature).isPresent(),
-            summaryRepository.isInProgress(calleeSignature));
+    log.debug(
+        "resolveReturnExpr: cache present={} inProgress={}",
+        summaryRepository.getSummary(calleeSignature).isPresent(),
+        summaryRepository.isInProgress(calleeSignature));
 
     if (summaryRepository == null || graphRepository == null) {
       log.debug("Interprocedural resolution skipped — no repository for {}", calleeSignature);

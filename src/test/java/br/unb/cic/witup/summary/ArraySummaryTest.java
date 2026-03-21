@@ -1,19 +1,17 @@
 package br.unb.cic.witup.summary;
 
-import br.unb.cic.witup.analysis.AnalysisResult;
-import br.unb.cic.witup.analysis.MethodSummary;
-import br.unb.cic.witup.analysis.graph.WITUpGraph;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
-import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import br.unb.cic.witup.testinfra.TestAnalysisContext;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import br.unb.cic.witup.analysis.AnalysisResult;
+import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import br.unb.cic.witup.testinfra.TestAnalysisContext;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
 public class ArraySummaryTest {
   @Test
@@ -80,7 +78,7 @@ public class ArraySummaryTest {
   @Test
   public void getStringElementSummary() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
+        "<br.unb.cic.witup.samples.Array: java.lang.String getStringElement(java.lang.String[],int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
@@ -100,7 +98,7 @@ public class ArraySummaryTest {
   @Test
   public void getObjectElementSummary() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
+        "<br.unb.cic.witup.samples.Array: java.lang.Object getObjectElement(java.lang.Object[],int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
@@ -120,7 +118,7 @@ public class ArraySummaryTest {
   @Test
   public void getObjectFromArraySummary() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
+        "<br.unb.cic.witup.samples.Array: br.unb.cic.witup.samples.Array$MyObject getObjectFromArray(br.unb.cic.witup.samples.Array$MyObject[],int)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
@@ -133,7 +131,9 @@ public class ArraySummaryTest {
     assertTrue(path0.get(0).getSymExpr().toString().contains("arr[0].value <= 10"));
 
     assertEquals(2, summary.getFormalParams().size());
-    assertEquals("br.unb.cic.witup.samples.Array$MyObject[]", summary.getFormalParams().get(0).getParamType());
+    assertEquals(
+        "br.unb.cic.witup.samples.Array$MyObject[]",
+        summary.getFormalParams().get(0).getParamType());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
 
@@ -211,14 +211,15 @@ public class ArraySummaryTest {
     // just assert there is a reference to some index in the array.
     // very cool that Z3 does not "care" about the jimple local not
     // tracing back fully; it still asserts on arr[i] and chooses i properly
-    assertTrue(path0.get(1).getSymExpr().toString().matches(".*arr\\[.*\\].*"),
-            "Expected array access, got: " + path0.get(1).getSymExpr());
+    assertTrue(
+        path0.get(1).getSymExpr().toString().matches(".*arr\\[.*\\].*"),
+        "Expected array access, got: " + path0.get(1).getSymExpr());
   }
 
   @Test
   public void requireNonNullObjectSummary() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
+        "<br.unb.cic.witup.samples.Array: void requireNonNullObject(java.lang.Object)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
@@ -234,8 +235,7 @@ public class ArraySummaryTest {
     assertEquals("java.lang.Object", summary.getFormalParams().get(0).getParamType());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
 
-    assertTrue(path0.get(0).getSymExpr().toString().contains("o != null"),
-            "Expected o != null");
+    assertTrue(path0.get(0).getSymExpr().toString().contains("o != null"), "Expected o != null");
   }
 
   @Test

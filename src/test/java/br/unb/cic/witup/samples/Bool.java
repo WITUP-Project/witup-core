@@ -3,7 +3,8 @@ package br.unb.cic.witup.samples;
 public class Bool {
   // From apache commons used exclusively for testing. Hopefully we don't need
   // to delete for licensing reasons?
-  public static boolean toBoolean(final Integer value, final Integer trueValue, final Integer falseValue) {
+  public static boolean toBoolean(
+      final Integer value, final Integer trueValue, final Integer falseValue) {
     if (value == null) {
       if (trueValue == null) {
         return true;

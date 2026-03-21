@@ -4,7 +4,7 @@ import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 
 /** Data dependency edge. */
 public class DataDependencyEdge extends WITUpEdge {
-    public DataDependencyEdge(final WITUpNode source, final WITUpNode target) {
+  public DataDependencyEdge(final WITUpNode source, final WITUpNode target) {
     super(source, target);
   }
 }

@@ -1,12 +1,5 @@
 package br.unb.cic.witup.samples;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 public class Text {
   public boolean invalidString(String s) {
     if (s == "abc") {

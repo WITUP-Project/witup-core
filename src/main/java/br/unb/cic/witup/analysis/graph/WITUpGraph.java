@@ -60,10 +60,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private String dot;
   private WITUpNode entryNode;
   private AllDirectedPaths<WITUpNode, WITUpEdge> allDirectedPaths;
-  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedConstraintPaths
-          = new HashMap<>();
-  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedReturnPaths
-          = new HashMap<>();
+  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedConstraintPaths =
+      new HashMap<>();
+  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedReturnPaths =
+      new HashMap<>();
 
   public String getMethodSignature() {
     return methodSignature;
@@ -173,7 +173,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private List<GraphPath<WITUpNode, WITUpEdge>> computeConstraintPaths(final WITUpNode throwNode) {
     WITUpNode entry = findEntryNode();
     List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
-            getAllDirectedPaths().getAllPaths(entry, throwNode, true, null);
+        getAllDirectedPaths().getAllPaths(entry, throwNode, true, null);
 
     List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConstraints = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
@@ -271,7 +271,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   private List<GraphPath<WITUpNode, WITUpEdge>> computeAllPathsToReturn(
-          final WITUpNode returnNode) {
+      final WITUpNode returnNode) {
     WITUpNode entry = findEntryNode();
     return getAllDirectedPaths().getAllPaths(entry, returnNode, true, MAX_PATH_LENGTH);
   }

@@ -1,18 +1,17 @@
 package br.unb.cic.witup.summary;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class MathSummaryTest {
   @Test
@@ -55,7 +54,7 @@ public class MathSummaryTest {
   @Test
   public void invalidParameterConjunctionSummary() {
     String methodSignature =
-            "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
+        "<br.unb.cic.witup.samples.Math: int invalidParameterConjunction(int)>";
 
     MethodSummary summary = TestAnalysisContext.getSummaries().get(methodSignature);
     assertNotNull(summary);

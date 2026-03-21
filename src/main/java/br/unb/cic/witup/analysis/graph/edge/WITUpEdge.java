@@ -21,9 +21,7 @@ public abstract class WITUpEdge {
     return target;
   }
 
-  /**
-   * compares witup nodes source and target
-   */
+  /** compares witup nodes source and target */
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -37,9 +35,7 @@ public abstract class WITUpEdge {
     return source == that.source && target == that.target;
   }
 
-  /**
-   *
-   */
+  /** */
   @Override
   public int hashCode() {
     return System.identityHashCode(source) * THIRTY_ONE + System.identityHashCode(target);

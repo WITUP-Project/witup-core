@@ -7,10 +7,7 @@ public final class BooleanCFGEdge extends CFGEdge {
   public static final int THIRTY_ONE = 31;
   private final boolean condition;
 
-  public BooleanCFGEdge(
-      final WITUpNode source,
-      final WITUpNode target,
-      final boolean condition) {
+  public BooleanCFGEdge(final WITUpNode source, final WITUpNode target, final boolean condition) {
     super(source, target);
     this.condition = condition;
   }

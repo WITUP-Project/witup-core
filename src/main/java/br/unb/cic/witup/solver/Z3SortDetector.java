@@ -93,13 +93,14 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
     String typeStr = v.getTypeName();
     if (typeStr != null && typeStr.endsWith("[]")) {
       String elementType = typeStr.substring(0, typeStr.length() - 2);
-      Sort elementSort = switch (elementType) {
-        case "int", "short", "byte", "long", "char" -> context.getIntSort();
-        case "boolean" -> context.getBoolSort();
-        case "float", "double" -> context.mkRealSort();
-        case "java.lang.String" -> context.getStringSort();
-        default -> context.mkUninterpretedSort("java.lang.Object");
-      };
+      Sort elementSort =
+          switch (elementType) {
+            case "int", "short", "byte", "long", "char" -> context.getIntSort();
+            case "boolean" -> context.getBoolSort();
+            case "float", "double" -> context.mkRealSort();
+            case "java.lang.String" -> context.getStringSort();
+            default -> context.mkUninterpretedSort("java.lang.Object");
+          };
       return context.mkArraySort(context.getIntSort(), elementSort);
     }
     return switch (v.getKind()) {
@@ -156,7 +157,7 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
           case STRING -> context.getStringSort();
           case REAL -> context.getRealSort();
           case BOOLEAN -> context.getBoolSort();
-            // we cannot anticipate user types so lift them all to objects
+          // we cannot anticipate user types so lift them all to objects
           case OBJECT -> context.mkUninterpretedSort("java.lang.Object");
           default -> context.getIntSort();
         };
