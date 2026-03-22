@@ -311,4 +311,25 @@ public class IntSummaryTest {
 
     assertTrue(summary.getReturnExpr().toString().contains("a + b"));
   }
+
+  @Test
+  public void callStaticAddLteSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int callStaticAddLte(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertEquals(2, path0.size());
+    // condition from callee. it throws if a + b <= 256
+    assertTrue(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("(a + b) > 256"));
+
+    // condition from caller. it throws if result == (a + b) > 512
+    assertFalse(path0.get(1).getTruthValue());
+    assertTrue(path0.get(1).getSymExpr().toString().contains("(a + b) <= 512"));
+
+  }
 }

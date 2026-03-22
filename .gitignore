@@ -40,5 +40,5 @@ build/
 
 *.svg
 
-./project-results
-./graphs
+/project-results
+/graphs

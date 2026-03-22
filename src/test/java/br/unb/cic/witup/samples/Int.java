@@ -110,7 +110,7 @@ public class Int {
     return result;
   }
 
-  public static int staticAdd(int a, int b) {
+  public static int staticAddGte(int a, int b) {
     if (a + b > 256) {
       throw new IllegalArgumentException("overflow");
     }
@@ -119,10 +119,25 @@ public class Int {
 
   public int callStaticAdd(int a, int b) {
     // calle throws if a + b > 256
-    int result = staticAdd(a, b);
+    int result = staticAddGte(a, b);
     // this one cannot throw
     if (result > 512) {
       throw new IllegalArgumentException("overflow");
+    }
+    return result;
+  }
+
+  public int staticAddLte(int a, int b) {
+    if (a + b <= 256) {
+      throw new IllegalArgumentException("underflow");
+    }
+    return a + b;
+  }
+
+  public int callStaticAddLte(int a, int b) {
+    int result = staticAddLte(a, b);
+    if (result > 512) {
+      throw new IllegalArgumentException("underflow");
     }
     return result;
   }

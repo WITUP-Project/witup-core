@@ -153,4 +153,17 @@ public class IntSolverTest {
     // calle throws if a + b > 256, so a + b > 512 cannot throw.
     assertTrue(sol0.isUnsat());
   }
+
+  @Test
+  public void callStaticAddLteSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int callStaticAddLte(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
+    assertTrue(sol0.isSat());
+    // from the callee, (a + b) must be > 256
+    // from the caller, (a + b) must be <= 512
+    assertTrue(sol0.getInt("a") + sol0.getInt("b") > 256, "Expected a + b > 256 to get here");
+    assertTrue(sol0.getInt("a") + sol0.getInt("b") > 512, "Expected a + b <= 512 to throw");
+  }
+
 }
