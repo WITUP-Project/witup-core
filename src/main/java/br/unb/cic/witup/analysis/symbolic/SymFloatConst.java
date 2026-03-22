@@ -4,6 +4,7 @@ import sootup.core.jimple.common.constant.FloatConstant;
 
 public final class SymFloatConst extends SymExpr {
   private final float value;
+  private String cachedToString;
 
   public SymFloatConst(final FloatConstant c) {
     super(fromJimpleType(c.getType()));
@@ -26,7 +27,10 @@ public final class SymFloatConst extends SymExpr {
 
   @Override
   public String toString() {
-    return Float.toString(value);
+    if  (cachedToString == null) {
+      cachedToString = Float.toString(value);
+    }
+    return cachedToString;
   }
 
   @Override

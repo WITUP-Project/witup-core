@@ -83,15 +83,15 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   // entry point — translates a full constraint including truth value
   public BoolExpr translateConstraint(final SymbolicConstraint constraint) {
     try {
-      Expr<?> expr = constraint.getSymExpr().accept(this);
+      Expr<?> expr = constraint.symExpr().accept(this);
       BoolExpr boolExpr = coerceToBool(expr);
-      return constraint.getTruthValue() ? boolExpr : context.mkNot(boolExpr);
+      return constraint.truthValue() ? boolExpr : context.mkNot(boolExpr);
     } catch (Exception e) {
       log.error(
           "Failed on: "
-              + constraint.getSymExpr().getClass().getSimpleName()
+              + constraint.symExpr().getClass().getSimpleName()
               + " = "
-              + constraint.getSymExpr());
+              + constraint.symExpr());
       throw e;
     }
   }

@@ -97,7 +97,7 @@ public final class MethodSummariser implements SummaryResolver {
       return null;
     }
     List<List<SymbolicConstraint>> boundedThrowFreePaths =
-            paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
+        paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
     // for each path, build the negation of its conjunction
     // throw-free means: NOT(path1) AND NOT(path2) AND ...
     // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
@@ -117,9 +117,9 @@ public final class MethodSummariser implements SummaryResolver {
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
       SymExpr cond =
-          c.getTruthValue()
-              ? c.getSymExpr()
-              : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
+          c.truthValue()
+              ? c.symExpr()
+              : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());
     }
     return result;
@@ -201,9 +201,9 @@ public final class MethodSummariser implements SummaryResolver {
       for (int i = constraints.size() - 1; i >= 0; i--) {
         SymbolicConstraint c = constraints.get(i);
         SymExpr cond =
-            c.getTruthValue()
-                ? c.getSymExpr()
-                : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
+            c.truthValue()
+                ? c.symExpr()
+                : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
         pathCond = new SymITE(cond, pathCond, SymIntConst.zero());
       }
 
@@ -285,8 +285,6 @@ public final class MethodSummariser implements SummaryResolver {
         precondition = precondition.substituteParam(idx, actual);
       }
     }
-    log.debug("Instantiated return expr for {}: {}", summary.getMethodSignature(), returnExpr);
-    log.debug("Instantiated precondition for {}: {}", summary.getMethodSignature(), precondition);
     return Optional.of(new ResolvedCallee(returnExpr, precondition));
   }
 

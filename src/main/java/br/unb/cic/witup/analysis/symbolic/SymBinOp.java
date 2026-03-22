@@ -7,6 +7,7 @@ public final class SymBinOp extends SymExpr {
   private final BinOp op;
   private final SymExpr lhs;
   private final SymExpr rhs;
+  private String cachedToString;
 
   public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
     SymExpr left = fromJimple(e.getOp1());
@@ -80,7 +81,10 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public String toString() {
-    return "(" + lhs.toString() + " " + op.toString() + " " + rhs.toString() + ")";
+    if (cachedToString == null) {
+      cachedToString = "(" + lhs.toString() + " " + op.toString() + " " + rhs.toString() + ")";
+    }
+    return cachedToString;
   }
 
   @Override

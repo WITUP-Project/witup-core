@@ -6,8 +6,7 @@ import sootup.core.jimple.common.ref.JArrayRef;
 public final class SymArrayRef extends SymExpr {
   private final SymExpr array;
   private final SymExpr index;
-
-  // we have access to getType, getUses
+  private String cachedToString;
 
   public static SymExpr fromArrayRef(final JArrayRef r) {
     SymExpr base = fromJimple(r.getBase());
@@ -51,7 +50,10 @@ public final class SymArrayRef extends SymExpr {
 
   @Override
   public String toString() {
-    return array.toString() + "[" + index + "]";
+    if (cachedToString == null) {
+      cachedToString = array.toString() + "[" + index + "]";
+    }
+    return cachedToString;
   }
 
   @Override

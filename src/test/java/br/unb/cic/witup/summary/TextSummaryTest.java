@@ -26,8 +26,8 @@ public class TextSummaryTest {
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("s != 'abc'"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("s != 'abc'"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.STRING, summary.getFormalParams().get(0).getKind());
@@ -47,8 +47,8 @@ public class TextSummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("s_instanceof_java_lang_String"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("s_instanceof_java_lang_String"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
@@ -67,8 +67,8 @@ public class TextSummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("s.length() != 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("s.length() != 0"));
 
     assertEquals(1, Integer.parseInt(summary.getReturnExpr().toString()));
   }

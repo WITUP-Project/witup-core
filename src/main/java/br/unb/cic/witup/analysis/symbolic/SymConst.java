@@ -3,10 +3,9 @@ package br.unb.cic.witup.analysis.symbolic;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymConst extends SymExpr {
-  public static final SymConst TRUE = new SymConst(1, SymKind.BOOLEAN);
-  public static final SymConst FALSE = new SymConst(0, SymKind.BOOLEAN);
-
   private final Object value;
+  private String cachedToString;
+
 
   public SymConst(final Object value, final SymKind kind) {
     super(kind);
@@ -24,7 +23,6 @@ public final class SymConst extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    // Constants don't contain variables
     return this;
   }
 
@@ -35,7 +33,10 @@ public final class SymConst extends SymExpr {
 
   @Override
   public String toString() {
-    return value.toString();
+    if (cachedToString == null) {
+      cachedToString = value.toString();
+    }
+    return cachedToString;
   }
 
   @Override
@@ -43,10 +44,9 @@ public final class SymConst extends SymExpr {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SymConst)) {
+    if (!(o instanceof SymConst symConst)) {
       return false;
     }
-    SymConst symConst = (SymConst) o;
     return value.equals(symConst.value);
   }
 

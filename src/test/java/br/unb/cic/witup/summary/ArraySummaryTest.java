@@ -24,8 +24,8 @@ public class ArraySummaryTest {
     // constraint paths
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("arr[i] != 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("arr[i] != 0"));
     // formal params
     assertEquals(3, summary.getFormalParams().size());
     // is this correct? paramType is int[]
@@ -47,8 +47,8 @@ public class ArraySummaryTest {
     // constraint paths
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("arr.length != 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("arr.length != 0"));
     // formal params
     assertEquals(2, summary.getFormalParams().size());
     // is this correct? paramType is int[]
@@ -69,8 +69,8 @@ public class ArraySummaryTest {
     // constraint paths
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("n >= 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("n >= 0"));
     // formal params
     assertEquals(2, summary.getFormalParams().size());
     // is this correct? paramType is int[]
@@ -92,8 +92,8 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("arr[0] != 'abc'"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("arr[0] != 'abc'"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals("java.lang.String[]", summary.getFormalParams().get(0).getParamType());
@@ -114,8 +114,8 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("arr[0] != 'abc'"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("arr[0] != 'abc'"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals("java.lang.Object[]", summary.getFormalParams().get(0).getParamType());
@@ -137,8 +137,8 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("arr[0].value <= 10"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("arr[0].value <= 10"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals(
@@ -162,11 +162,11 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("0 >= arr.length"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("0 >= arr.length"));
 
-    assertFalse(path0.get(1).getTruthValue());
-    assertTrue(path0.get(1).getSymExpr().toString().contains("arr[i] != 0"));
+    assertFalse(path0.get(1).truthValue());
+    assertTrue(path0.get(1).symExpr().toString().contains("arr[i] != 0"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
@@ -187,16 +187,16 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("0 >= arr.length"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("0 >= arr.length"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertFalse(path0.get(1).getTruthValue());
-    assertTrue(path0.get(1).getSymExpr().toString().contains("arr[i] != 0"));
+    assertFalse(path0.get(1).truthValue());
+    assertTrue(path0.get(1).symExpr().toString().contains("arr[i] != 0"));
     // returnExpr here is always giving 0 as we do not handle loop-carried acc
   }
 
@@ -211,23 +211,23 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("0 >= arr.length"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("0 >= arr.length"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertFalse(path0.get(1).getTruthValue());
+    assertFalse(path0.get(1).truthValue());
     // we can't "know" which temporary/local we'll get here with
     // before we process loops more thoroughly, so for now we'll
     // just assert there is a reference to some index in the array.
     // very cool that Z3 does not "care" about the jimple local not
     // tracing back fully; it still asserts on arr[i] and chooses i properly
     assertTrue(
-        path0.get(1).getSymExpr().toString().matches(".*arr\\[.*\\].*"),
-        "Expected array access, got: " + path0.get(1).getSymExpr());
+        path0.get(1).symExpr().toString().matches(".*arr\\[.*\\].*"),
+        "Expected array access, got: " + path0.get(1).symExpr());
   }
 
   @Test
@@ -242,15 +242,15 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("o != null"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("o != null"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals("java.lang.Object", summary.getFormalParams().get(0).getParamType());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertTrue(path0.get(0).getSymExpr().toString().contains("o != null"), "Expected o != null");
+    assertTrue(path0.get(0).symExpr().toString().contains("o != null"), "Expected o != null");
   }
 
   @Test
@@ -263,8 +263,8 @@ public class ArraySummaryTest {
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("arr != null"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("arr != null"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
@@ -286,26 +286,26 @@ public class ArraySummaryTest {
     assertEquals(3, summary.getSymbolicConstraintPaths().size());
     // first path: arr == null
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("arr != null"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("arr != null"));
 
     // second path: arr != null && i < 0.
     List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
-    assertTrue(path1.get(0).getTruthValue());
-    assertTrue(path1.get(0).getSymExpr().toString().contains("arr != null"));
+    assertTrue(path1.get(0).truthValue());
+    assertTrue(path1.get(0).symExpr().toString().contains("arr != null"));
 
-    assertFalse(path1.get(1).getTruthValue());
-    assertTrue(path1.get(1).getSymExpr().toString().contains("i >= 0"));
+    assertFalse(path1.get(1).truthValue());
+    assertTrue(path1.get(1).symExpr().toString().contains("i >= 0"));
 
     List<SymbolicConstraint> path3 = summary.getSymbolicConstraintPaths().get(2);
-    assertTrue(path3.get(0).getTruthValue());
-    assertTrue(path3.get(0).getSymExpr().toString().contains("arr != null"));
+    assertTrue(path3.get(0).truthValue());
+    assertTrue(path3.get(0).symExpr().toString().contains("arr != null"));
 
-    assertTrue(path3.get(1).getTruthValue());
-    assertTrue(path3.get(1).getSymExpr().toString().contains("i >= 0"));
+    assertTrue(path3.get(1).truthValue());
+    assertTrue(path3.get(1).symExpr().toString().contains("i >= 0"));
 
-    assertFalse(path3.get(2).getTruthValue());
-    assertTrue(path3.get(2).getSymExpr().toString().contains("i < arr.length"));
+    assertFalse(path3.get(2).truthValue());
+    assertTrue(path3.get(2).symExpr().toString().contains("i < arr.length"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals("int[]", summary.getFormalParams().get(0).getParamType());
@@ -325,15 +325,15 @@ public class ArraySummaryTest {
     assertEquals(2, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("rows >= 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("rows >= 0"));
 
     List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
-    assertTrue(path1.get(0).getTruthValue());
-    assertTrue(path1.get(0).getSymExpr().toString().contains("rows >= 0"));
+    assertTrue(path1.get(0).truthValue());
+    assertTrue(path1.get(0).symExpr().toString().contains("rows >= 0"));
 
-    assertFalse(path1.get(1).getTruthValue());
-    assertTrue(path1.get(1).getSymExpr().toString().contains("cols >= 0"));
+    assertFalse(path1.get(1).truthValue());
+    assertTrue(path1.get(1).symExpr().toString().contains("cols >= 0"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());

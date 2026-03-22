@@ -193,9 +193,9 @@ public final class SymbolicConstraintGenerator {
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
       SymExpr cond =
-          c.getTruthValue()
-              ? c.getSymExpr()
-              : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
+          c.truthValue()
+              ? c.symExpr()
+              : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());
     }
     return result;

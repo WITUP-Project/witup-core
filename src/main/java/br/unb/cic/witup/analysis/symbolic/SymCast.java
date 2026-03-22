@@ -6,6 +6,7 @@ import sootup.core.jimple.common.expr.JCastExpr;
 public final class SymCast extends SymExpr {
   private final SymExpr op;
   private final String type;
+  private String cachedToString;
 
   public SymCast(final JCastExpr c) {
     super(SymKind.CAST);
@@ -52,7 +53,10 @@ public final class SymCast extends SymExpr {
 
   @Override
   public String toString() {
-    return "(" + type + ")" + op.toString();
+    if (cachedToString == null) {
+      cachedToString = "(" + type + ")" + op.toString();
+    }
+    return cachedToString;
   }
 
   @Override

@@ -6,6 +6,7 @@ import sootup.core.types.Type;
 public final class SymParamRef extends SymExpr {
   private final int index;
   private final String paramType;
+  private String cachedToString;
 
   public SymParamRef(final JParameterRef r) {
     super(fromJimpleType(r.getType()));
@@ -44,7 +45,10 @@ public final class SymParamRef extends SymExpr {
 
   @Override
   public String toString() {
-    return "@parameter" + this.index + ": " + this.paramType;
+    if  (cachedToString == null) {
+      cachedToString = "@parameter" + this.index + ": " + this.paramType;
+    }
+    return cachedToString;
   }
 
   @Override

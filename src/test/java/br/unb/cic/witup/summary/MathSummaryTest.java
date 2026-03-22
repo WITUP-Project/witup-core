@@ -27,8 +27,8 @@ public class MathSummaryTest {
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("this.radius >= 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("this.radius >= 0"));
 
     assertEquals(1, summary.getFormalParams().size());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
@@ -49,8 +49,8 @@ public class MathSummaryTest {
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("y != 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("y != 0"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
@@ -73,15 +73,15 @@ public class MathSummaryTest {
     assertEquals(2, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertTrue(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("p < 0"));
+    assertTrue(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("p < 0"));
 
     List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
-    assertFalse(path1.get(0).getTruthValue());
-    assertTrue(path1.get(0).getSymExpr().toString().contains("p < 0"));
+    assertFalse(path1.get(0).truthValue());
+    assertTrue(path1.get(0).symExpr().toString().contains("p < 0"));
 
-    assertFalse(path1.get(1).getTruthValue());
-    assertTrue(path1.get(1).getSymExpr().toString().contains("p <= 1"));
+    assertFalse(path1.get(1).truthValue());
+    assertTrue(path1.get(1).symExpr().toString().contains("p <= 1"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
@@ -100,8 +100,8 @@ public class MathSummaryTest {
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("truncated >= 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("truncated >= 0"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.REAL, summary.getFormalParams().get(0).getKind());
@@ -120,8 +120,8 @@ public class MathSummaryTest {
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("(int)d >= 0"));
+    assertFalse(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("(int)d >= 0"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.REAL, summary.getFormalParams().get(0).getKind());

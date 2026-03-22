@@ -165,5 +165,4 @@ public class IntSolverTest {
     assertTrue(sol0.getInt("a") + sol0.getInt("b") > 256, "Expected a + b > 256 to get here");
     assertTrue(sol0.getInt("a") + sol0.getInt("b") > 512, "Expected a + b <= 512 to throw");
   }
-
 }

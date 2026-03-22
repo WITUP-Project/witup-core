@@ -4,6 +4,7 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 
 public final class SymNull extends SymExpr {
   public static final SymNull INSTANCE = new SymNull();
+  private String cachedToString = "null";
 
   private SymNull() {
     super(SymKind.NULL);
@@ -26,6 +27,6 @@ public final class SymNull extends SymExpr {
 
   @Override
   public String toString() {
-    return "null";
+    return cachedToString;
   }
 }
