@@ -321,7 +321,9 @@ public final class SymbolicConstraintGenerator {
     switch (rhsOp) {
       case JVirtualInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = new ArrayList<>();
+        invoke.getArgs().stream().map(SymExpr::fromJimple).forEach(actuals::add);
+        actuals.add(SymExpr.fromJimple(invoke.getBase()));
       }
       case JStaticInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();

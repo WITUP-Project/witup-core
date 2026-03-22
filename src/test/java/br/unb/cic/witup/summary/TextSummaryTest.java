@@ -29,8 +29,9 @@ public class TextSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("s != 'abc'"));
 
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.STRING, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     assertEquals(1, Integer.parseInt(summary.getReturnExpr().toString()));
   }
@@ -49,8 +50,9 @@ public class TextSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("s_instanceof_java_lang_String"));
 
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     assertTrue(summary.getReturnExpr().toString().contains("(java.lang.String)s"));
   }

@@ -28,8 +28,11 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("(a + b) <= 256"));
     // formal params
-    assertEquals(2, summary.getFormalParams().size());
+    assertEquals(3, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+
     // return expr
     assertTrue(summary.getReturnExpr().toString().contains("a + b"));
   }
@@ -47,8 +50,10 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("a >= 0"));
     // formal params
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
     // return expr
     assertEquals("a", summary.getReturnExpr().toString());
   }
@@ -66,8 +71,10 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("0 <= a"));
     // formal params
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
     // return expr
     assertEquals("a", summary.getReturnExpr().toString());
   }
@@ -85,8 +92,10 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("a != 0"));
     // formal params
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
     // return expr
     assertEquals("a", summary.getReturnExpr().toString());
   }
@@ -104,8 +113,10 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("0 != a"));
     // formal params
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
     // return expr
     assertEquals("a", summary.getReturnExpr().toString());
   }
@@ -123,8 +134,10 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("a > 0"));
     // formal params
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
     // return expr
     assertEquals("a", summary.getReturnExpr().toString());
   }
@@ -148,8 +161,10 @@ public class IntSummaryTest {
     assertFalse(path1.get(0).getTruthValue());
     assertTrue(path1.get(0).getSymExpr().toString().contains("a >= 0"));
     // formal params
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
     // return expr too complicated already
     // (((a >= 0) ? ((0 == 0) ? 1 : 0) : 0) ? a : a)
     // but correct and z3 handles
@@ -173,8 +188,10 @@ public class IntSummaryTest {
     assertFalse(path1.get(0).getTruthValue());
     assertTrue(path1.get(0).getSymExpr().toString().contains("a >= 0"));
     // formal params
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
     // return expr
     // (((a >= 0) ? ((0 != 0) ? 1 : 0) : 0) ? a : a)
   }
@@ -191,9 +208,10 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("(a + b) <= 512"));
 
-    assertEquals(2, summary.getFormalParams().size());
+    assertEquals(3, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
     assertTrue(summary.getReturnExpr().toString().contains("a + b"));
   }
@@ -206,13 +224,17 @@ public class IntSummaryTest {
     assertNotNull(summary);
 
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
     assertFalse(path0.get(0).getTruthValue());
     // too hard to assert on ITE trees when doing interprocedural.
 
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+
   }
 
   @Test
@@ -246,8 +268,9 @@ public class IntSummaryTest {
     assertFalse(path0.get(0).getTruthValue());
     assertTrue(path0.get(0).getSymExpr().toString().contains("(x * 2) >= 0"));
 
-    assertEquals(1, summary.getFormalParams().size());
+    assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     assertTrue(summary.getReturnExpr().toString().contains("x * 2"));
   }

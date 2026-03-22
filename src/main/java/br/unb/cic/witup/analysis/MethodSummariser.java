@@ -107,6 +107,10 @@ public final class MethodSummariser implements SummaryResolver {
     for (int i = 0; i < paramTypes.size(); i++) {
       formals.add(new SymParamRef(i, paramTypes.get(i)));
     }
+    // @this in -1 index
+    if (!cpg.getMethod().isStatic()) {
+      formals.add(new SymParamRef(-1, cpg.getMethod().getDeclaringClassType()));
+    }
     return formals;
   }
 
