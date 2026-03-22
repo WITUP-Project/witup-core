@@ -90,8 +90,14 @@ public final class SymbolicConstraintGenerator {
     List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
     for (ThrowConstraint throwConstraint : cpg.getThrowConstraints(p)) {
       SymExpr symExpr = generateSymbolicExpression(throwConstraint.node());
-      boolean truthValue = throwConstraint.truthValue();
+      symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
+      System.out.println(
+          "FINAL CONSTRAINT(generateSymbolicConstraints): "
+              + symExpr
+              + " class="
+              + symExpr.getClass().getSimpleName());
 
+      boolean truthValue = throwConstraint.truthValue();
       if (symExpr.getKind() == SymKind.BOOLEAN_METHOD) {
         truthValue = !truthValue;
       }
@@ -108,6 +114,12 @@ public final class SymbolicConstraintGenerator {
   private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
     SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
+    symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
+    System.out.println(
+        "FINAL CONSTRAINT (substitute): "
+            + symExpr
+            + " class="
+            + symExpr.getClass().getSimpleName());
     return SymExpr.stripBooleanEncoding(symExpr);
   }
 
@@ -212,6 +224,7 @@ public final class SymbolicConstraintGenerator {
           return Optional.empty();
         }
 
+        // e.g. <Int: Integer lambda$applyAndCheckResult$1(int)>
         String className = mh.getReferenceSignature().getDeclClassType().getFullyQualifiedName();
         String subSig = mh.getReferenceSignature().getSubSignature().toString();
         String lambdaSig = "<" + className + ": " + subSig + ">";

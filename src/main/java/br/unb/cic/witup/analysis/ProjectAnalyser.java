@@ -167,11 +167,8 @@ public final class ProjectAnalyser implements GraphRepository {
     Map<String, MethodSummary> methodSummaries = new LinkedHashMap<>();
 
     CallGraphBuilder builder = new CallGraphBuilder(view);
-
     callGraph = builder.build(graphs.keySet());
-
     analysisOrder = builder.buildAnalysisOrder(callGraph);
-
     log.info("analysis order :{}", analysisOrder);
     for (List<String> scc : analysisOrder) {
       if (scc.size() == 1) {
@@ -182,7 +179,6 @@ public final class ProjectAnalyser implements GraphRepository {
         summariseSCC(scc, graphs, summaryCache, methodSummaries, failures);
       }
     }
-
     return methodSummaries;
   }
 

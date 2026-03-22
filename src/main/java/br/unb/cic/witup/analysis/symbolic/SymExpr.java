@@ -1,6 +1,8 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.constant.ClassConstant;
@@ -54,6 +56,8 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 public abstract class SymExpr {
+  private static final Logger log = LoggerFactory.getLogger("SymExpr");
+
   public abstract <T> T accept(SymExprVisitor<T> visitor);
 
   private final SymKind kind;
@@ -209,6 +213,74 @@ public abstract class SymExpr {
     }
 
     return expr;
+  }
+
+  public static SymExpr simplifyBoxingPatterns(final SymExpr expr) {
+    log.debug("simplifyBoxingPatterns input: {}", expr);
+
+    SymExpr simplified =
+        switch (expr) {
+          case SymBinOp b -> {
+            SymExpr newLhs = simplifyBoxingPatterns(b.getLhs());
+            SymExpr newRhs = simplifyBoxingPatterns(b.getRhs());
+            log.debug("SymBinOp is: op={} oldLhs={} newLhs={}", b.getOp(), b.getLhs(), newLhs);
+            yield new SymBinOp(b.getOp(), newLhs, newRhs);
+          }
+          case SymITE ite ->
+              new SymITE(
+                  simplifyBoxingPatterns(ite.getCondition()),
+                  simplifyBoxingPatterns(ite.getThenExpr()),
+                  simplifyBoxingPatterns(ite.getElseExpr()));
+          default -> expr;
+        };
+
+    if (!(expr instanceof SymVirtualInvoke invoke)) {
+      return simplified;
+    }
+
+    if (!(simplified instanceof SymVirtualInvoke inv)) {
+      return simplified;
+    }
+
+    if (!isUnboxingCall(invoke.getSignature())) {
+      return simplified;
+    }
+
+    SymExpr base = invoke.getBase();
+    if (base instanceof SymCast cast) {
+      log.debug(
+          "cast branch: inner={} class={}", cast.getOp(), cast.getOp().getClass().getSimpleName());
+      SymExpr inner = cast.getOp();
+      // unwrap valueOf(e) -> e
+      if (inner instanceof SymStaticInvoke staticInvoke
+          && isBoxingCall(staticInvoke.getInvokeName())
+          && staticInvoke.getArgs().size() == 1) {
+        log.debug("valueOf branch fired");
+        return staticInvoke.getArgs().get(0);
+      }
+      return inner;
+    }
+    if (base instanceof SymStaticInvoke staticInvoke
+        && isBoxingCall(staticInvoke.getInvokeName())
+        && staticInvoke.getArgs().size() == 1) {
+      return staticInvoke.getArgs().get(0);
+    }
+
+    return simplified;
+  }
+
+  private static boolean isUnboxingCall(final String name) {
+    return name.equals("intValue")
+        || name.equals("longValue")
+        || name.equals("doubleValue")
+        || name.equals("floatValue")
+        || name.equals("shortValue")
+        || name.equals("byteValue")
+        || name.equals("booleanValue");
+  }
+
+  private static boolean isBoxingCall(final String name) {
+    return name.contains("valueOf");
   }
 
   private static boolean isZeroConst(final SymExpr expr) {

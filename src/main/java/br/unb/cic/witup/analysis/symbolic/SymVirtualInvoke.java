@@ -23,6 +23,10 @@ public final class SymVirtualInvoke extends SymExpr {
     return args;
   }
 
+  public String getSignature() {
+    return signature;
+  }
+
   public static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
     SymExpr base = fromJimple(e.getBase());
     String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
