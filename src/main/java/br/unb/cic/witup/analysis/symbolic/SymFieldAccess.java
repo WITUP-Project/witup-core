@@ -6,6 +6,7 @@ import sootup.core.jimple.common.ref.JInstanceFieldRef;
 public final class SymFieldAccess extends SymExpr {
   private final SymExpr base; // e.g., "this" or another object
   private final String fieldName; // e.g., "radius"
+  private String cachedToString;
 
   public SymFieldAccess(final SymExpr base, final JInstanceFieldRef r) {
     super(fromJimpleType(r.getType()));
@@ -57,7 +58,10 @@ public final class SymFieldAccess extends SymExpr {
 
   @Override
   public String toString() {
-    return base.toString() + "." + fieldName;
+    if (cachedToString == null) {
+      cachedToString = base.toString() + "." + fieldName;
+    }
+    return cachedToString;
   }
 
   @Override

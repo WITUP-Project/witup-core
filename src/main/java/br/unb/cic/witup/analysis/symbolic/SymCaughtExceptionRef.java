@@ -5,6 +5,7 @@ import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 
 public final class SymCaughtExceptionRef extends SymExpr {
   private final String caughtType;
+  private String cachedToString;
 
   public SymCaughtExceptionRef(final JCaughtExceptionRef r) {
     super(SymKind.BOOLEAN);
@@ -27,7 +28,10 @@ public final class SymCaughtExceptionRef extends SymExpr {
 
   @Override
   public String toString() {
-    return "@caughtexception:" + caughtType;
+    if (cachedToString == null) {
+      cachedToString = "@caughtexception:" + caughtType;
+    }
+    return cachedToString;
   }
 
   @Override

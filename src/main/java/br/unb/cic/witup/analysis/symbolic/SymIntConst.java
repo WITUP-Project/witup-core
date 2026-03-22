@@ -5,6 +5,7 @@ import sootup.core.jimple.common.constant.IntConstant;
 
 public final class SymIntConst extends SymExpr {
   private final int value;
+  private String cachedToString;
 
   public static SymIntConst one() {
     return new SymIntConst(1);
@@ -40,7 +41,10 @@ public final class SymIntConst extends SymExpr {
 
   @Override
   public String toString() {
-    return Integer.toString(value);
+    if   (cachedToString == null) {
+      cachedToString = Integer.toString(value);
+    }
+    return cachedToString;
   }
 
   @Override

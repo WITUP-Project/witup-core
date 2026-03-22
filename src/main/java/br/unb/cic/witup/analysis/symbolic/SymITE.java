@@ -4,6 +4,7 @@ public final class SymITE extends SymExpr {
   private final SymExpr condition;
   private final SymExpr thenExpr;
   private final SymExpr elseExpr;
+  private String cachedToString;
 
   public SymITE(final SymExpr condition, final SymExpr thenExpr, final SymExpr elseExpr) {
     super(thenExpr.getKind());
@@ -58,6 +59,9 @@ public final class SymITE extends SymExpr {
 
   @Override
   public String toString() {
-    return "(" + condition + " ? " + thenExpr + " : " + elseExpr + ")";
+    if (cachedToString == null) {
+      cachedToString = "(" + condition + " ? " + thenExpr + " : " + elseExpr + ")";
+    }
+    return cachedToString;
   }
 }

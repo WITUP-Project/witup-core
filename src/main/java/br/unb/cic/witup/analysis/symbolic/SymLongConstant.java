@@ -4,6 +4,7 @@ import sootup.core.jimple.common.constant.LongConstant;
 
 public final class SymLongConstant extends SymExpr {
   private final long value;
+  private String cachedToString;
 
   public SymLongConstant(final LongConstant c) {
     super(fromJimpleType(c.getType()));
@@ -26,7 +27,10 @@ public final class SymLongConstant extends SymExpr {
 
   @Override
   public String toString() {
-    return Long.toString(value);
+    if  (cachedToString == null) {
+      cachedToString = Long.toString(value);
+    }
+    return cachedToString;
   }
 
   @Override

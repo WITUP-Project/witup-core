@@ -83,15 +83,15 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   // entry point — translates a full constraint including truth value
   public BoolExpr translateConstraint(final SymbolicConstraint constraint) {
     try {
-      Expr<?> expr = constraint.getSymExpr().accept(this);
+      Expr<?> expr = constraint.symExpr().accept(this);
       BoolExpr boolExpr = coerceToBool(expr);
-      return constraint.getTruthValue() ? boolExpr : context.mkNot(boolExpr);
+      return constraint.truthValue() ? boolExpr : context.mkNot(boolExpr);
     } catch (Exception e) {
       log.error(
           "Failed on: "
-              + constraint.getSymExpr().getClass().getSimpleName()
+              + constraint.symExpr().getClass().getSimpleName()
               + " = "
-              + constraint.getSymExpr());
+              + constraint.symExpr());
       throw e;
     }
   }
@@ -169,13 +169,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
     // String vs Int — coerce string to opaque int
     if (leftSort.equals(strSort) && rightSort.equals(intSort)) {
-      Expr<?> coerced = exprMap.computeIfAbsent(
-              lhs + "_as_int", k -> context.mkIntConst(k));
+      Expr<?> coerced = exprMap.computeIfAbsent(lhs + "_as_int", k -> context.mkIntConst(k));
       return new ExprPair(coerced, rhs);
     }
     if (rightSort.equals(strSort) && leftSort.equals(intSort)) {
-      Expr<?> coerced = exprMap.computeIfAbsent(
-              rhs + "_as_int", k -> context.mkIntConst(k));
+      Expr<?> coerced = exprMap.computeIfAbsent(rhs + "_as_int", k -> context.mkIntConst(k));
       return new ExprPair(lhs, coerced);
     }
 

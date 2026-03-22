@@ -38,6 +38,7 @@ build/
 ### Mac OS ###
 .DS_Store
 
-.venv
-
 *.svg
+
+/project-results
+/graphs

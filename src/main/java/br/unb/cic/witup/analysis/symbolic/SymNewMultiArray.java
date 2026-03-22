@@ -1,22 +1,21 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
 
 public final class SymNewMultiArray extends SymExpr {
   private final String objectType;
   private final List<SymExpr> sizes;
+  private String cachedToString;
 
   public SymNewMultiArray(final JNewMultiArrayExpr e) {
     super(SymKind.OTHER);
     this.objectType = e.getType().toString();
-    this.sizes = e.getSizes().stream()
-            .map(SymExpr::fromJimple)
-            .collect(Collectors.toList());
+    this.sizes = e.getSizes().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
   }
 
   private SymNewMultiArray(final String objectType, final List<SymExpr> sizes) {
@@ -29,10 +28,6 @@ public final class SymNewMultiArray extends SymExpr {
     return sizes;
   }
 
-  public String getObjectType() {
-    return objectType;
-  }
-
   @Override
   public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitNewMultiArray(this);
@@ -40,11 +35,29 @@ public final class SymNewMultiArray extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    List<SymExpr> newSizes = sizes.stream()
-            .map(s -> s.substitute(varName, replacement))
-            .collect(Collectors.toList());
-    if (!IntStream.range(0, sizes.size())
-            .allMatch(i -> sizes.get(i) == newSizes.get(i))) {
+    List<SymExpr> newSizes = null;
+    for (int i = 0; i < sizes.size(); i++) {
+      SymExpr newArg = sizes.get(i).substitute(varName, replacement);
+      if (newArg != sizes.get(i) && newSizes == null) {
+        newSizes = new ArrayList<>(sizes.size());
+        for (int j = 0; j < i; j++) {
+          newSizes.add(sizes.get(j));
+        }
+      }
+      if (newSizes != null) {
+        newSizes.add(newArg);
+      }
+    }
+
+    boolean sizesChanged = false;
+    for (int i = 0; i < sizes.size(); i++) {
+      if (sizes.get(i) != newSizes.get(i)) {
+        sizesChanged = true;
+        break;
+      }
+    }
+
+    if (sizesChanged) {
       return new SymNewMultiArray(objectType, newSizes);
     }
     return this;
@@ -52,11 +65,18 @@ public final class SymNewMultiArray extends SymExpr {
 
   @Override
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
-    List<SymExpr> newSizes = sizes.stream()
-            .map(s -> s.substituteParam(idx, actual))
-            .collect(Collectors.toList());
-    if (!IntStream.range(0, sizes.size())
-            .allMatch(i -> sizes.get(i) == newSizes.get(i))) {
+    List<SymExpr> newSizes =
+        sizes.stream().map(s -> s.substituteParam(idx, actual)).collect(Collectors.toList());
+
+    boolean sizesChanged = false;
+    for (int i = 0; i < sizes.size(); i++) {
+      if (sizes.get(i) != newSizes.get(i)) {
+        sizesChanged = true;
+        break;
+      }
+    }
+
+    if (sizesChanged) {
       return new SymNewMultiArray(objectType, newSizes);
     }
     return this;
@@ -69,9 +89,14 @@ public final class SymNewMultiArray extends SymExpr {
 
   @Override
   public String toString() {
-    String dims = sizes.stream()
-            .map(SymExpr::toString)
-            .collect(Collectors.joining("][", "[", "]"));
-    return "newmultiarray(" + objectType + ")" + dims;
+    if  (cachedToString == null) {
+      StringBuilder sb = new StringBuilder("newmultiarray(");
+      sb.append(objectType).append(")");
+      for (SymExpr size : sizes) {
+        sb.append("[").append(size.toString()).append("]");
+      }
+      cachedToString = sb.toString();
+    }
+    return cachedToString;
   }
 }

@@ -1,22 +1,14 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
-import sootup.core.types.ArrayType;
 
 /** Represents an allocated array */
 public final class SymArray extends SymExpr {
   private final String name;
   private final String objectType;
   private final SymExpr size;
-
-  public SymArray(final Local l) {
-    super(fromJimpleType(((ArrayType) l.getType()).getElementType()));
-    this.name = l.toString();
-    this.objectType = l.getType().toString();
-    this.size = null;
-  }
+  private String cachedToString;
 
   public SymArray(final JNewArrayExpr newArrExpr) {
     super(fromJimpleType(newArrExpr.getType()));
@@ -76,10 +68,14 @@ public final class SymArray extends SymExpr {
 
   @Override
   public String toString() {
-    if (size == null) {
-      return name + ":" + objectType;
+    if (cachedToString == null) {
+      if (size == null) {
+        cachedToString = name + ":" + objectType;
+      } else {
+        cachedToString = "newarray(" + objectType + ")[" + size + "]";
+      }
     }
-    return "newarray(" + objectType + ")[" + size + "]";
+    return cachedToString;
   }
 
   @Override

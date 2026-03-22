@@ -6,6 +6,7 @@ import sootup.core.jimple.common.expr.JInstanceOfExpr;
 public final class SymInstanceOf extends SymExpr {
   private final SymExpr op;
   private final String type;
+  private String cachedToString;
 
   public SymInstanceOf(final JInstanceOfExpr e) {
     super(SymKind.BOOLEAN);
@@ -33,7 +34,10 @@ public final class SymInstanceOf extends SymExpr {
 
   @Override
   public String toString() {
-    return op.toString() + "_instanceof_" + type.replace(".", "_");
+    if  (cachedToString == null) {
+      cachedToString = op.toString() + "_instanceof_" + type.replace(".", "_");
+    }
+    return cachedToString;
   }
 
   @Override

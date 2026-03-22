@@ -5,16 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
-import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
-import sootup.core.jimple.common.constant.MethodHandle;
-import sootup.core.jimple.common.expr.JDynamicInvokeExpr;
-import sootup.core.jimple.common.stmt.JAssignStmt;
 
 public class IntGraphTest {
   @Test
@@ -199,7 +194,35 @@ public class IntGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+  }
+
+  @Test
+  public void callStaticAddGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int callStaticAdd(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes.size());
+  }
+
+  @Test
+  public void callStaticAddLteGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int callStaticAddLte(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(1, throwNodes.size());
+
+    List<WITUpNode> conditionNodes =
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
   }
 }

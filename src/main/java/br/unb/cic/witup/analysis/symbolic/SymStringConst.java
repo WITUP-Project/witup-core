@@ -5,12 +5,12 @@ import sootup.core.jimple.common.constant.StringConstant;
 
 public final class SymStringConst extends SymExpr {
   private final String value;
-
-  // we have access to c.getType() if we need
+  private final String cachedToString;
 
   public SymStringConst(final StringConstant c) {
     super(SymKind.STRING);
     this.value = c.getValue();
+    this.cachedToString = "'" + value + "'";
   }
 
   @Override
@@ -34,6 +34,6 @@ public final class SymStringConst extends SymExpr {
 
   @Override
   public String toString() {
-    return "'" + value + "'";
+    return cachedToString;
   }
 }

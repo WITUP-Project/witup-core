@@ -1,8 +1,8 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.types.PrimitiveType;
 
@@ -10,6 +10,7 @@ public final class SymStaticInvoke extends SymExpr {
   private final String invokeName; // e.g. length
   private final boolean returnsBoolean;
   private final List<SymExpr> args;
+  private String cachedToString;
 
   public SymStaticInvoke(final JStaticInvokeExpr e) {
     super(deriveKind(e));
@@ -50,14 +51,44 @@ public final class SymStaticInvoke extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    List<SymExpr> newArgs = args.stream().map(arg -> arg.substitute(varName, replacement)).toList();
-    return new SymStaticInvoke(invokeName, returnsBoolean, newArgs, getKind());
+    List<SymExpr> newArgs = null;
+    for (int i = 0; i < args.size(); i++) {
+      SymExpr newArg = args.get(i).substitute(varName, replacement);
+      if (newArg != args.get(i) && newArgs == null) {
+        newArgs = new ArrayList<>(args.size());
+        for (int j = 0; j < i; j++) {
+          newArgs.add(args.get(j));
+        }
+      }
+      if (newArgs != null) {
+        newArgs.add(newArg);
+      }
+    }
+    if (newArgs != null) {
+      return new SymStaticInvoke(invokeName, returnsBoolean, newArgs, getKind());
+    }
+    return this;
   }
 
   @Override
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
-    List<SymExpr> newArgs = args.stream().map(arg -> arg.substituteParam(idx, actual)).toList();
-    return new SymStaticInvoke(invokeName, returnsBoolean, newArgs, getKind());
+    List<SymExpr> newArgs = null;
+    for (int i = 0; i < args.size(); i++) {
+      SymExpr newArg = args.get(i).substituteParam(idx, actual);
+      if (newArg != args.get(i) && newArgs == null) {
+        newArgs = new ArrayList<>(args.size());
+        for (int j = 0; j < i; j++) {
+          newArgs.add(args.get(j));
+        }
+      }
+      if (newArgs != null) {
+        newArgs.add(newArg);
+      }
+    }
+    if (newArgs != null) {
+      return new SymStaticInvoke(invokeName, returnsBoolean, newArgs, getKind());
+    }
+    return this;
   }
 
   @Override
@@ -67,7 +98,18 @@ public final class SymStaticInvoke extends SymExpr {
 
   @Override
   public String toString() {
-    String argStr = args.stream().map(SymExpr::toString).collect(Collectors.joining(","));
-    return invokeName + "(" + argStr + ")";
+    if (cachedToString != null) {
+      return cachedToString;
+    }
+    StringBuilder sb = new StringBuilder(invokeName).append("(");
+    if (!args.isEmpty()) {
+      sb.append(args.get(0).toString());
+      for (int i = 1; i < args.size(); i++) {
+        sb.append(",").append(args.get(i).toString());
+      }
+    }
+    sb.append(")");
+    cachedToString = sb.toString();
+    return cachedToString;
   }
 }

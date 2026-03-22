@@ -27,26 +27,26 @@ public class BoolSummaryTest {
     // first path: value != null && !value.equals(trueValue) && !value.equals(falseValue)
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
     assertEquals(3, path0.size());
-    assertTrue(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("value != null"));
+    assertTrue(path0.get(0).truthValue());
+    assertTrue(path0.get(0).symExpr().toString().contains("value != null"));
 
-    assertFalse(path0.get(1).getTruthValue());
-    assertTrue(path0.get(1).getSymExpr().toString().contains("value.equals(trueValue)"));
+    assertFalse(path0.get(1).truthValue());
+    assertTrue(path0.get(1).symExpr().toString().contains("value.equals(trueValue)"));
 
-    assertFalse(path0.get(2).getTruthValue());
-    assertTrue(path0.get(2).getSymExpr().toString().contains("value.equals(falseValue)"));
+    assertFalse(path0.get(2).truthValue());
+    assertTrue(path0.get(2).symExpr().toString().contains("value.equals(falseValue)"));
 
     // second path: arr != null && i < 0.
     List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
     assertEquals(3, path1.size());
 
-    assertFalse(path1.get(0).getTruthValue());
-    assertTrue(path1.get(0).getSymExpr().toString().contains("value != null"));
+    assertFalse(path1.get(0).truthValue());
+    assertTrue(path1.get(0).symExpr().toString().contains("value != null"));
 
-    assertTrue(path1.get(1).getTruthValue());
-    assertTrue(path1.get(1).getSymExpr().toString().contains("trueValue != null"));
+    assertTrue(path1.get(1).truthValue());
+    assertTrue(path1.get(1).symExpr().toString().contains("trueValue != null"));
 
-    assertTrue(path1.get(2).getTruthValue());
-    assertTrue(path1.get(2).getSymExpr().toString().contains("falseValue != null"));
+    assertTrue(path1.get(2).truthValue());
+    assertTrue(path1.get(2).symExpr().toString().contains("falseValue != null"));
   }
 }

@@ -5,6 +5,7 @@ import sootup.core.jimple.common.expr.JLengthExpr;
 
 public final class SymLength extends SymExpr {
   private final SymExpr op;
+  private String cachedToString;
 
   public SymLength(final JLengthExpr e) {
     super(SymKind.INT);
@@ -36,7 +37,10 @@ public final class SymLength extends SymExpr {
 
   @Override
   public String toString() {
-    return op.toString() + ".length";
+    if (cachedToString == null) {
+      cachedToString = op.toString() + ".length";
+    }
+    return cachedToString;
   }
 
   @Override

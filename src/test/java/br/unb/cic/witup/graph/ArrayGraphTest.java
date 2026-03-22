@@ -219,11 +219,11 @@ public class ArrayGraphTest {
     assertEquals(2, throwNodes.size());
 
     List<WITUpNode> conditionNodes0 =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes0.size());
 
     List<WITUpNode> conditionNodes1 =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(1));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(1));
     assertEquals(2, conditionNodes1.size());
   }
 }

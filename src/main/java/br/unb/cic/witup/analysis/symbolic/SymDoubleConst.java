@@ -4,6 +4,7 @@ import sootup.core.jimple.common.constant.DoubleConstant;
 
 public final class SymDoubleConst extends SymExpr {
   private final double value;
+  private String cachedToString;
 
   public SymDoubleConst(final DoubleConstant c) {
     super(fromJimpleType(c.getType()));
@@ -26,7 +27,10 @@ public final class SymDoubleConst extends SymExpr {
 
   @Override
   public String toString() {
-    return Double.toString(value);
+    if (cachedToString == null) {
+      cachedToString = Double.toString(value);
+    }
+    return cachedToString;
   }
 
   @Override

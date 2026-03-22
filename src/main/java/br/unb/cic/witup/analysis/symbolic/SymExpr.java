@@ -55,22 +55,17 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 public abstract class SymExpr {
-//  private static final Logger log = LoggerFactory.getLogger("SymExpr");
-
-  public abstract <T> T accept(SymExprVisitor<T> visitor);
-
   private final SymKind kind;
-
   public SymExpr(final SymKind kind) {
     this.kind = kind;
   }
-
   public final SymKind getKind() {
     return kind;
   }
 
-  public abstract SymExpr substitute(String varName, SymExpr replacement);
+  public abstract <T> T accept(SymExprVisitor<T> visitor);
 
+  public abstract SymExpr substitute(String varName, SymExpr replacement);
   /***
    * Ignored for most types, useful for SymParam
    *
@@ -81,12 +76,9 @@ public abstract class SymExpr {
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
     return this; // default: no substitution
   }
-
   public abstract String toString();
-
   public abstract boolean contains(String varName);
 
-  // inspect each Jimple type and collect as much info as possible
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
       case Local l -> new SymVar(l);
@@ -124,7 +116,6 @@ public abstract class SymExpr {
     if (type instanceof ArrayType at) {
       return fromJimpleType(at.getElementType());
     }
-
     return switch (type) {
       case PrimitiveType.ShortType ignored -> SymKind.INT;
       case PrimitiveType.ByteType ignored -> SymKind.INT;
@@ -171,17 +162,14 @@ public abstract class SymExpr {
     if (!(expr instanceof SymBinOp binOp)) {
       return expr;
     }
-
     SymExpr lhs = simplifyCmpPatterns(binOp.getLhs());
     SymExpr rhs = simplifyCmpPatterns(binOp.getRhs());
-
     // Pattern: (x cmpg/cmpl y) op 0
     if (lhs instanceof SymBinOp leftBinOp
         && isZeroConst(rhs)
         && (leftBinOp.getOp() == BinOp.CMPG
             || leftBinOp.getOp() == BinOp.CMPL
             || leftBinOp.getOp() == BinOp.CMP)) {
-
       // cmpg/cmpl returns: -1 if left < right, 0 if equal, 1 if left > right
       // So: (x cmpg y) >= 0 means x >= y
       //     (x cmpg y) > 0 means x > y
@@ -190,12 +178,10 @@ public abstract class SymExpr {
       //     (x cmpg y) <= 0 means x <= y
       return new SymBinOp(binOp.getOp(), leftBinOp.getLhs(), leftBinOp.getRhs());
     }
-
     // Return with simplified children
     if (lhs != binOp.getLhs() || rhs != binOp.getRhs()) {
       return new SymBinOp(binOp.getOp(), lhs, rhs);
     }
-
     return expr;
   }
 
@@ -203,21 +189,16 @@ public abstract class SymExpr {
     if (!(expr instanceof SymBinOp bin)) {
       return expr;
     }
-
     SymExpr lhs = bin.getLhs();
     SymExpr rhs = bin.getRhs();
-
     if (isZeroConst(rhs)
         && (lhs.getKind() == SymKind.BOOLEAN_METHOD || lhs.getKind() == SymKind.BOOLEAN)) {
       return lhs;
     }
-
     return expr;
   }
 
   public static SymExpr simplifyBoxingPatterns(final SymExpr expr) {
-    //    log.debug("simplifyBoxingPatterns input: {}", expr);
-
     SymExpr simplified =
         switch (expr) {
           case SymBinOp b ->
@@ -236,15 +217,12 @@ public abstract class SymExpr {
     if (!(expr instanceof SymVirtualInvoke invoke)) {
       return simplified;
     }
-
     if (!(simplified instanceof SymVirtualInvoke inv)) {
       return simplified;
     }
-
     if (!isUnboxingCall(invoke.getSignature())) {
       return simplified;
     }
-
     SymExpr base = invoke.getBase();
     if (base instanceof SymCast cast) {
       SymExpr inner = cast.getOp();
@@ -261,7 +239,6 @@ public abstract class SymExpr {
         && staticInvoke.getArgs().size() == 1) {
       return staticInvoke.getArgs().get(0);
     }
-
     return simplified;
   }
 

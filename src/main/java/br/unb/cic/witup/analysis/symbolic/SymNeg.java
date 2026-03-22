@@ -5,6 +5,7 @@ import sootup.core.jimple.common.expr.JNegExpr;
 
 public final class SymNeg extends SymExpr {
   private final SymExpr operand;
+  private String cachedToString;
 
   public SymNeg(final JNegExpr e) {
     super(fromJimpleType(e.getType()));
@@ -14,6 +15,7 @@ public final class SymNeg extends SymExpr {
   private SymNeg(final SymExpr operand, final SymKind kind) {
     super(kind);
     this.operand = operand;
+    this.cachedToString = "-" + operand;
   }
 
   public SymExpr getOperand() {
@@ -50,6 +52,6 @@ public final class SymNeg extends SymExpr {
 
   @Override
   public String toString() {
-    return "-" + operand;
+    return cachedToString;
   }
 }
