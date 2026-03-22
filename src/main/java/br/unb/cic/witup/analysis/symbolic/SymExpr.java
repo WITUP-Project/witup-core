@@ -32,6 +32,7 @@ import sootup.core.jimple.common.expr.JNeExpr;
 import sootup.core.jimple.common.expr.JNegExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
 import sootup.core.jimple.common.expr.JOrExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
 import sootup.core.jimple.common.expr.JShlExpr;
@@ -103,8 +104,9 @@ public abstract class SymExpr {
       case JSpecialInvokeExpr e -> SymSpecialInvoke.fromSpecialInvokeExpr(e);
       case JDynamicInvokeExpr e -> new SymDynamicInvoke(e);
       case JArrayRef r -> SymArrayRef.fromArrayRef(r);
-      case JLengthExpr e -> new SymLength(e);
       case JNewArrayExpr e -> new SymArray(e);
+      case JNewMultiArrayExpr e -> new SymNewMultiArray(e);
+      case JLengthExpr e -> new SymLength(e);
       case JCastExpr e -> new SymCast(e);
       case JInstanceOfExpr e -> new SymInstanceOf(e);
       case JParameterRef r -> new SymParamRef(r);

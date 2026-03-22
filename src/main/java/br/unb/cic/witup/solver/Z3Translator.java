@@ -21,6 +21,7 @@ import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNeg;
 import br.unb.cic.witup.analysis.symbolic.SymNew;
+import br.unb.cic.witup.analysis.symbolic.SymNewMultiArray;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
@@ -394,6 +395,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Expr<?> result = context.mkSelect((ArrayExpr<IntSort, Sort>) arrayExpr, (IntExpr) indexExpr);
     exprMap.put(key, result);
     return result;
+  }
+
+  @Override
+  public Expr<?> visitNewMultiArray(final SymNewMultiArray e) {
+    return exprMap.computeIfAbsent(e.toString(), context::mkIntConst);
   }
 
   private static String toArrayRefKey(final SymArrayRef ref) {
