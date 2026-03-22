@@ -10,9 +10,9 @@ public final class SymBinOp extends SymExpr {
   private String cachedToString;
 
   public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
-    SymExpr left = fromJimple(e.getOp1());
-    SymExpr right = fromJimple(e.getOp2());
-    return new SymBinOp(fromJimpleBinop(e), left, right);
+    SymExpr lhs = fromJimple(e.getOp1());
+    SymExpr rhs = fromJimple(e.getOp2());
+    return new SymBinOp(fromJimpleBinop(e), lhs, rhs);
   }
 
   public SymBinOp(final BinOp op, final SymExpr lhs, final SymExpr rhs) {
@@ -51,6 +51,9 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    if (!containsParam(idx)) {
+      return this;
+    }
     SymExpr newLhs = lhs.substituteParam(idx, actual);
     SymExpr newRhs = rhs.substituteParam(idx, actual);
     if (newLhs != lhs || newRhs != rhs) {
@@ -72,6 +75,17 @@ public final class SymBinOp extends SymExpr {
       return new SymBinOp(op, newLhs, newRhs);
     }
     return this;
+  }
+
+  @Override
+  public boolean containsUnboxing() {
+    return lhs.containsUnboxing() || rhs.containsUnboxing();
+  }
+
+  @Override
+  public boolean containsParam(final int idx) {
+    return lhs.containsParam(idx)
+            || rhs.containsParam(idx);
   }
 
   @Override

@@ -61,6 +61,9 @@ public final class SymDynamicInvoke extends SymExpr {
 
   @Override
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    if (!containsParam(idx)) {
+      return this;
+    }
     List<SymExpr> newArgs = null;
     for (int i = 0; i < args.size(); i++) {
       SymExpr newArg = args.get(i).substituteParam(idx, actual);
@@ -76,15 +79,9 @@ public final class SymDynamicInvoke extends SymExpr {
       }
     }
 
-    boolean argsChanged = false;
-    for (int i = 0; i < args.size(); i++) {
-      if (args.get(i) != newArgs.get(i)) {
-        argsChanged = true;
-        break;
-      }
-    }
-
-    return argsChanged ? new SymDynamicInvoke(signature, newArgs, getKind()) : this;
+    return newArgs != null
+            ? new SymDynamicInvoke(signature, newArgs, getKind())
+            : this;
   }
 
   @Override
@@ -104,6 +101,16 @@ public final class SymDynamicInvoke extends SymExpr {
       }
     }
     return cachedToString;
+  }
+
+  @Override
+  public boolean containsParam(final int idx) {
+    for (SymExpr arg : args) {
+      if (arg.containsParam(idx)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
