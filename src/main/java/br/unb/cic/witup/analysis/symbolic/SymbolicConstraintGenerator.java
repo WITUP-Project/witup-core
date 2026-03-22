@@ -1,5 +1,6 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.MethodSummariser;
 import br.unb.cic.witup.analysis.SummaryResolver;
 import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
@@ -86,14 +87,30 @@ public final class SymbolicConstraintGenerator {
     this.setCurrentPath(p);
     List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
     for (ThrowConstraint throwConstraint : cpg.getThrowConstraints(p)) {
-      SymExpr symExpr = generateSymbolicExpression(throwConstraint.node());
+      StmtGraphNode n = (StmtGraphNode) throwConstraint.node().getNode();
+
+      List<SymbolicConstraint> extraConstraints = new ArrayList<>();
+      SymExpr symExpr;
+
+      if (n.getStmt() instanceof JIfStmt ifStmt) {
+        SubstituteResult result =
+            substituteWithPreconditions(
+                SymExpr.fromJimple(ifStmt.getCondition()), throwConstraint.node());
+        symExpr = result.expr();
+        extraConstraints.addAll(result.extraConstraints());
+      } else if (throwConstraint.node() instanceof CaughtExceptionNode caught) {
+        symExpr = new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
+      } else {
+        throw new IllegalStateException(
+            "Unexpected constraint node type: " + throwConstraint.node().getClass());
+      }
       symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
 
       boolean truthValue = throwConstraint.truthValue();
       if (symExpr.getKind() == SymKind.BOOLEAN_METHOD) {
         truthValue = !truthValue;
       }
-
+      symbolicConstraints.addAll(extraConstraints);
       symbolicConstraints.add(new SymbolicConstraint(symExpr, truthValue));
     }
     return symbolicConstraints;
@@ -103,8 +120,23 @@ public final class SymbolicConstraintGenerator {
     this.currentPathNodes = new HashSet<>(p.getVertexList());
   }
 
+  private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> extraConstraints) {}
+
+  private SubstituteResult substituteWithPreconditions(
+      final SymExpr initial, final WITUpNode startNode) {
+    List<SymbolicConstraint> extraConstraints = new ArrayList<>();
+    SymExpr symExpr =
+        backwardSubstitute(initial, startNode, new HashSet<>(), false, extraConstraints);
+    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
+    symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
+    symExpr = SymExpr.stripBooleanEncoding(symExpr);
+    return new SubstituteResult(symExpr, extraConstraints);
+  }
+
   private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
-    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false);
+    // when substituting inside, no need to consider constraints from other methods
+    List<SymbolicConstraint> ignored = new ArrayList<>();
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false, ignored);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
     return SymExpr.stripBooleanEncoding(symExpr);
@@ -169,7 +201,7 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
-  private Optional<SymExpr> tryResolveLambda(
+  private Optional<MethodSummariser.ResolvedCallee> tryResolveLambda(
       final JInterfaceInvokeExpr invoke, final WITUpNode node) {
     if (resolver == null) {
       return Optional.empty();
@@ -229,7 +261,8 @@ public final class SymbolicConstraintGenerator {
       SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
       final WITUpNode currentNode,
       final Set<WITUpNode> visited,
-      final boolean followIdentity) {
+      final boolean followIdentity,
+      final List<SymbolicConstraint> extraConstraints) {
 
     if (visited.contains(currentNode)) {
       return symExpr;
@@ -271,7 +304,7 @@ public final class SymbolicConstraintGenerator {
 
         // this is the interprocedural hook.
         // need to add hooks for other invokes
-        Optional<SymExpr> resolved = tryResolveInterprocedural(rhsOp);
+        Optional<MethodSummariser.ResolvedCallee> resolved = tryResolveInterprocedural(rhsOp);
 
         if (resolved.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
           resolved = tryResolveLambda(ifaceInvoke, sourceNode);
@@ -280,8 +313,13 @@ public final class SymbolicConstraintGenerator {
         if (resolved.isPresent()) {
           String definedVar = getVariableName(assign.getLeftOp());
           if (freeVars.contains(definedVar)) {
-            symExpr = symExpr.substitute(definedVar, resolved.get());
-            symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
+            symExpr = symExpr.substitute(definedVar, resolved.get().returnExpr());
+            // add callee's throw-free precondition as extra constraint
+            if (resolved.get().precondition() != null) {
+              extraConstraints.add(new SymbolicConstraint(resolved.get().precondition(), true));
+            }
+            symExpr =
+                backwardSubstitute(symExpr, sourceNode, visited, followIdentity, extraConstraints);
           }
           continue;
         }
@@ -304,13 +342,13 @@ public final class SymbolicConstraintGenerator {
       SymExpr rhsSymExpr = SymExpr.fromJimple(rhsOp);
 
       symExpr = symExpr.substitute(definedVar, rhsSymExpr);
-      symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
+      symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity, extraConstraints);
     }
 
     return symExpr;
   }
 
-  private Optional<SymExpr> tryResolveInterprocedural(final Value rhsOp) {
+  private Optional<MethodSummariser.ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
     if (resolver == null) {
       return Optional.empty();
     }

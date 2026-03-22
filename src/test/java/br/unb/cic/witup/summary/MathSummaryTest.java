@@ -87,7 +87,6 @@ public class MathSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-
     assertEquals("p", summary.getReturnExpr().toString());
   }
 
@@ -107,7 +106,6 @@ public class MathSummaryTest {
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.REAL, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
-
 
     assertEquals("truncated", summary.getReturnExpr().toString());
   }

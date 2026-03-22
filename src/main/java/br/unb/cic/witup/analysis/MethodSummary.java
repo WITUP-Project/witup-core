@@ -10,25 +10,31 @@ public final class MethodSummary {
   private final List<List<SymbolicConstraint>> symbolicConstraintPaths;
   private final List<SymParamRef> formalParams;
   private final SymExpr returnExpr;
-
-  public MethodSummary(
-      final String methodSignature, final List<List<SymbolicConstraint>> symbolicConstraintPaths) {
-    this(methodSignature, symbolicConstraintPaths, null, null);
-  }
+  private final SymExpr throwFreePrecondition;
 
   public MethodSummary(
       final String methodSignature,
       final List<List<SymbolicConstraint>> symbolicConstraintPaths,
       final List<SymParamRef> formalParams,
-      final SymExpr returnExpr) {
+      final SymExpr returnExpr,
+      final SymExpr throwFreePrecondition) {
     this.methodSignature = methodSignature;
     this.symbolicConstraintPaths = symbolicConstraintPaths;
     this.formalParams = formalParams;
     this.returnExpr = returnExpr;
+    this.throwFreePrecondition = throwFreePrecondition;
+  }
+
+  public SymExpr getThrowFreePrecondition() {
+    return throwFreePrecondition;
+  }
+
+  public boolean hasThrowFreePrecondition() {
+    return throwFreePrecondition != null;
   }
 
   public static MethodSummary empty(final String sig) {
-    return new MethodSummary(sig, null, null, null);
+    return new MethodSummary(sig, null, null, null, null);
   }
 
   public String getMethodSignature() {

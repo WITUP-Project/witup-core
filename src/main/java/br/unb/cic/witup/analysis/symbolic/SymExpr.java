@@ -55,7 +55,7 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 public abstract class SymExpr {
-//  private static final Logger log = LoggerFactory.getLogger("SymExpr");
+  //  private static final Logger log = LoggerFactory.getLogger("SymExpr");
 
   public abstract <T> T accept(SymExprVisitor<T> visitor);
 

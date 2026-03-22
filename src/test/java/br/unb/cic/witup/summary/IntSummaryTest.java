@@ -205,14 +205,22 @@ public class IntSummaryTest {
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    assertTrue(path0.get(0).getSymExpr().toString().contains("(a + b) <= 512"));
+    assertEquals(2, path0.size());
+    // SymIte is (((((a + b) <= 256) == 0) ? 1 : 0) ? 0 : 1), truthValue=true
+    assertTrue(path0.get(0).getTruthValue());
+    // should contain (a + b) <= 256 as this is the condition in the callee
+    assertTrue(path0.get(0).getSymExpr().toString().contains("(a + b) <= 256"));
+
+    // condition from within the method.
+    assertFalse(path0.get(1).getTruthValue());
+    assertTrue(path0.get(1).getSymExpr().toString().contains("(a + b) <= 512"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
+    // massive SymITE
     assertTrue(summary.getReturnExpr().toString().contains("a + b"));
   }
 
@@ -226,15 +234,17 @@ public class IntSummaryTest {
     assertEquals(1, summary.getSymbolicConstraintPaths().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
 
-
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).getTruthValue());
-    // too hard to assert on ITE trees when doing interprocedural.
+    // condition from callee
+    assertTrue(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("a != 0"));
 
+    assertFalse(path0.get(1).getTruthValue());
+    assertTrue(path0.get(1).getSymExpr().toString().contains("a != 0"));
+    // too hard to assert on ITE trees when doing interprocedural.
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
-
   }
 
   @Test
@@ -273,5 +283,32 @@ public class IntSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     assertTrue(summary.getReturnExpr().toString().contains("x * 2"));
+  }
+
+  @Test
+  public void callStaticAddSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int callStaticAdd(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+
+    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertEquals(2, path0.size());
+    // condition from callee
+    assertTrue(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("(a + b) <= 256"));
+
+    // condition from caller
+    assertFalse(path0.get(1).getTruthValue());
+    assertTrue(path0.get(1).getSymExpr().toString().contains("(a + b) <= 512"));
+
+    assertEquals(3, summary.getFormalParams().size());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+
+    assertTrue(summary.getReturnExpr().toString().contains("a + b"));
   }
 }

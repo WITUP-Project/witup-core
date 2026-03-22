@@ -80,14 +80,46 @@ public final class MethodSummariser implements SummaryResolver {
 
     List<SymParamRef> formals = buildFormals(cpg);
     SymExpr returnExpr = traceReturnExpr();
-
-    MethodSummary summary = new MethodSummary(getMethodSignature(), paths, formals, returnExpr);
+    SymExpr throwFreePrecondition = buildThrowFreePrecondition(paths);
+    MethodSummary summary =
+        new MethodSummary(getMethodSignature(), paths, formals, returnExpr, throwFreePrecondition);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);
     }
 
     return summary;
+  }
+
+  private SymExpr buildThrowFreePrecondition(final List<List<SymbolicConstraint>> paths) {
+    if (paths == null || paths.isEmpty()) {
+      return null;
+    }
+    // for each path, build the negation of its conjunction
+    // throw-free means: NOT(path1) AND NOT(path2) AND ...
+    // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
+    // but for simplicity encode as ITE tree
+    // throw-free precondition: all throw paths are false
+    // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
+    SymExpr result = SymIntConst.one();
+    for (List<SymbolicConstraint> path : paths) {
+      SymExpr pathCond = buildPathConjunction(path);
+      result = new SymITE(pathCond, SymIntConst.zero(), result);
+    }
+    return result;
+  }
+
+  private SymExpr buildPathConjunction(final List<SymbolicConstraint> constraints) {
+    SymExpr result = SymIntConst.one();
+    for (int i = constraints.size() - 1; i >= 0; i--) {
+      SymbolicConstraint c = constraints.get(i);
+      SymExpr cond =
+          c.getTruthValue()
+              ? c.getSymExpr()
+              : new SymBinOp(BinOp.EQ, c.getSymExpr(), SymIntConst.zero());
+      result = new SymITE(cond, result, SymIntConst.zero());
+    }
+    return result;
   }
 
   public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
@@ -179,8 +211,10 @@ public final class MethodSummariser implements SummaryResolver {
     return result;
   }
 
+  public record ResolvedCallee(SymExpr returnExpr, SymExpr precondition) {}
+
   @Override
-  public Optional<SymExpr> resolveReturnExpr(
+  public Optional<ResolvedCallee> resolveReturnExpr(
       final String calleeSignature, final List<SymExpr> actuals) {
 
     if (summaryRepository == null || graphRepository == null) {
@@ -224,7 +258,8 @@ public final class MethodSummariser implements SummaryResolver {
     return instantiate(calleeSummary, actuals);
   }
 
-  private Optional<SymExpr> instantiate(final MethodSummary summary, final List<SymExpr> actuals) {
+  private Optional<ResolvedCallee> instantiate(
+      final MethodSummary summary, final List<SymExpr> actuals) {
     if (!summary.hasReturnExpr()) {
       return Optional.empty();
     }
@@ -236,12 +271,20 @@ public final class MethodSummariser implements SummaryResolver {
     }
 
     SymExpr returnExpr = summary.getReturnExpr();
+    SymExpr precondition = summary.getThrowFreePrecondition();
+
     for (int i = 0; i < formals.size(); i++) {
-      returnExpr = returnExpr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+      int idx = formals.get(i).getIndex();
+      SymExpr actual = actuals.get(i);
+      returnExpr = returnExpr.substituteParam(idx, actual);
+      returnExpr = returnExpr.substituteParam(idx, actual);
+      if (precondition != null) {
+        precondition = precondition.substituteParam(idx, actual);
+      }
     }
-    //    log.debug("Instantiated return expr for {}: {}", summary.getMethodSignature(),
-    // returnExpr);
-    return Optional.of(returnExpr);
+    log.debug("Instantiated return expr for {}: {}", summary.getMethodSignature(), returnExpr);
+    log.debug("Instantiated precondition for {}: {}", summary.getMethodSignature(), precondition);
+    return Optional.of(new ResolvedCallee(returnExpr, precondition));
   }
 
   public String getMethodSignature() {

@@ -63,7 +63,9 @@ public class Int {
   }
 
   public int addAndCheck(int a, int b) {
+    // calle throws if a + b > 256
     int result = add(a, b);
+    // so it is not possible for result > 512 to throw
     if (result > 512) {
       throw new IllegalArgumentException("result overflows");
     }
@@ -104,6 +106,23 @@ public class Int {
     int result = s.get();
     if (result < 0) {
       throw new IllegalArgumentException("negative result");
+    }
+    return result;
+  }
+
+  public static int staticAdd(int a, int b) {
+    if (a + b > 256) {
+      throw new IllegalArgumentException("overflow");
+    }
+    return a + b;
+  }
+
+  public int callStaticAdd(int a, int b) {
+    // calle throws if a + b > 256
+    int result = staticAdd(a, b);
+    // this one cannot throw
+    if (result > 512) {
+      throw new IllegalArgumentException("overflow");
     }
     return result;
   }

@@ -169,13 +169,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
     // String vs Int — coerce string to opaque int
     if (leftSort.equals(strSort) && rightSort.equals(intSort)) {
-      Expr<?> coerced = exprMap.computeIfAbsent(
-              lhs + "_as_int", k -> context.mkIntConst(k));
+      Expr<?> coerced = exprMap.computeIfAbsent(lhs + "_as_int", k -> context.mkIntConst(k));
       return new ExprPair(coerced, rhs);
     }
     if (rightSort.equals(strSort) && leftSort.equals(intSort)) {
-      Expr<?> coerced = exprMap.computeIfAbsent(
-              rhs + "_as_int", k -> context.mkIntConst(k));
+      Expr<?> coerced = exprMap.computeIfAbsent(rhs + "_as_int", k -> context.mkIntConst(k));
       return new ExprPair(lhs, coerced);
     }
 

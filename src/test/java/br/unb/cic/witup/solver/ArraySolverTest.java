@@ -174,7 +174,8 @@ public class ArraySolverTest {
     assertTrue(sol1.isSat());
     assertTrue(sol1.getInt("i") < 0, "expected i < 0");
 
-    SolverResult sol2 = analysis.solutions().get(2);;
+    SolverResult sol2 = analysis.solutions().get(2);
+    ;
     assertTrue(sol2.isSat());
     assertFalse(sol2.getBool("arr_is_null"), "arr must not be null");
     assertTrue(sol2.getInt("i") >= 0, "i must be non-negative");
