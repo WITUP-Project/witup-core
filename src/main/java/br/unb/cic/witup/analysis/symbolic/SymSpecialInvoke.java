@@ -65,7 +65,7 @@ public final class SymSpecialInvoke extends SymExpr {
     }
 
     if (newBase != base || newArgs != null) {
-      return new SymVirtualInvoke(
+      return new SymSpecialInvoke(
           newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;
@@ -93,7 +93,7 @@ public final class SymSpecialInvoke extends SymExpr {
     }
 
     if (newBase != base || newArgs != null) {
-      return new SymVirtualInvoke(
+      return new SymSpecialInvoke(
           newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;

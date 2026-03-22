@@ -65,7 +65,7 @@ public final class SymInterfaceInvoke extends SymExpr {
     }
 
     if (newBase != base || newArgs != null) {
-      return new SymVirtualInvoke(
+      return new SymInterfaceInvoke(
           newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;
@@ -93,7 +93,7 @@ public final class SymInterfaceInvoke extends SymExpr {
     }
 
     if (newBase != base || newArgs != null) {
-      return new SymVirtualInvoke(
+      return new SymInterfaceInvoke(
           newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;
@@ -114,7 +114,15 @@ public final class SymInterfaceInvoke extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return base.contains(varName);
+    if (base.contains(varName)) {
+      return true;
+    }
+    for (SymExpr arg : args) {
+      if (arg.contains(varName)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
