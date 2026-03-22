@@ -18,8 +18,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jgrapht.GraphPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.LValue;
@@ -47,7 +45,6 @@ public final class SymbolicConstraintGenerator {
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
-  private static final Logger log = LoggerFactory.getLogger("SymbolicConstraintGenerator");
 
   public SymbolicConstraintGenerator(
       final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
@@ -91,11 +88,6 @@ public final class SymbolicConstraintGenerator {
     for (ThrowConstraint throwConstraint : cpg.getThrowConstraints(p)) {
       SymExpr symExpr = generateSymbolicExpression(throwConstraint.node());
       symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
-      System.out.println(
-          "FINAL CONSTRAINT(generateSymbolicConstraints): "
-              + symExpr
-              + " class="
-              + symExpr.getClass().getSimpleName());
 
       boolean truthValue = throwConstraint.truthValue();
       if (symExpr.getKind() == SymKind.BOOLEAN_METHOD) {
@@ -115,11 +107,6 @@ public final class SymbolicConstraintGenerator {
     SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
-    System.out.println(
-        "FINAL CONSTRAINT (substitute): "
-            + symExpr
-            + " class="
-            + symExpr.getClass().getSimpleName());
     return SymExpr.stripBooleanEncoding(symExpr);
   }
 
@@ -227,7 +214,6 @@ public final class SymbolicConstraintGenerator {
         List<SymExpr> actuals =
             dynInvoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
 
-        log.debug("Lambda resolution: {} with actuals {}", lambdaSig, actuals);
         return resolver.resolveReturnExpr(lambdaSig, actuals);
       }
       // not a dynamic invoke — skip
@@ -288,7 +274,6 @@ public final class SymbolicConstraintGenerator {
         Optional<SymExpr> resolved = tryResolveInterprocedural(rhsOp);
 
         if (resolved.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
-          log.debug("trying lambda resolution for: {}", ifaceInvoke);
           resolved = tryResolveLambda(ifaceInvoke, sourceNode);
         }
 
@@ -296,10 +281,6 @@ public final class SymbolicConstraintGenerator {
           String definedVar = getVariableName(assign.getLeftOp());
           if (freeVars.contains(definedVar)) {
             symExpr = symExpr.substitute(definedVar, resolved.get());
-            log.debug(
-                "after substitute: freeVars={} symExpr={}",
-                new VariableCollector().collect(symExpr),
-                symExpr);
             symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity);
           }
           continue;
@@ -334,8 +315,6 @@ public final class SymbolicConstraintGenerator {
       return Optional.empty();
     }
 
-    log.debug("tryResolveInterprocedural: {}", rhsOp.getClass().getSimpleName());
-
     String calleeSig;
     List<SymExpr> actuals;
 
@@ -365,7 +344,6 @@ public final class SymbolicConstraintGenerator {
       }
     }
 
-    log.debug("Interprocedural hook fired for: {}", calleeSig);
     return resolver.resolveReturnExpr(calleeSig, actuals);
   }
 

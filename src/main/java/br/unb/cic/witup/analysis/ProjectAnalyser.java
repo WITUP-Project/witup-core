@@ -38,12 +38,6 @@ public final class ProjectAnalyser implements GraphRepository {
   private DefaultDirectedGraph<String, DefaultEdge> callGraph;
   private List<List<String>> analysisOrder;
 
-  public JavaView getView() {
-    return view;
-  }
-
-  //  private final SummaryCache summaryCache = new SummaryCache();
-
   public ProjectAnalyser(final Path jarPath) {
     this.jarPath = jarPath;
   }
@@ -95,7 +89,7 @@ public final class ProjectAnalyser implements GraphRepository {
         continue;
       }
       if (relevant.size() == 1) {
-        summariseMethod(relevant.get(0), methodGraphs, summaryCache, localSummaries, failures);
+        summariseMethod(relevant.getFirst(), methodGraphs, summaryCache, localSummaries, failures);
       } else {
         summariseSCC(relevant, methodGraphs, summaryCache, localSummaries, failures);
       }
@@ -144,14 +138,8 @@ public final class ProjectAnalyser implements GraphRepository {
   public static Map<String, WITUpGraph> buildGraphsForClass(final JavaSootClass sootClass) {
     return sootClass.getMethods().stream()
         .filter(JavaSootMethod::hasBody)
-        //        .filter(ProjectAnalyser::methodHasThrow)
         .collect(Collectors.toMap(m -> m.getSignature().toString(), CPGBuilder::buildForMethod));
   }
-
-  //  private static boolean methodHasThrow(final JavaSootMethod method) {
-  //    return method.getBody().getStmtGraph().getNodes().stream()
-  //        .anyMatch(s -> s instanceof JThrowStmt);
-  //  }
 
   @Override
   public Optional<WITUpGraph> getGraph(final String methodSignature) {
@@ -170,7 +158,7 @@ public final class ProjectAnalyser implements GraphRepository {
     for (List<String> scc : analysisOrder) {
       if (scc.size() == 1) {
         // singleton — one pass
-        String sig = scc.get(0);
+        String sig = scc.getFirst();
         summariseMethod(sig, graphs, summaryCache, methodSummaries, failures);
       } else {
         summariseSCC(scc, graphs, summaryCache, methodSummaries, failures);
@@ -193,7 +181,7 @@ public final class ProjectAnalyser implements GraphRepository {
       MethodSummariser ms = new MethodSummariser(graph, this, summaryCache);
       summaries.put(sig, ms.summarise());
     } catch (Exception e) {
-      log.error("Failed to summarise {}: {}", sig, e.getMessage());
+      log.warn("Failed to summarise {}: {}", sig, e.getMessage());
       failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
     }
   }
@@ -213,7 +201,6 @@ public final class ProjectAnalyser implements GraphRepository {
       }
       summaryCache.putSummary(sig, MethodSummary.empty(sig));
     }
-
     // iterate until fixpoint
     boolean changed = true;
     int iterations = 0;

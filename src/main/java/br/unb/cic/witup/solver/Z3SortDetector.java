@@ -143,13 +143,6 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitArray(final SymArray symArray) {
-    System.out.println(
-        "visitArray: "
-            + symArray.getName()
-            + " elementKind="
-            + symArray.getKind()
-            + " typeStr="
-            + symArray.getObjectType());
     // Declare array sort based on element type
     Sort elemSort =
         switch (symArray.getKind()) {

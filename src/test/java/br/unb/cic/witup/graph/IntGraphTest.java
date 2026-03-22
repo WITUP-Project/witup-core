@@ -199,41 +199,7 @@ public class IntGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
-
-    cpg.vertexSet()
-        .forEach(
-            node -> {
-              if (node instanceof SimpleNode sn
-                  && sn.getNode() instanceof StmtGraphNode stmtNode
-                  && stmtNode.getStmt() instanceof JAssignStmt assign
-                  && assign.getRightOp() instanceof JDynamicInvokeExpr invoke) {
-                System.out.println("DynamicInvoke: " + invoke);
-                invoke
-                    .getBootstrapArgs()
-                    .forEach(
-                        arg ->
-                            System.out.println(
-                                "  bootstrap arg: " + arg.getClass().getName() + " = " + arg));
-                invoke
-                    .getArgs()
-                    .forEach(
-                        arg ->
-                            System.out.println("  arg: " + arg.getClass().getName() + " = " + arg));
-                invoke
-                    .getBootstrapArgs()
-                    .forEach(
-                        arg -> {
-                          if (arg instanceof MethodHandle mh) {
-                            System.out.println("MethodHandle methods:");
-                            System.out.println("  toString: " + mh);
-                            System.out.println(
-                                "  getReferenceSignature: "
-                                    + mh.getReferenceSignature().getSubSignature());
-                          }
-                        });
-              }
-            });
   }
 }

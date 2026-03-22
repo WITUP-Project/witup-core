@@ -114,7 +114,6 @@ public final class SymbolicConstraintSolver {
           // Store under the Z3 constant name (e.g. "arr"), not the cache key
           // very hacky and implemented like this after too much time debugging
           String modelKey = this.toModelKey(name);
-          System.out.println("extractModel array: name=" + name + " modelKey=" + modelKey);
           modelValueMap.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
         } else {
           Expr<?> evaluated = model.eval(expr, true);

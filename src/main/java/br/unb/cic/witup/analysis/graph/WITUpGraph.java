@@ -303,7 +303,6 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public void dump() {
-    System.out.println("=== WITUpGraph === " + methodSignature);
     for (WITUpNode n : vertexSet()) {
       System.out.println("  NODE: " + n.getClass().getSimpleName() + " -- " + n.getNode());
     }

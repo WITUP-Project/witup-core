@@ -133,7 +133,6 @@ public class IntSolverTest {
     AnalysisResult analysis = pa.analyseMethod(lambdaSig);
     SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
-    System.out.println("model: " + sol0.getModelValueMap());
     assertTrue(sol0.getInt("x") < 0, "Expected x < 0");
   }
 

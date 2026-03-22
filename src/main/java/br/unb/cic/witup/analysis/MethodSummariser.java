@@ -180,7 +180,6 @@ public final class MethodSummariser implements SummaryResolver {
       final String calleeSignature, final List<SymExpr> actuals) {
 
     if (summaryRepository == null || graphRepository == null) {
-      log.debug("Interprocedural resolution skipped — no repository for {}", calleeSignature);
       return Optional.empty();
     }
 
@@ -191,7 +190,6 @@ public final class MethodSummariser implements SummaryResolver {
 
     // any alternatives to being conservatives here or mathematically impossible?
     if (summaryRepository.isInProgress(calleeSignature)) {
-      log.debug("Recursive call detected for {} — returning conservative empty", calleeSignature);
       return Optional.empty();
     }
 
@@ -207,7 +205,6 @@ public final class MethodSummariser implements SummaryResolver {
       return Optional.empty();
     }
 
-    log.debug("Recursively analysing callee {}", calleeSignature);
     summaryRepository.markInProgress(calleeSignature);
     MethodSummariser calleeAnalysis =
         new MethodSummariser(calleeGraph.get(), graphRepository, summaryRepository);
@@ -233,8 +230,6 @@ public final class MethodSummariser implements SummaryResolver {
       log.error("Formal/actual mismatch for {}", summary.getMethodSignature());
       return Optional.empty();
     }
-
-    log.debug("instantiate: formals={} actuals={}", summary.getFormalParams(), actuals);
 
     SymExpr returnExpr = summary.getReturnExpr();
     for (int i = 0; i < formals.size(); i++) {
