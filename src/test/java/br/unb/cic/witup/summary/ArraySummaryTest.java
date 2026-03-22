@@ -298,4 +298,27 @@ public class ArraySummaryTest {
 
     assertEquals("arr[i]", summary.getReturnExpr().toString());
   }
+
+  @Test
+  public void allocate2DSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[][] allocate2D(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    assertEquals(2, summary.getSymbolicConstraintPaths().size());
+
+    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
+    assertFalse(path0.get(0).getTruthValue());
+    assertTrue(path0.get(0).getSymExpr().toString().contains("rows >= 0"));
+
+    List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
+    assertTrue(path1.get(0).getTruthValue());
+    assertTrue(path1.get(0).getSymExpr().toString().contains("rows >= 0"));
+
+    assertFalse(path1.get(1).getTruthValue());
+    assertTrue(path1.get(1).getSymExpr().toString().contains("cols >= 0"));
+
+    assertEquals(2, summary.getFormalParams().size());
+    assertTrue(summary.getReturnExpr().toString().contains("newmultiarray(int[][])[rows][cols]"));
+  }
 }

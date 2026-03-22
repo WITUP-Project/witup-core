@@ -120,4 +120,14 @@ public class Array {
     }
     return arr[i];
   }
+
+  public int[][] allocate2D(int rows, int cols) {
+    if (rows < 0) {
+      throw new IllegalArgumentException("rows must not be negative");
+    }
+    if (cols < 0) {
+      throw new IllegalArgumentException("cols must not be negative");
+    }
+    return new int[rows][cols];
+  }
 }
