@@ -79,15 +79,9 @@ public final class SymDynamicInvoke extends SymExpr {
       }
     }
 
-    boolean argsChanged = false;
-    for (int i = 0; i < args.size(); i++) {
-      if (args.get(i) != newArgs.get(i)) {
-        argsChanged = true;
-        break;
-      }
-    }
-
-    return argsChanged ? new SymDynamicInvoke(signature, newArgs, getKind()) : this;
+    return newArgs != null
+            ? new SymDynamicInvoke(signature, newArgs, getKind())
+            : this;
   }
 
   @Override
