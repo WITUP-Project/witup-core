@@ -56,6 +56,13 @@ public final class SymITE extends SymExpr {
   }
 
   @Override
+  public boolean containsUnboxing() {
+    return condition.containsUnboxing()
+            || thenExpr.containsUnboxing()
+            || elseExpr.containsUnboxing();
+  }
+
+  @Override
   public boolean containsParam(final int idx) {
     return condition.containsParam(idx)
             || thenExpr.containsParam(idx)

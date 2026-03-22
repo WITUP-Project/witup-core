@@ -104,6 +104,14 @@ public final class SymVirtualInvoke extends SymExpr {
   }
 
   @Override
+  public boolean containsUnboxing() {
+    if (SymExpr.isUnboxingCall(signature)) {
+      return true;
+    }
+    return base.containsUnboxing();
+  }
+
+  @Override
   public boolean containsParam(final int idx) {
     if (base.containsParam(idx)) {
       return true;

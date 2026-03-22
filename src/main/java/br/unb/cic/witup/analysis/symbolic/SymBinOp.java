@@ -78,6 +78,11 @@ public final class SymBinOp extends SymExpr {
   }
 
   @Override
+  public boolean containsUnboxing() {
+    return lhs.containsUnboxing() || rhs.containsUnboxing();
+  }
+
+  @Override
   public boolean containsParam(final int idx) {
     return lhs.containsParam(idx)
             || rhs.containsParam(idx);

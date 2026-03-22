@@ -83,6 +83,11 @@ public abstract class SymExpr {
     return false;
   }
 
+  /** also saves on hot path*/
+  public boolean containsUnboxing() {
+    return false;
+  }
+
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
       case Local l -> new SymVar(l);
@@ -203,6 +208,10 @@ public abstract class SymExpr {
   }
 
   public static SymExpr simplifyBoxingPatterns(final SymExpr expr) {
+    if (!expr.containsUnboxing()) {
+      return expr;
+    }
+
     SymExpr simplified =
         switch (expr) {
           case SymBinOp b ->
@@ -219,9 +228,6 @@ public abstract class SymExpr {
         };
 
     if (!(expr instanceof SymVirtualInvoke invoke)) {
-      return simplified;
-    }
-    if (!(simplified instanceof SymVirtualInvoke inv)) {
       return simplified;
     }
     if (!isUnboxingCall(invoke.getSignature())) {
@@ -246,7 +252,7 @@ public abstract class SymExpr {
     return simplified;
   }
 
-  private static boolean isUnboxingCall(final String name) {
+  public static boolean isUnboxingCall(final String name) {
     return name.equals("intValue")
         || name.equals("longValue")
         || name.equals("doubleValue")
