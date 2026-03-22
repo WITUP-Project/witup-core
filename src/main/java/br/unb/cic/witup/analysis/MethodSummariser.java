@@ -29,6 +29,7 @@ import sootup.core.types.Type;
  */
 public final class MethodSummariser implements SummaryResolver {
   private static final Logger log = LoggerFactory.getLogger("MethodSummariser");
+  public static final int MAX_THROW_FREE_PATHS = 10000;
 
   private final WITUpGraph cpg;
   private final Map<WITUpNode, List<List<SymbolicConstraint>>> symbolicThrowConstraints =
@@ -95,6 +96,8 @@ public final class MethodSummariser implements SummaryResolver {
     if (paths == null || paths.isEmpty()) {
       return null;
     }
+    List<List<SymbolicConstraint>> boundedThrowFreePaths =
+            paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
     // for each path, build the negation of its conjunction
     // throw-free means: NOT(path1) AND NOT(path2) AND ...
     // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
@@ -102,7 +105,7 @@ public final class MethodSummariser implements SummaryResolver {
     // throw-free precondition: all throw paths are false
     // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
     SymExpr result = SymIntConst.one();
-    for (List<SymbolicConstraint> path : paths) {
+    for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
       SymExpr pathCond = buildPathConjunction(path);
       result = new SymITE(pathCond, SymIntConst.zero(), result);
     }

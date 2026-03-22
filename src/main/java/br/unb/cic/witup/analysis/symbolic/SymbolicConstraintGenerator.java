@@ -369,11 +369,15 @@ public final class SymbolicConstraintGenerator {
       }
       case JInterfaceInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = new ArrayList<>();
+        invoke.getArgs().stream().map(SymExpr::fromJimple).forEach(actuals::add);
+        actuals.add(SymExpr.fromJimple(invoke.getBase())); // add @this
       }
       case JSpecialInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
-        actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
+        actuals = new ArrayList<>();
+        invoke.getArgs().stream().map(SymExpr::fromJimple).forEach(actuals::add);
+        actuals.add(SymExpr.fromJimple(invoke.getBase())); // add @this
       }
       case JDynamicInvokeExpr invoke -> {
         calleeSig = invoke.getMethodSignature().toString();
