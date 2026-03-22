@@ -207,4 +207,23 @@ public class ArrayGraphTest {
         cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
     assertEquals(1, conditionNodes.size());
   }
+
+  @Test
+  public void allocate2DGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[][] allocate2D(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
+    assertNotNull(cpg);
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    assertEquals(2, throwNodes.size());
+
+    List<WITUpNode> conditionNodes0 =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+    assertEquals(1, conditionNodes0.size());
+
+    List<WITUpNode> conditionNodes1 =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(1));
+    assertEquals(2, conditionNodes1.size());
+  }
 }

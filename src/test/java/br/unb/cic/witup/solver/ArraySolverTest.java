@@ -174,12 +174,24 @@ public class ArraySolverTest {
     assertTrue(sol1.isSat());
     assertTrue(sol1.getInt("i") < 0, "expected i < 0");
 
-    SolverResult sol2 = analysis.solutions().get(2);
-    ;
-
+    SolverResult sol2 = analysis.solutions().get(2);;
     assertTrue(sol2.isSat());
     assertFalse(sol2.getBool("arr_is_null"), "arr must not be null");
     assertTrue(sol2.getInt("i") >= 0, "i must be non-negative");
     assertTrue(sol2.getInt("i") >= sol2.getInt("arr.length"), "expected i >= arr.length");
+  }
+
+  @Test
+  public void allocate2DSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Array: int[][] allocate2D(int,int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+
+    SolverResult sol0 = analysis.solutions().get(0);
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("rows") < 0, "Expected rows < 0");
+
+    SolverResult sol1 = analysis.solutions().get(1);
+    assertTrue(sol1.isSat());
+    assertTrue(sol1.getInt("cols") < 0, "Expected cols < 0");
   }
 }
