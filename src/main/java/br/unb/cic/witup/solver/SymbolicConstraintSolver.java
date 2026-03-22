@@ -75,7 +75,14 @@ public final class SymbolicConstraintSolver {
     Z3Translator translator = new Z3Translator(ctx);
 
     for (SymbolicConstraint c : constraints) {
-      solver.add(translator.translateConstraint(c));
+      // should probably remove
+      try {
+        solver.add(translator.translateConstraint(c));
+      } catch (Exception e) {
+        log.error("Z3 error adding constraint for {}: {}", pathId, e.getMessage());
+        log.error("Stack trace: ", e);
+        throw e;
+      }
     }
 
     Status status = solver.check();

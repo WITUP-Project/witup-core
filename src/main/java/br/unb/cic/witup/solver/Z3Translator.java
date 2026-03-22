@@ -144,8 +144,41 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       return new ExprPair(lhs, rhs);
     }
 
-    UninterpretedSort objSort = context.mkUninterpretedSort(JAVA_LANG_OBJECT);
+    Sort nullSort = context.mkUninterpretedSort("Null");
+    Sort intSort = context.getIntSort();
     Sort strSort = context.getStringSort();
+
+    if (lhs instanceof BoolExpr boolLhs && rightSort.equals(context.getIntSort())) {
+      return new ExprPair(toArith(boolLhs), rhs);
+    }
+    if (rhs instanceof BoolExpr boolRhs && leftSort.equals(context.getIntSort())) {
+      return new ExprPair(lhs, toArith(boolRhs));
+    }
+    // Null vs Int — encode as null check bool const, coerce to int
+    if (leftSort.equals(nullSort) && rightSort.equals(intSort)) {
+      String key = lhs.toString().replace("|", "") + IS_NULL;
+      BoolExpr isNull = (BoolExpr) exprMap.computeIfAbsent(key, context::mkBoolConst);
+      return new ExprPair(toArith(isNull), rhs);
+    }
+    if (rightSort.equals(nullSort) && leftSort.equals(intSort)) {
+      String key = rhs.toString().replace("|", "") + IS_NULL;
+      BoolExpr isNull = (BoolExpr) exprMap.computeIfAbsent(key, context::mkBoolConst);
+      return new ExprPair(lhs, toArith(isNull));
+    }
+
+    // String vs Int — coerce string to opaque int
+    if (leftSort.equals(strSort) && rightSort.equals(intSort)) {
+      Expr<?> coerced = exprMap.computeIfAbsent(
+              lhs + "_as_int", k -> context.mkIntConst(k));
+      return new ExprPair(coerced, rhs);
+    }
+    if (rightSort.equals(strSort) && leftSort.equals(intSort)) {
+      Expr<?> coerced = exprMap.computeIfAbsent(
+              rhs + "_as_int", k -> context.mkIntConst(k));
+      return new ExprPair(lhs, coerced);
+    }
+
+    UninterpretedSort objSort = context.mkUninterpretedSort(JAVA_LANG_OBJECT);
 
     if (leftSort instanceof ArraySort<?, ?> ls
         && ls.getRange().equals(objSort)
@@ -211,7 +244,13 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     if (expr instanceof BoolExpr b) {
       return (ArithExpr<IntSort>) context.mkITE(b, context.mkInt(1), context.mkInt(0));
     }
-    return (ArithExpr<IntSort>) expr;
+    Sort sort = expr.getSort();
+    if (sort.equals(context.getIntSort()) || sort.equals(context.getRealSort())) {
+      return (ArithExpr<IntSort>) expr;
+    }
+    // Null, String, UninterpretedSort — encode as opaque int constant
+    String key = expr.toString().replace("|", "") + "_as_int";
+    return (ArithExpr<IntSort>) exprMap.computeIfAbsent(key, context::mkIntConst);
   }
 
   private BitVecExpr bv(final Expr<?> e) {
@@ -456,6 +495,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       condExpr = context.mkNot(context.mkEq(a, context.mkInt(0)));
     } else {
       throw new IllegalStateException("Unexpected ITE condition type: " + condExprRaw.getClass());
+    }
+
+    if (!thenExpr.getSort().equals(elseExpr.getSort())) {
+      thenExpr = toArith(thenExpr);
+      elseExpr = toArith(elseExpr);
     }
 
     return context.mkITE(condExpr, thenExpr, elseExpr);
