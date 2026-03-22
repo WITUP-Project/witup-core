@@ -52,6 +52,11 @@ public final class SymParamRef extends SymExpr {
   }
 
   @Override
+  public boolean containsParam(final int idx) {
+    return this.index == idx;
+  }
+
+  @Override
   public boolean contains(final String varName) {
     return Integer.toString(index).contains(varName);
   }

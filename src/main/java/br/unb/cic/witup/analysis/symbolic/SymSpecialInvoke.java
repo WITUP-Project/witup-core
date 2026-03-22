@@ -72,6 +72,9 @@ public final class SymSpecialInvoke extends SymExpr {
   }
 
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    if (!containsParam(idx)) {
+      return this;
+    }
     SymExpr newBase = base.substituteParam(idx, actual);
 
     List<SymExpr> newArgs = null;
@@ -97,8 +100,29 @@ public final class SymSpecialInvoke extends SymExpr {
   }
 
   @Override
+  public boolean containsParam(final int idx) {
+    if (base.containsParam(idx)) {
+      return true;
+    }
+    for (SymExpr arg : args) {
+      if (arg.containsParam(idx)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
   public boolean contains(final String varName) {
-    return base.contains(varName);
+    if (base.contains(varName)) {
+      return true;
+    }
+    for (SymExpr arg : args) {
+      if (arg.contains(varName)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

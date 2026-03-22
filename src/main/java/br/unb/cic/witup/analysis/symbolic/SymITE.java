@@ -43,6 +43,9 @@ public final class SymITE extends SymExpr {
 
   @Override
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    if (!containsParam(idx)) {
+      return this;
+    }
     SymExpr newCond = condition.substituteParam(idx, actual);
     SymExpr newThen = thenExpr.substituteParam(idx, actual);
     SymExpr newElse = elseExpr.substituteParam(idx, actual);
@@ -50,6 +53,13 @@ public final class SymITE extends SymExpr {
       return new SymITE(newCond, newThen, newElse);
     }
     return this;
+  }
+
+  @Override
+  public boolean containsParam(final int idx) {
+    return condition.containsParam(idx)
+            || thenExpr.containsParam(idx)
+            || elseExpr.containsParam(idx);
   }
 
   @Override

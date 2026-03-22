@@ -78,6 +78,10 @@ public abstract class SymExpr {
   }
   public abstract String toString();
   public abstract boolean contains(String varName);
+  /** save allocation on hot path */
+  public boolean containsParam(final int idx) {
+    return false;
+  }
 
   public static SymExpr fromJimple(final Value value) {
     return switch (value) {
