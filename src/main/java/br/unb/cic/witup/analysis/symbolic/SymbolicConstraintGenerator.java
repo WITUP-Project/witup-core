@@ -190,13 +190,6 @@ public final class SymbolicConstraintGenerator {
 
     String receiverName = invoke.getBase().toString();
 
-    log.debug(
-        "tryResolveLambda: receiver={} incoming edges={}",
-        receiverName,
-        cpg.getIncomingDDGEdges(node).size());
-    cpg.getIncomingDDGEdges(node)
-        .forEach(e -> log.debug("  edge source: {}", cpg.getEdgeSource(e)));
-
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(node)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
       if (!isNodeInPath(sourceNode)) {
@@ -220,6 +213,8 @@ public final class SymbolicConstraintGenerator {
         if (bootstrapArgs.size() < 2) {
           return Optional.empty();
         }
+        // this should always be the implementation method handle for lambda
+        // metafactory invocations
         if (!(bootstrapArgs.get(1) instanceof MethodHandle mh)) {
           return Optional.empty();
         }
@@ -256,7 +251,6 @@ public final class SymbolicConstraintGenerator {
     visited.add(currentNode);
 
     Set<String> freeVars = new VariableCollector().collect(symExpr);
-    log.debug("backwardSubstitute freeVars={} at node={}", freeVars, currentNode);
 
     if (freeVars.isEmpty()) {
       return symExpr;
@@ -283,11 +277,6 @@ public final class SymbolicConstraintGenerator {
       Value rhsOp;
 
       if (stmt instanceof JAssignStmt assign) {
-        log.debug(
-            "assign lhs={} isStack={} rhs={}",
-            assign.getLeftOp(),
-            isStackVariable(assign.getLeftOp()),
-            assign.getRightOp().getClass().getSimpleName());
         if (!isStackVariable(assign.getLeftOp()) && assign.getRightOp() instanceof JCastExpr) {
           continue;
         }
@@ -368,10 +357,6 @@ public final class SymbolicConstraintGenerator {
         actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
       }
       case JDynamicInvokeExpr invoke -> {
-        log.debug(
-            "DynamicInvoke: method={} bootstrapArgs={}",
-            invoke.getMethodSignature(),
-            invoke.getBootstrapArgs());
         calleeSig = invoke.getMethodSignature().toString();
         actuals = invoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
       }

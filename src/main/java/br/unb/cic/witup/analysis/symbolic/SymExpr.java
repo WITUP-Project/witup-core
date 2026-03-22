@@ -1,8 +1,6 @@
 package br.unb.cic.witup.analysis.symbolic;
 
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.constant.ClassConstant;
@@ -56,7 +54,7 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 public abstract class SymExpr {
-  private static final Logger log = LoggerFactory.getLogger("SymExpr");
+//  private static final Logger log = LoggerFactory.getLogger("SymExpr");
 
   public abstract <T> T accept(SymExprVisitor<T> visitor);
 
@@ -216,16 +214,15 @@ public abstract class SymExpr {
   }
 
   public static SymExpr simplifyBoxingPatterns(final SymExpr expr) {
-    log.debug("simplifyBoxingPatterns input: {}", expr);
+    //    log.debug("simplifyBoxingPatterns input: {}", expr);
 
     SymExpr simplified =
         switch (expr) {
-          case SymBinOp b -> {
-            SymExpr newLhs = simplifyBoxingPatterns(b.getLhs());
-            SymExpr newRhs = simplifyBoxingPatterns(b.getRhs());
-            log.debug("SymBinOp is: op={} oldLhs={} newLhs={}", b.getOp(), b.getLhs(), newLhs);
-            yield new SymBinOp(b.getOp(), newLhs, newRhs);
-          }
+          case SymBinOp b ->
+              new SymBinOp(
+                  b.getOp(),
+                  simplifyBoxingPatterns(b.getLhs()),
+                  simplifyBoxingPatterns(b.getRhs()));
           case SymITE ite ->
               new SymITE(
                   simplifyBoxingPatterns(ite.getCondition()),
@@ -248,14 +245,11 @@ public abstract class SymExpr {
 
     SymExpr base = invoke.getBase();
     if (base instanceof SymCast cast) {
-      log.debug(
-          "cast branch: inner={} class={}", cast.getOp(), cast.getOp().getClass().getSimpleName());
       SymExpr inner = cast.getOp();
       // unwrap valueOf(e) -> e
       if (inner instanceof SymStaticInvoke staticInvoke
           && isBoxingCall(staticInvoke.getInvokeName())
           && staticInvoke.getArgs().size() == 1) {
-        log.debug("valueOf branch fired");
         return staticInvoke.getArgs().get(0);
       }
       return inner;

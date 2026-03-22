@@ -54,7 +54,6 @@ public final class ProjectAnalyser implements GraphRepository {
     view = new JavaView(inputLocation);
 
     List<JavaSootClass> classes = view.getClasses().toList();
-    log.info("Found {} classes", classes.size());
 
     Map<String, WITUpGraph> methodGraph = analyseClasses(classes);
     methodGraphs.putAll(methodGraph);
@@ -138,7 +137,6 @@ public final class ProjectAnalyser implements GraphRepository {
                   worklist.add(callee);
                 }
               });
-      log.debug("reachable for {}: {}", sig, reachable);
     }
     return reachable;
   }
@@ -169,7 +167,6 @@ public final class ProjectAnalyser implements GraphRepository {
     CallGraphBuilder builder = new CallGraphBuilder(view);
     callGraph = builder.build(graphs.keySet());
     analysisOrder = builder.buildAnalysisOrder(callGraph);
-    log.info("analysis order :{}", analysisOrder);
     for (List<String> scc : analysisOrder) {
       if (scc.size() == 1) {
         // singleton — one pass
@@ -196,7 +193,7 @@ public final class ProjectAnalyser implements GraphRepository {
       MethodSummariser ms = new MethodSummariser(graph, this, summaryCache);
       summaries.put(sig, ms.summarise());
     } catch (Exception e) {
-      log.warn("Failed to summarise {}: {}", sig, e.getMessage());
+      log.error("Failed to summarise {}: {}", sig, e.getMessage());
       failures.put(sig, e.getClass().getSimpleName() + ": " + e.getMessage());
     }
   }
