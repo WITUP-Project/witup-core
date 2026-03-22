@@ -75,7 +75,14 @@ public final class SymbolicConstraintSolver {
     Z3Translator translator = new Z3Translator(ctx);
 
     for (SymbolicConstraint c : constraints) {
-      solver.add(translator.translateConstraint(c));
+      // should probably remove
+      try {
+        solver.add(translator.translateConstraint(c));
+      } catch (Exception e) {
+        log.error("Z3 error adding constraint for {}: {}", pathId, e.getMessage());
+        log.error("Stack trace: ", e);
+        throw e;
+      }
     }
 
     Status status = solver.check();
@@ -114,7 +121,6 @@ public final class SymbolicConstraintSolver {
           // Store under the Z3 constant name (e.g. "arr"), not the cache key
           // very hacky and implemented like this after too much time debugging
           String modelKey = this.toModelKey(name);
-          System.out.println("extractModel array: name=" + name + " modelKey=" + modelKey);
           modelValueMap.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
         } else {
           Expr<?> evaluated = model.eval(expr, true);

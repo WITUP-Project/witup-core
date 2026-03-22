@@ -244,9 +244,11 @@ public class IntSummaryTest {
 
     List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
     assertFalse(path0.get(0).getTruthValue());
-    // too hard to assert on ITE trees when doing interprocedural.
+    assertTrue(path0.get(0).getSymExpr().toString().contains("(x * 2) >= 0"));
 
     assertEquals(1, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().get(0).getKind());
+
+    assertTrue(summary.getReturnExpr().toString().contains("x * 2"));
   }
 }

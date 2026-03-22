@@ -20,6 +20,7 @@ import br.unb.cic.witup.analysis.symbolic.SymLength;
 import br.unb.cic.witup.analysis.symbolic.SymLongConstant;
 import br.unb.cic.witup.analysis.symbolic.SymNeg;
 import br.unb.cic.witup.analysis.symbolic.SymNew;
+import br.unb.cic.witup.analysis.symbolic.SymNewMultiArray;
 import br.unb.cic.witup.analysis.symbolic.SymNull;
 import br.unb.cic.witup.analysis.symbolic.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymSpecialInvoke;
@@ -143,13 +144,6 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
 
   @Override
   public Sort visitArray(final SymArray symArray) {
-    System.out.println(
-        "visitArray: "
-            + symArray.getName()
-            + " elementKind="
-            + symArray.getKind()
-            + " typeStr="
-            + symArray.getObjectType());
     // Declare array sort based on element type
     Sort elemSort =
         switch (symArray.getKind()) {
@@ -174,6 +168,11 @@ public final class Z3SortDetector implements SymExprVisitor<Sort> {
           "Expected ArraySort for array base, got " + arraySort.getClass());
     }
     return arrSort.getRange(); // arr[i]
+  }
+
+  @Override
+  public Sort visitNewMultiArray(final SymNewMultiArray e) {
+    return context.getIntSort();
   }
 
   @Override

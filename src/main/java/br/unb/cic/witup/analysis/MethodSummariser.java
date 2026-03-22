@@ -113,7 +113,6 @@ public final class MethodSummariser implements SummaryResolver {
   private SymExpr traceReturnExpr() {
     List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
     if (returnNodes.isEmpty()) {
-      log.debug("No return nodes found for {}", getMethodSignature());
       return null;
     }
 
@@ -136,7 +135,6 @@ public final class MethodSummariser implements SummaryResolver {
       }
     }
 
-    log.debug("traceReturnExpr for {} — {}", getMethodSignature(), result);
     return result;
   }
 
@@ -181,19 +179,17 @@ public final class MethodSummariser implements SummaryResolver {
   public Optional<SymExpr> resolveReturnExpr(
       final String calleeSignature, final List<SymExpr> actuals) {
 
+    if (summaryRepository == null || graphRepository == null) {
+      return Optional.empty();
+    }
+
     log.debug(
         "resolveReturnExpr: cache present={} inProgress={}",
         summaryRepository.getSummary(calleeSignature).isPresent(),
         summaryRepository.isInProgress(calleeSignature));
 
-    if (summaryRepository == null || graphRepository == null) {
-      log.debug("Interprocedural resolution skipped — no repository for {}", calleeSignature);
-      return Optional.empty();
-    }
-
     // any alternatives to being conservatives here or mathematically impossible?
     if (summaryRepository.isInProgress(calleeSignature)) {
-      log.debug("Recursive call detected for {} — returning conservative empty", calleeSignature);
       return Optional.empty();
     }
 
@@ -209,44 +205,38 @@ public final class MethodSummariser implements SummaryResolver {
       return Optional.empty();
     }
 
-    log.debug("Recursively analysing callee {}", calleeSignature);
     summaryRepository.markInProgress(calleeSignature);
     MethodSummariser calleeAnalysis =
         new MethodSummariser(calleeGraph.get(), graphRepository, summaryRepository);
 
-    log.debug("Calling summarise() for callee {}", calleeSignature);
+    log.debug("summarising callee {}", calleeSignature);
     MethodSummary calleeSummary = calleeAnalysis.summarise();
-    log.debug(
-        "summarise() returned for {} — returnExpr={}",
-        calleeSignature,
-        calleeSummary.getReturnExpr());
-    summaryRepository.putSummary(calleeSignature, calleeSummary);
+    //    log.debug(
+    //        "summarise() returned for {} — returnExpr={}",
+    //        calleeSignature,
+    //        calleeSummary.getReturnExpr());
 
-    // instantiate returnExpr with actuals when MethodSummary carries returnExpr
-    log.debug(
-        "Callee {} analysed — return expr instantiation not yet implemented", calleeSignature);
+    summaryRepository.putSummary(calleeSignature, calleeSummary);
     return instantiate(calleeSummary, actuals);
   }
 
   private Optional<SymExpr> instantiate(final MethodSummary summary, final List<SymExpr> actuals) {
     if (!summary.hasReturnExpr()) {
-      log.debug("No return expr in summary for {}", summary.getMethodSignature());
       return Optional.empty();
     }
 
     List<SymParamRef> formals = summary.getFormalParams();
     if (formals == null || formals.size() != actuals.size()) {
-      log.debug("Formal/actual mismatch for {}", summary.getMethodSignature());
+      log.error("Formal/actual mismatch for {}", summary.getMethodSignature());
       return Optional.empty();
     }
-
-    log.debug("instantiate: formals={} actuals={}", summary.getFormalParams(), actuals);
 
     SymExpr returnExpr = summary.getReturnExpr();
     for (int i = 0; i < formals.size(); i++) {
       returnExpr = returnExpr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
     }
-    log.debug("Instantiated return expr for {}: {}", summary.getMethodSignature(), returnExpr);
+    //    log.debug("Instantiated return expr for {}: {}", summary.getMethodSignature(),
+    // returnExpr);
     return Optional.of(returnExpr);
   }
 

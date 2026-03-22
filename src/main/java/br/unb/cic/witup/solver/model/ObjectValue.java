@@ -32,8 +32,6 @@ public final class ObjectValue implements ModelValue {
       if (decl.getName().toString().equals("field_" + fieldName) && decl.getArity() == 1) {
         Expr<?> applied = ctx.mkApp(decl, objExpr);
         Expr<?> evaluated = model.eval(applied, true);
-        System.out.println(
-            "getField " + fieldName + ": objExpr=" + objExpr + " evaluated=" + evaluated);
         return ModelValue.fromExpr(evaluated, model, ctx);
       }
     }

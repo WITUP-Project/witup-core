@@ -32,6 +32,7 @@ import sootup.core.jimple.common.expr.JNeExpr;
 import sootup.core.jimple.common.expr.JNegExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
 import sootup.core.jimple.common.expr.JOrExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
 import sootup.core.jimple.common.expr.JShlExpr;
@@ -54,6 +55,8 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 public abstract class SymExpr {
+//  private static final Logger log = LoggerFactory.getLogger("SymExpr");
+
   public abstract <T> T accept(SymExprVisitor<T> visitor);
 
   private final SymKind kind;
@@ -101,8 +104,9 @@ public abstract class SymExpr {
       case JSpecialInvokeExpr e -> SymSpecialInvoke.fromSpecialInvokeExpr(e);
       case JDynamicInvokeExpr e -> new SymDynamicInvoke(e);
       case JArrayRef r -> SymArrayRef.fromArrayRef(r);
-      case JLengthExpr e -> new SymLength(e);
       case JNewArrayExpr e -> new SymArray(e);
+      case JNewMultiArrayExpr e -> new SymNewMultiArray(e);
+      case JLengthExpr e -> new SymLength(e);
       case JCastExpr e -> new SymCast(e);
       case JInstanceOfExpr e -> new SymInstanceOf(e);
       case JParameterRef r -> new SymParamRef(r);
@@ -209,6 +213,70 @@ public abstract class SymExpr {
     }
 
     return expr;
+  }
+
+  public static SymExpr simplifyBoxingPatterns(final SymExpr expr) {
+    //    log.debug("simplifyBoxingPatterns input: {}", expr);
+
+    SymExpr simplified =
+        switch (expr) {
+          case SymBinOp b ->
+              new SymBinOp(
+                  b.getOp(),
+                  simplifyBoxingPatterns(b.getLhs()),
+                  simplifyBoxingPatterns(b.getRhs()));
+          case SymITE ite ->
+              new SymITE(
+                  simplifyBoxingPatterns(ite.getCondition()),
+                  simplifyBoxingPatterns(ite.getThenExpr()),
+                  simplifyBoxingPatterns(ite.getElseExpr()));
+          default -> expr;
+        };
+
+    if (!(expr instanceof SymVirtualInvoke invoke)) {
+      return simplified;
+    }
+
+    if (!(simplified instanceof SymVirtualInvoke inv)) {
+      return simplified;
+    }
+
+    if (!isUnboxingCall(invoke.getSignature())) {
+      return simplified;
+    }
+
+    SymExpr base = invoke.getBase();
+    if (base instanceof SymCast cast) {
+      SymExpr inner = cast.getOp();
+      // unwrap valueOf(e) -> e
+      if (inner instanceof SymStaticInvoke staticInvoke
+          && isBoxingCall(staticInvoke.getInvokeName())
+          && staticInvoke.getArgs().size() == 1) {
+        return staticInvoke.getArgs().get(0);
+      }
+      return inner;
+    }
+    if (base instanceof SymStaticInvoke staticInvoke
+        && isBoxingCall(staticInvoke.getInvokeName())
+        && staticInvoke.getArgs().size() == 1) {
+      return staticInvoke.getArgs().get(0);
+    }
+
+    return simplified;
+  }
+
+  private static boolean isUnboxingCall(final String name) {
+    return name.equals("intValue")
+        || name.equals("longValue")
+        || name.equals("doubleValue")
+        || name.equals("floatValue")
+        || name.equals("shortValue")
+        || name.equals("byteValue")
+        || name.equals("booleanValue");
+  }
+
+  private static boolean isBoxingCall(final String name) {
+    return name.contains("valueOf");
   }
 
   private static boolean isZeroConst(final SymExpr expr) {

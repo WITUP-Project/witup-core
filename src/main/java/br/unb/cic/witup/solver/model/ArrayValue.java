@@ -26,14 +26,6 @@ public record ArrayValue(ArrayExpr<IntSort, ?> arrayExpr, Model model, Context c
     Expr<?> val = model.eval(ctx.mkSelect(arrayExpr, indexExpr), true);
     Sort rangeSort = ((ArraySort<?, ?>) arrayExpr.getSort()).getRange();
 
-    System.out.println(
-        "ArrayValue.get: arrayExpr="
-            + arrayExpr
-            + " rangeSort="
-            + rangeSort
-            + " kind="
-            + rangeSort.getSortKind());
-
     return switch (rangeSort.getSortKind()) {
       case Z3_INT_SORT -> parseIntValue(val);
       case Z3_SEQ_SORT -> new StringValue(val.getString());

@@ -133,7 +133,15 @@ public class IntSolverTest {
     AnalysisResult analysis = pa.analyseMethod(lambdaSig);
     SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
-    System.out.println("model: " + sol0.getModelValueMap());
     assertTrue(sol0.getInt("x") < 0, "Expected x < 0");
+  }
+
+  @Test
+  public void applyAndCheckResultSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int applyAndCheckResult(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("x") < 0, "Expected x < 0 (since (x * 2 < 0))");
   }
 }

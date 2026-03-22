@@ -33,6 +33,8 @@ public interface SymExprVisitor<T> {
 
   T visitArrayRef(SymArrayRef r);
 
+  T visitNewMultiArray(SymNewMultiArray r);
+
   T visitLength(SymLength l);
 
   T visitCast(SymCast c);

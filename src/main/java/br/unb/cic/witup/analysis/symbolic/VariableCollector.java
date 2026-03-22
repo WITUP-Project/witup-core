@@ -101,6 +101,12 @@ public final class VariableCollector implements SymExprVisitor<Void> {
   }
 
   @Override
+  public Void visitNewMultiArray(final SymNewMultiArray e) {
+    e.getSizes().forEach(s -> s.accept(this));
+    return null;
+  }
+
+  @Override
   public Void visitLength(final SymLength l) {
     l.getOp().accept(this);
     return null;

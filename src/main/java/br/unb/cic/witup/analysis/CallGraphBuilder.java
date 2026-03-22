@@ -74,9 +74,8 @@ public final class CallGraphBuilder {
       analysisOrder.add(new ArrayList<>(scc.vertexSet()));
     }
 
-    log.info("Analysis order: {} SCCs", analysisOrder.size());
     long nonSingletons = analysisOrder.stream().filter(scc -> scc.size() > 1).count();
-    log.info("Non-singleton SCCs (genuine recursion): {}", nonSingletons);
+    log.debug("Non-singleton SCCs (genuine recursion): {}", nonSingletons);
     return analysisOrder;
   }
 }
