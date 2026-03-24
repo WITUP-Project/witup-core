@@ -52,12 +52,7 @@ public final class SymbolicConstraintGenerator {
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
-
-  public SymbolicConstraintGenerator(
-      final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
-    this(cpg, constraintPaths, null);
-  }
-
+  
   /**
    * Interprocedural constructor.
    *

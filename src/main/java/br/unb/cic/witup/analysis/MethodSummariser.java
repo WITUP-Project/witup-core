@@ -94,18 +94,20 @@ public final class MethodSummariser implements SummaryResolver {
     return summary;
   }
 
+  // if a callee returned, it means one of its return paths was reached
+  // for each path, build the negation of its conjunction
+  // throw-free means: NOT(path1) AND NOT(path2) AND ...
+  // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
+  // but for simplicity encode as ITE tree (may cost a lot of memory)
+  // throw-free precondition: all throw paths are false
+  // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
   private SymExpr buildThrowFreePrecondition(final List<List<SymbolicConstraint>> paths) {
     if (paths == null || paths.isEmpty()) {
       return null;
     }
     List<List<SymbolicConstraint>> boundedThrowFreePaths =
         paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
-    // for each path, build the negation of its conjunction
-    // throw-free means: NOT(path1) AND NOT(path2) AND ...
-    // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
-    // but for simplicity encode as ITE tree (may cost a lot of memory)
-    // throw-free precondition: all throw paths are false
-    // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
+
     SymExpr result = SymIntConst.one();
     for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
       SymExpr pathCond = generatePathConditions(path);
