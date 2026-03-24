@@ -4,11 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
-import br.unb.cic.witup.analysis.MethodSummariser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -25,9 +23,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -40,9 +38,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -55,9 +53,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -72,9 +70,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -89,9 +87,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -106,9 +104,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(1, conditionNodes.size());
   }
 
   @Test
@@ -122,9 +120,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(2, conditionNodes.size());
   }
 
   @Test
@@ -138,9 +136,9 @@ public class ArrayGraphTest {
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
     assertEquals(1, throwNodes.size());
 
-    List<List<SymbolicConstraint>> paths =
-        new MethodSummariser(cpg).buildSymbolicConstraintPaths(throwNodes.get(0));
-    assertEquals(1, paths.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(2, conditionNodes.size());
   }
 
   @Test
@@ -155,7 +153,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(2, conditionNodes.size());
   }
 
@@ -172,7 +170,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -188,7 +186,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -204,7 +202,7 @@ public class ArrayGraphTest {
     assertEquals(3, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -219,11 +217,11 @@ public class ArrayGraphTest {
     assertEquals(2, throwNodes.size());
 
     List<WITUpNode> conditionNodes0 =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(0));
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes0.size());
 
-    List<WITUpNode> conditionNodes1 =
-        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.get(1));
-    assertEquals(2, conditionNodes1.size());
+    List<WITUpNode> conditionNodes =
+            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+    assertEquals(1, conditionNodes.size());
   }
 }
