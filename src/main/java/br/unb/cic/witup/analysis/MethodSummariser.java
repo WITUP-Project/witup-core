@@ -2,9 +2,7 @@ package br.unb.cic.witup.analysis;
 
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
-import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
-import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
@@ -17,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.jgrapht.GraphPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sootup.core.types.Type;
@@ -150,35 +147,9 @@ public final class MethodSummariser implements SummaryResolver {
         // base case — last return in iteration becomes the else branch
         result = returnExpr;
       } else {
-        SymExpr pathCondition = buildPathCondition(returnNode);
+        SymExpr pathCondition = symbolicConstraintGenerator.buildPathCondition(returnNode);
         result = new SymITE(pathCondition, returnExpr, result);
       }
-    }
-
-    return result;
-  }
-
-  private SymExpr buildPathCondition(final ReturnStatementNode returnNode) {
-    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
-    if (paths.isEmpty()) {
-      return SymIntConst.one();
-    }
-
-    // build a condition per path, then disjoin them
-    // ITE(cond1, 1, ITE(cond2, 1, ITE(cond3, 1, 0)))
-    SymExpr result = SymIntConst.zero();
-
-    for (int p = paths.size() - 1; p >= 0; p--) {
-      List<List<SymbolicConstraint>> generated =
-          symbolicConstraintGenerator.generateSymbolicConstraintPaths(List.of(paths.get(p)));
-
-      if (generated.isEmpty() || generated.getFirst().isEmpty()) {
-        return SymIntConst.one(); // unconditional path exists — always reachable
-      }
-      List<SymbolicConstraint> constraints = generated.getFirst();
-      SymExpr pathCond = generatePathConditions(constraints);
-      // disjoin: if this path's condition holds, result is 1
-      result = new SymITE(pathCond, SymIntConst.one(), result);
     }
 
     return result;

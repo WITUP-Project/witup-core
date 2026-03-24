@@ -346,6 +346,32 @@ public final class SymbolicConstraintGenerator {
     return symExpr;
   }
 
+  public SymExpr buildPathCondition(final ReturnStatementNode returnNode) {
+    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
+    if (paths.isEmpty()) {
+      return SymIntConst.one();
+    }
+
+    // build a condition per path, then disjoin them
+    // ITE(cond1, 1, ITE(cond2, 1, ITE(cond3, 1, 0)))
+    SymExpr result = SymIntConst.zero();
+
+    for (int p = paths.size() - 1; p >= 0; p--) {
+      List<List<SymbolicConstraint>> generated =
+              generateSymbolicConstraintPaths(List.of(paths.get(p)));
+
+      if (generated.isEmpty() || generated.getFirst().isEmpty()) {
+        return SymIntConst.one(); // unconditional path exists — always reachable
+      }
+      List<SymbolicConstraint> constraints = generated.getFirst();
+      SymExpr pathCond = generatePathConditions(constraints);
+      // disjoin: if this path's condition holds, result is 1
+      result = new SymITE(pathCond, SymIntConst.one(), result);
+    }
+
+    return result;
+  }
+
   private Optional<MethodSummariser.ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
     if (resolver == null) {
       return Optional.empty();
