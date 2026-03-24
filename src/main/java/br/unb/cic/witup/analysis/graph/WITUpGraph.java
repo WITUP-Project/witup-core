@@ -48,7 +48,6 @@ import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
-import sootup.core.types.ClassType;
 import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
@@ -128,7 +127,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private static WITUpNode createNode(final PropertyGraphNode node) {
     if (node instanceof StmtGraphNode stmt && stmt.getStmt() instanceof JThrowStmt throwStmt) {
-      return new ThrowStatementNode(node, throwStmt.getOp());
+      return new ThrowStatementNode(node, throwStmt);
     } else if (node instanceof StmtGraphNode stmt && stmt.getStmt() instanceof JIfStmt ifStmt) {
       return new IfStatementNode(node, ifStmt.getCondition());
     } else if (node instanceof StmtGraphNode stmt
@@ -280,7 +279,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   // $stack2 = new java.lang.IllegalArgumentException <--> first node has exception type
   // #l1 = (java.lang.Throwable) $stack 2             <--> mimic JVM wanting throwable
   // throw #l1                                        <--> actual throw node
-  public ClassType resolveExceptionType(final ThrowStatementNode throwNode) {
+  public String resolveExceptionType(final ThrowStatementNode throwNode) {
     for (DataDependencyEdge throwableEdge : getIncomingDDGEdges(throwNode)) {
       WITUpNode castNode = getEdgeSource(throwableEdge);
       for (DataDependencyEdge throwTypeEdge : getIncomingDDGEdges(castNode)) {
@@ -295,7 +294,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
           continue;
         }
         if (assign.getRightOp() instanceof JNewExpr newExpr) {
-          return newExpr.getType();
+          return newExpr.getType().getFullyQualifiedName();
         }
       }
     }

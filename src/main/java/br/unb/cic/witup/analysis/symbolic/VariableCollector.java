@@ -1,5 +1,35 @@
 package br.unb.cic.witup.analysis.symbolic;
 
+import br.unb.cic.witup.analysis.symbolic.expr.SymArray;
+import br.unb.cic.witup.analysis.symbolic.expr.SymArrayRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymCast;
+import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymDoubleConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymDynamicInvoke;
+import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymFieldAccess;
+import br.unb.cic.witup.analysis.symbolic.expr.SymFloatConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
+import br.unb.cic.witup.analysis.symbolic.expr.SymInstanceOf;
+import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymInterfaceInvoke;
+import br.unb.cic.witup.analysis.symbolic.expr.SymLength;
+import br.unb.cic.witup.analysis.symbolic.expr.SymLongConstant;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNeg;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNew;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNewMultiArray;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNull;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymSpecialInvoke;
+import br.unb.cic.witup.analysis.symbolic.expr.SymStaticFieldRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymStaticInvoke;
+import br.unb.cic.witup.analysis.symbolic.expr.SymStringConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymThisRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
+import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
 import java.util.HashSet;
 import java.util.Set;
 

@@ -23,14 +23,15 @@ public class TextSummaryTest {
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
-    assertEquals(1, summary.getSymbolicConstraintPaths().size());
+    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).truthValue());
-    assertTrue(path0.get(0).symExpr().toString().contains("s != 'abc'"));
+    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    assertFalse(path0.getFirst().truthValue());
+    assertTrue(path0.getFirst().symExpr().toString().contains("s != 'abc'"));
 
     assertEquals(2, summary.getFormalParams().size());
-    assertEquals(SymKind.STRING, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.STRING, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     assertEquals(1, Integer.parseInt(summary.getReturnExpr().toString()));
@@ -45,13 +46,15 @@ public class TextSummaryTest {
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
-    assertEquals(1, summary.getSymbolicConstraintPaths().size());
-    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).truthValue());
-    assertTrue(path0.get(0).symExpr().toString().contains("s_instanceof_java_lang_String"));
+    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+
+    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    assertFalse(path0.getFirst().truthValue());
+    assertTrue(path0.getFirst().symExpr().toString().contains("s_instanceof_java_lang_String"));
 
     assertEquals(2, summary.getFormalParams().size());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(0).getKind());
+    assertEquals(SymKind.OBJECT, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     assertTrue(summary.getReturnExpr().toString().contains("(java.lang.String)s"));
@@ -65,10 +68,12 @@ public class TextSummaryTest {
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
 
-    assertEquals(1, summary.getSymbolicConstraintPaths().size());
-    List<SymbolicConstraint> path0 = summary.getSymbolicConstraintPaths().get(0);
-    assertFalse(path0.get(0).truthValue());
-    assertTrue(path0.get(0).symExpr().toString().contains("s.length() != 0"));
+    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+
+    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    assertFalse(path0.getFirst().truthValue());
+    assertTrue(path0.getFirst().symExpr().toString().contains("s.length() != 0"));
 
     assertEquals(1, Integer.parseInt(summary.getReturnExpr().toString()));
   }

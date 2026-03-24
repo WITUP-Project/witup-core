@@ -1,6 +1,6 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.MethodSummariser;
+import br.unb.cic.witup.analysis.ResolvedCallee;
 import br.unb.cic.witup.analysis.SummaryResolver;
 import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
@@ -10,6 +10,13 @@ import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
+import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +41,7 @@ import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
+import sootup.core.types.Type;
 
 /**
  * Translates Jimple constraints into SymbolicConstraints. Uses backwards data flow resolution to
@@ -42,43 +50,14 @@ import sootup.core.jimple.common.stmt.Stmt;
  */
 public final class SymbolicConstraintGenerator {
   private final WITUpGraph cpg;
-  private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
+  public static final int MAX_THROW_FREE_PATHS = 10000;
 
-  public SymbolicConstraintGenerator(
-      final WITUpGraph cpg, final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
-    this(cpg, constraintPaths, null);
-  }
-
-  /**
-   * Interprocedural constructor.
-   *
-   * @param cpg a WITUpGraph with the CPG of the method under analysis
-   * @param constraintPaths List<GraphPath<WITUpNode, WITUpEdge>> paths that represent symbolic
-   *     constraints
-   * @param resolver a MethodSummariser that recursively resolves interprocedural calls.
-   */
-  public SymbolicConstraintGenerator(
-      final WITUpGraph cpg,
-      final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths,
-      final SummaryResolver resolver) {
+  public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
     this.cpg = cpg;
-    this.constraintPaths = constraintPaths;
     this.resolver = resolver;
-  }
-
-  public List<List<SymbolicConstraint>> generateSymbolicConstraintPaths() {
-    List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> p : this.constraintPaths) {
-      List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
-
-      if (!resolved.isEmpty()) {
-        symbolicConstraints.add(resolved);
-      }
-    }
-    return symbolicConstraints;
   }
 
   public List<SymbolicConstraint> generateSymbolicConstraints(
@@ -97,7 +76,7 @@ public final class SymbolicConstraintGenerator {
             substituteWithPreconditions(
                 SymExpr.fromJimple(ifStmt.getCondition()), throwConstraint.node());
         symExpr = result.expr();
-        extraConstraints.addAll(result.extraConstraints());
+        extraConstraints.addAll(result.preconditions());
       } else if (throwConstraint.node() instanceof CaughtExceptionNode caught) {
         symExpr = new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
       } else {
@@ -120,17 +99,34 @@ public final class SymbolicConstraintGenerator {
     this.currentPathNodes = new HashSet<>(p.getVertexList());
   }
 
-  private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> extraConstraints) {}
+  public List<List<SymbolicConstraint>> buildNodeConstraintPaths(final WITUpNode throwNode) {
+    List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths = cpg.getConstraintPaths(throwNode);
+    return generateThrowConstraintPath(throwConstraintPaths);
+  }
+
+  private List<List<SymbolicConstraint>> generateThrowConstraintPath(
+      final List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths) {
+    List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
+    for (GraphPath<WITUpNode, WITUpEdge> p : throwConstraintPaths) {
+      List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
+
+      if (!resolved.isEmpty()) {
+        symbolicConstraints.add(resolved);
+      }
+    }
+    return symbolicConstraints;
+  }
+
+  private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> preconditions) {}
 
   private SubstituteResult substituteWithPreconditions(
       final SymExpr initial, final WITUpNode startNode) {
-    List<SymbolicConstraint> extraConstraints = new ArrayList<>();
-    SymExpr symExpr =
-        backwardSubstitute(initial, startNode, new HashSet<>(), false, extraConstraints);
+    List<SymbolicConstraint> preconditions = new ArrayList<>();
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false, preconditions);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
     symExpr = SymExpr.stripBooleanEncoding(symExpr);
-    return new SubstituteResult(symExpr, extraConstraints);
+    return new SubstituteResult(symExpr, preconditions);
   }
 
   private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
@@ -142,25 +138,13 @@ public final class SymbolicConstraintGenerator {
     return SymExpr.stripBooleanEncoding(symExpr);
   }
 
-  public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
-    StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
-    if (n.getStmt() instanceof JIfStmt ifStmt) {
-      return substitute(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
-    }
-    if (constraintNode instanceof CaughtExceptionNode caught) {
-      return new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
-    }
-    throw new IllegalStateException(
-        "Unexpected constraint node type: " + constraintNode.getClass());
-  }
-
   public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {
     List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
     if (paths.isEmpty()) {
       return SymExpr.fromJimple(returnNode.getOp());
     }
     if (paths.size() == 1) {
-      setCurrentPath(paths.get(0));
+      setCurrentPath(paths.getFirst());
       return substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
     }
 
@@ -171,37 +155,72 @@ public final class SymbolicConstraintGenerator {
     for (int i = paths.size() - 2; i >= 0; i--) {
       setCurrentPath(paths.get(i));
       SymExpr pathExpr = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
-      SymExpr pathCondition = buildPathConditionFromPath(paths.get(i));
+      SymExpr pathCondition = buildPathConditionExpr(paths.get(i));
       result = new SymITE(pathCondition, pathExpr, result);
     }
 
     return result;
   }
 
-  // effectively duplicates MethodSummariser.buildPathCondition
-  // still work to do in the boundaries between here and there.
-  private SymExpr buildPathConditionFromPath(final GraphPath<WITUpNode, WITUpEdge> path) {
-    List<List<SymbolicConstraint>> generated =
-        new SymbolicConstraintGenerator(cpg, List.of(path), null).generateSymbolicConstraintPaths();
+  private SymExpr buildPathConditionExpr(final GraphPath<WITUpNode, WITUpEdge> path) {
+    List<List<SymbolicConstraint>> generated = generateThrowConstraintPath(List.of(path));
 
-    if (generated.isEmpty() || generated.get(0).isEmpty()) {
+    if (generated.isEmpty() || generated.getFirst().isEmpty()) {
       return SymIntConst.one();
     }
 
-    List<SymbolicConstraint> constraints = generated.get(0);
+    List<SymbolicConstraint> constraints = generated.getFirst();
+    return generatePathConditionExpr(constraints);
+  }
+
+  // if a callee returned, it means one of its return paths was reached
+  // for each path, build the negation of its conjunction
+  // throw-free means: NOT(path1) AND NOT(path2) AND ...
+  // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
+  // but for simplicity encode as ITE tree (may cost a lot of memory)
+  // throw-free precondition: all throw paths are false
+  // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
+  public SymExpr buildThrowFreePrecondition(final List<List<SymbolicConstraint>> paths) {
+    if (paths == null || paths.isEmpty()) {
+      return null;
+    }
+    List<List<SymbolicConstraint>> boundedThrowFreePaths =
+        paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
+
     SymExpr result = SymIntConst.one();
+    for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
+      SymExpr pathCond = generatePathConditionExpr(path);
+      result = new SymITE(pathCond, SymIntConst.zero(), result);
+    }
+    return result;
+  }
+
+  public SymExpr generatePathConditionExpr(final List<SymbolicConstraint> constraints) {
+    SymExpr result = SymIntConst.one();
+    // traverse constraints backwards to build the recursive ITE
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
       SymExpr cond =
-          c.truthValue()
-              ? c.symExpr()
-              : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
+          c.truthValue() ? c.symExpr() : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());
     }
     return result;
   }
 
-  private Optional<MethodSummariser.ResolvedCallee> tryResolveLambda(
+  public List<SymParamRef> buildFormals() {
+    List<Type> paramTypes = cpg.getMethod().getParameterTypes();
+    List<SymParamRef> formals = new ArrayList<>();
+    for (int i = 0; i < paramTypes.size(); i++) {
+      formals.add(new SymParamRef(i, paramTypes.get(i)));
+    }
+    // @this in -1 index
+    if (!cpg.getMethod().isStatic()) {
+      formals.add(new SymParamRef(-1, cpg.getMethod().getDeclaringClassType()));
+    }
+    return formals;
+  }
+
+  private Optional<ResolvedCallee> tryResolveLambda(
       final JInterfaceInvokeExpr invoke, final WITUpNode node) {
     if (resolver == null) {
       return Optional.empty();
@@ -211,7 +230,7 @@ public final class SymbolicConstraintGenerator {
 
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(node)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
-      if (!isNodeInPath(sourceNode)) {
+      if (nodeNotInPath(sourceNode)) {
         continue;
       }
       if (!(sourceNode instanceof SimpleNode sn)) {
@@ -277,21 +296,17 @@ public final class SymbolicConstraintGenerator {
 
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
-
-      if (!isNodeInPath(sourceNode)) {
+      if (nodeNotInPath(sourceNode)) {
         continue;
       }
-
       if (!(sourceNode instanceof SimpleNode simpleNode)) {
         continue;
       }
-
       if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
         continue;
       }
 
       Stmt stmt = stmtNode.getStmt();
-
       Value lhsOp;
       Value rhsOp;
 
@@ -304,7 +319,7 @@ public final class SymbolicConstraintGenerator {
 
         // this is the interprocedural hook.
         // need to add hooks for other invokes
-        Optional<MethodSummariser.ResolvedCallee> resolved = tryResolveInterprocedural(rhsOp);
+        Optional<ResolvedCallee> resolved = tryResolveInterprocedural(rhsOp);
 
         if (resolved.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
           resolved = tryResolveLambda(ifaceInvoke, sourceNode);
@@ -348,7 +363,58 @@ public final class SymbolicConstraintGenerator {
     return symExpr;
   }
 
-  private Optional<MethodSummariser.ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
+  public SymExpr buildPathCondition(final ReturnStatementNode returnNode) {
+    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
+    if (paths.isEmpty()) {
+      return SymIntConst.one();
+    }
+
+    // build a condition per path, then disjoin them
+    // ITE(cond1, 1, ITE(cond2, 1, ITE(cond3, 1, 0)))
+    SymExpr result = SymIntConst.zero();
+
+    for (int p = paths.size() - 1; p >= 0; p--) {
+      List<List<SymbolicConstraint>> generated = generateThrowConstraintPath(List.of(paths.get(p)));
+
+      if (generated.isEmpty() || generated.getFirst().isEmpty()) {
+        return SymIntConst.one(); // unconditional path exists — always reachable
+      }
+      List<SymbolicConstraint> constraints = generated.getFirst();
+      SymExpr pathCond = generatePathConditionExpr(constraints);
+      // disjoin: if this path's condition holds, result is 1
+      result = new SymITE(pathCond, SymIntConst.one(), result);
+    }
+
+    return result;
+  }
+
+  public SymExpr traceReturnExpr() {
+    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
+    if (returnNodes.isEmpty()) {
+      return null;
+    }
+
+    SymExpr result = null;
+
+    for (ReturnStatementNode returnNode : returnNodes) {
+      SymExpr returnExpr = generateReturnExpression(returnNode);
+      if (returnExpr == null) {
+        continue;
+      }
+
+      if (result == null) {
+        // base case — last return in iteration becomes the else branch
+        result = returnExpr;
+      } else {
+        SymExpr pathCondition = buildPathCondition(returnNode);
+        result = new SymITE(pathCondition, returnExpr, result);
+      }
+    }
+
+    return result;
+  }
+
+  private Optional<ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
     if (resolver == null) {
       return Optional.empty();
     }
@@ -391,8 +457,8 @@ public final class SymbolicConstraintGenerator {
     return resolver.resolveReturnExpr(calleeSig, actuals);
   }
 
-  private boolean isNodeInPath(final WITUpNode node) {
-    return currentPathNodes.contains(node);
+  private boolean nodeNotInPath(final WITUpNode node) {
+    return !currentPathNodes.contains(node);
   }
 
   private static String getVariableName(final Value value) {
