@@ -7,15 +7,15 @@ import java.util.List;
 public final class ExceptionPath {
   private final List<SymbolicConstraint> constraints;
   private final WITUpNode throwNode;
-  private final String exceptionType;
+  private final String exceptionQualifiedName;
 
   public ExceptionPath(
       final List<SymbolicConstraint> constraints,
       final WITUpNode throwNode,
-      final String exceptionType) {
+      final String exceptionQualifiedName) {
     this.constraints = constraints;
     this.throwNode = throwNode;
-    this.exceptionType = exceptionType;
+    this.exceptionQualifiedName = exceptionQualifiedName;
   }
 
   public List<SymbolicConstraint> getConstraints() {
@@ -26,7 +26,7 @@ public final class ExceptionPath {
     return throwNode;
   }
 
-  public String getExceptionType() {
-    return exceptionType;
+  public String getExceptionQualifiedName() {
+    return exceptionQualifiedName;
   }
 }
