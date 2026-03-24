@@ -2,6 +2,7 @@ package br.unb.cic.witup.analysis;
 
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
@@ -53,6 +54,20 @@ public final class MethodSummariser implements SummaryResolver {
       summaryRepository.markInProgress(sig);
     }
 
+    List<ExceptionPath> exceptionPaths =
+        cpg.getThrowNodes().stream()
+            .flatMap(
+                throwNode -> {
+                  String exceptionQualifiedName =
+                      cpg.resolveExceptionType((ThrowStatementNode) throwNode);
+
+                  return symbolicConstraintGenerator.buildNodeConstraintPaths(throwNode).stream()
+                      .map(
+                          constraints ->
+                              new ExceptionPath(constraints, throwNode, exceptionQualifiedName));
+                })
+            .toList();
+
     List<List<SymbolicConstraint>> paths =
         cpg.getThrowNodes().stream()
             .flatMap(
@@ -65,7 +80,12 @@ public final class MethodSummariser implements SummaryResolver {
     SymExpr throwFreePrecondition = symbolicConstraintGenerator.buildThrowFreePrecondition(paths);
     MethodSummary summary =
         new MethodSummary(
-            cpg.getMethodSignature(), paths, formals, returnExpr, throwFreePrecondition);
+            cpg.getMethodSignature(),
+            paths,
+            exceptionPaths,
+            formals,
+            returnExpr,
+            throwFreePrecondition);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);

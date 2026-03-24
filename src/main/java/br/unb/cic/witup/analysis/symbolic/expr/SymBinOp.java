@@ -11,6 +11,7 @@ public final class SymBinOp extends SymExpr {
   private String cachedToString;
 
   public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
+
     SymExpr lhs = fromJimple(e.getOp1());
     SymExpr rhs = fromJimple(e.getOp2());
     return new SymBinOp(fromJimpleBinop(e), lhs, rhs);

@@ -76,7 +76,7 @@ public final class SymbolicConstraintGenerator {
             substituteWithPreconditions(
                 SymExpr.fromJimple(ifStmt.getCondition()), throwConstraint.node());
         symExpr = result.expr();
-        extraConstraints.addAll(result.extraConstraints());
+        extraConstraints.addAll(result.preconditions());
       } else if (throwConstraint.node() instanceof CaughtExceptionNode caught) {
         symExpr = new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
       } else {
@@ -101,10 +101,10 @@ public final class SymbolicConstraintGenerator {
 
   public List<List<SymbolicConstraint>> buildNodeConstraintPaths(final WITUpNode throwNode) {
     List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths = cpg.getConstraintPaths(throwNode);
-    return generateSymbolicConstraintPaths(throwConstraintPaths);
+    return generateThrowConstraintPath(throwConstraintPaths);
   }
 
-  private List<List<SymbolicConstraint>> generateSymbolicConstraintPaths(
+  private List<List<SymbolicConstraint>> generateThrowConstraintPath(
       final List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths) {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> p : throwConstraintPaths) {
@@ -117,17 +117,16 @@ public final class SymbolicConstraintGenerator {
     return symbolicConstraints;
   }
 
-  private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> extraConstraints) {}
+  private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> preconditions) {}
 
   private SubstituteResult substituteWithPreconditions(
       final SymExpr initial, final WITUpNode startNode) {
-    List<SymbolicConstraint> extraConstraints = new ArrayList<>();
-    SymExpr symExpr =
-        backwardSubstitute(initial, startNode, new HashSet<>(), false, extraConstraints);
+    List<SymbolicConstraint> preconditions = new ArrayList<>();
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false, preconditions);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
     symExpr = SymExpr.stripBooleanEncoding(symExpr);
-    return new SubstituteResult(symExpr, extraConstraints);
+    return new SubstituteResult(symExpr, preconditions);
   }
 
   private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
@@ -156,24 +155,22 @@ public final class SymbolicConstraintGenerator {
     for (int i = paths.size() - 2; i >= 0; i--) {
       setCurrentPath(paths.get(i));
       SymExpr pathExpr = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
-      SymExpr pathCondition = buildPathConditionFromPath(paths.get(i));
+      SymExpr pathCondition = buildPathConditionExpr(paths.get(i));
       result = new SymITE(pathCondition, pathExpr, result);
     }
 
     return result;
   }
 
-  // effectively duplicates MethodSummariser.buildPathCondition
-  // still work to do in the boundaries between here and there.
-  private SymExpr buildPathConditionFromPath(final GraphPath<WITUpNode, WITUpEdge> path) {
-    List<List<SymbolicConstraint>> generated = generateSymbolicConstraintPaths(List.of(path));
+  private SymExpr buildPathConditionExpr(final GraphPath<WITUpNode, WITUpEdge> path) {
+    List<List<SymbolicConstraint>> generated = generateThrowConstraintPath(List.of(path));
 
     if (generated.isEmpty() || generated.getFirst().isEmpty()) {
       return SymIntConst.one();
     }
 
     List<SymbolicConstraint> constraints = generated.getFirst();
-    return generatePathConditions(constraints);
+    return generatePathConditionExpr(constraints);
   }
 
   // if a callee returned, it means one of its return paths was reached
@@ -192,13 +189,13 @@ public final class SymbolicConstraintGenerator {
 
     SymExpr result = SymIntConst.one();
     for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
-      SymExpr pathCond = generatePathConditions(path);
+      SymExpr pathCond = generatePathConditionExpr(path);
       result = new SymITE(pathCond, SymIntConst.zero(), result);
     }
     return result;
   }
 
-  public SymExpr generatePathConditions(final List<SymbolicConstraint> constraints) {
+  public SymExpr generatePathConditionExpr(final List<SymbolicConstraint> constraints) {
     SymExpr result = SymIntConst.one();
     // traverse constraints backwards to build the recursive ITE
     for (int i = constraints.size() - 1; i >= 0; i--) {
@@ -377,14 +374,13 @@ public final class SymbolicConstraintGenerator {
     SymExpr result = SymIntConst.zero();
 
     for (int p = paths.size() - 1; p >= 0; p--) {
-      List<List<SymbolicConstraint>> generated =
-          generateSymbolicConstraintPaths(List.of(paths.get(p)));
+      List<List<SymbolicConstraint>> generated = generateThrowConstraintPath(List.of(paths.get(p)));
 
       if (generated.isEmpty() || generated.getFirst().isEmpty()) {
         return SymIntConst.one(); // unconditional path exists — always reachable
       }
       List<SymbolicConstraint> constraints = generated.getFirst();
-      SymExpr pathCond = generatePathConditions(constraints);
+      SymExpr pathCond = generatePathConditionExpr(constraints);
       // disjoin: if this path's condition holds, result is 1
       result = new SymITE(pathCond, SymIntConst.one(), result);
     }
