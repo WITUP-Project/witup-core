@@ -2,7 +2,6 @@ package br.unb.cic.witup.analysis;
 
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
-import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
@@ -70,7 +69,7 @@ public final class MethodSummariser implements SummaryResolver {
             .collect(Collectors.toList());
 
     List<SymParamRef> formals = buildFormals(cpg);
-    SymExpr returnExpr = traceReturnExpr();
+    SymExpr returnExpr = symbolicConstraintGenerator.traceReturnExpr();
     SymExpr throwFreePrecondition = buildThrowFreePrecondition(paths);
     MethodSummary summary =
         new MethodSummary(getMethodSignature(), paths, formals, returnExpr, throwFreePrecondition);
@@ -127,32 +126,6 @@ public final class MethodSummariser implements SummaryResolver {
       formals.add(new SymParamRef(-1, cpg.getMethod().getDeclaringClassType()));
     }
     return formals;
-  }
-
-  private SymExpr traceReturnExpr() {
-    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
-    if (returnNodes.isEmpty()) {
-      return null;
-    }
-
-    SymExpr result = null;
-
-    for (ReturnStatementNode returnNode : returnNodes) {
-      SymExpr returnExpr = symbolicConstraintGenerator.generateReturnExpression(returnNode);
-      if (returnExpr == null) {
-        continue;
-      }
-
-      if (result == null) {
-        // base case — last return in iteration becomes the else branch
-        result = returnExpr;
-      } else {
-        SymExpr pathCondition = symbolicConstraintGenerator.buildPathCondition(returnNode);
-        result = new SymITE(pathCondition, returnExpr, result);
-      }
-    }
-
-    return result;
   }
 
   public record ResolvedCallee(SymExpr returnExpr, SymExpr precondition) {}

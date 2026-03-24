@@ -372,6 +372,32 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
+  public SymExpr traceReturnExpr() {
+    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
+    if (returnNodes.isEmpty()) {
+      return null;
+    }
+
+    SymExpr result = null;
+
+    for (ReturnStatementNode returnNode : returnNodes) {
+      SymExpr returnExpr = generateReturnExpression(returnNode);
+      if (returnExpr == null) {
+        continue;
+      }
+
+      if (result == null) {
+        // base case — last return in iteration becomes the else branch
+        result = returnExpr;
+      } else {
+        SymExpr pathCondition = buildPathCondition(returnNode);
+        result = new SymITE(pathCondition, returnExpr, result);
+      }
+    }
+
+    return result;
+  }
+
   private Optional<MethodSummariser.ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
     if (resolver == null) {
       return Optional.empty();
