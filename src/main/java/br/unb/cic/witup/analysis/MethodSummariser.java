@@ -4,26 +4,19 @@ import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
-import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
-import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
-import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
-import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sootup.core.types.Type;
 
 /**
  * Given a method that throws, build the symbolic constraints for each path leading to throw nodes.
  */
 public final class MethodSummariser implements SummaryResolver {
-  private static final Logger log = LoggerFactory.getLogger("MethodSummariser");
-
+  private static final Logger log = LoggerFactory.getLogger(MethodSummariser.class);
   private final WITUpGraph cpg;
   private final GraphRepository graphRepository;
   private final SummaryRepository summaryRepository;
@@ -48,7 +41,7 @@ public final class MethodSummariser implements SummaryResolver {
 
   /** Recursively produces MethodSummary. */
   public MethodSummary summarise() {
-    String sig = getMethodSignature();
+    String sig = cpg.getMethodSignature();
 
     // this should never be null so consider ensuring that upstream
     // code will always set it
@@ -64,14 +57,15 @@ public final class MethodSummariser implements SummaryResolver {
         cpg.getThrowNodes().stream()
             .flatMap(
                 throwNode ->
-                    symbolicConstraintGenerator.buildSymbolicConstraintPaths(throwNode).stream())
+                    symbolicConstraintGenerator.buildNodeConstraintPaths(throwNode).stream())
             .collect(Collectors.toList());
 
-    List<SymParamRef> formals = buildFormals(cpg);
+    List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
     SymExpr returnExpr = symbolicConstraintGenerator.traceReturnExpr();
     SymExpr throwFreePrecondition = symbolicConstraintGenerator.buildThrowFreePrecondition(paths);
     MethodSummary summary =
-        new MethodSummary(getMethodSignature(), paths, formals, returnExpr, throwFreePrecondition);
+        new MethodSummary(
+            cpg.getMethodSignature(), paths, formals, returnExpr, throwFreePrecondition);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);
@@ -79,21 +73,6 @@ public final class MethodSummariser implements SummaryResolver {
 
     return summary;
   }
-
-  private static List<SymParamRef> buildFormals(final WITUpGraph cpg) {
-    List<Type> paramTypes = cpg.getMethod().getParameterTypes();
-    List<SymParamRef> formals = new ArrayList<>();
-    for (int i = 0; i < paramTypes.size(); i++) {
-      formals.add(new SymParamRef(i, paramTypes.get(i)));
-    }
-    // @this in -1 index
-    if (!cpg.getMethod().isStatic()) {
-      formals.add(new SymParamRef(-1, cpg.getMethod().getDeclaringClassType()));
-    }
-    return formals;
-  }
-
-  public record ResolvedCallee(SymExpr returnExpr, SymExpr precondition) {}
 
   @Override
   public Optional<ResolvedCallee> resolveReturnExpr(
@@ -161,9 +140,5 @@ public final class MethodSummariser implements SummaryResolver {
       }
     }
     return Optional.of(new ResolvedCallee(returnExpr, precondition));
-  }
-
-  public String getMethodSignature() {
-    return cpg.getMethodSignature();
   }
 }

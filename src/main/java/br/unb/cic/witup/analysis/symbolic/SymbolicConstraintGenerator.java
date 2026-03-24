@@ -1,6 +1,6 @@
 package br.unb.cic.witup.analysis.symbolic;
 
-import br.unb.cic.witup.analysis.MethodSummariser;
+import br.unb.cic.witup.analysis.ResolvedCallee;
 import br.unb.cic.witup.analysis.SummaryResolver;
 import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
@@ -16,6 +16,7 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,6 +41,7 @@ import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.Stmt;
+import sootup.core.types.Type;
 
 /**
  * Translates Jimple constraints into SymbolicConstraints. Uses backwards data flow resolution to
@@ -53,28 +55,9 @@ public final class SymbolicConstraintGenerator {
   private final SummaryResolver resolver;
   public static final int MAX_THROW_FREE_PATHS = 10000;
 
-  /**
-   * Interprocedural constructor.
-   *
-   * @param cpg a WITUpGraph with the CPG of the method under analysis
-   * @param resolver a MethodSummariser that recursively resolves interprocedural calls.
-   */
   public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
     this.cpg = cpg;
     this.resolver = resolver;
-  }
-
-  public List<List<SymbolicConstraint>> generateSymbolicConstraintPaths(
-      final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
-    List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> p : constraintPaths) {
-      List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
-
-      if (!resolved.isEmpty()) {
-        symbolicConstraints.add(resolved);
-      }
-    }
-    return symbolicConstraints;
   }
 
   public List<SymbolicConstraint> generateSymbolicConstraints(
@@ -116,8 +99,13 @@ public final class SymbolicConstraintGenerator {
     this.currentPathNodes = new HashSet<>(p.getVertexList());
   }
 
-  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
+  public List<List<SymbolicConstraint>> buildNodeConstraintPaths(final WITUpNode throwNode) {
     List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths = cpg.getConstraintPaths(throwNode);
+    return generateSymbolicConstraintPaths(throwConstraintPaths);
+  }
+
+  private List<List<SymbolicConstraint>> generateSymbolicConstraintPaths(
+      final List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths) {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
     for (GraphPath<WITUpNode, WITUpEdge> p : throwConstraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
@@ -200,7 +188,7 @@ public final class SymbolicConstraintGenerator {
       return null;
     }
     List<List<SymbolicConstraint>> boundedThrowFreePaths =
-            paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
+        paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
 
     SymExpr result = SymIntConst.one();
     for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
@@ -222,7 +210,20 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
-  private Optional<MethodSummariser.ResolvedCallee> tryResolveLambda(
+  public List<SymParamRef> buildFormals() {
+    List<Type> paramTypes = cpg.getMethod().getParameterTypes();
+    List<SymParamRef> formals = new ArrayList<>();
+    for (int i = 0; i < paramTypes.size(); i++) {
+      formals.add(new SymParamRef(i, paramTypes.get(i)));
+    }
+    // @this in -1 index
+    if (!cpg.getMethod().isStatic()) {
+      formals.add(new SymParamRef(-1, cpg.getMethod().getDeclaringClassType()));
+    }
+    return formals;
+  }
+
+  private Optional<ResolvedCallee> tryResolveLambda(
       final JInterfaceInvokeExpr invoke, final WITUpNode node) {
     if (resolver == null) {
       return Optional.empty();
@@ -298,21 +299,17 @@ public final class SymbolicConstraintGenerator {
 
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
-
       if (nodeNotInPath(sourceNode)) {
         continue;
       }
-
       if (!(sourceNode instanceof SimpleNode simpleNode)) {
         continue;
       }
-
       if (!(simpleNode.getNode() instanceof StmtGraphNode stmtNode)) {
         continue;
       }
 
       Stmt stmt = stmtNode.getStmt();
-
       Value lhsOp;
       Value rhsOp;
 
@@ -325,7 +322,7 @@ public final class SymbolicConstraintGenerator {
 
         // this is the interprocedural hook.
         // need to add hooks for other invokes
-        Optional<MethodSummariser.ResolvedCallee> resolved = tryResolveInterprocedural(rhsOp);
+        Optional<ResolvedCallee> resolved = tryResolveInterprocedural(rhsOp);
 
         if (resolved.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
           resolved = tryResolveLambda(ifaceInvoke, sourceNode);
@@ -381,7 +378,7 @@ public final class SymbolicConstraintGenerator {
 
     for (int p = paths.size() - 1; p >= 0; p--) {
       List<List<SymbolicConstraint>> generated =
-              generateSymbolicConstraintPaths(List.of(paths.get(p)));
+          generateSymbolicConstraintPaths(List.of(paths.get(p)));
 
       if (generated.isEmpty() || generated.getFirst().isEmpty()) {
         return SymIntConst.one(); // unconditional path exists — always reachable
@@ -421,7 +418,7 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
-  private Optional<MethodSummariser.ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
+  private Optional<ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
     if (resolver == null) {
       return Optional.empty();
     }
