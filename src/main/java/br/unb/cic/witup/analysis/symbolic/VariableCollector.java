@@ -30,7 +30,6 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
-
 import java.util.HashSet;
 import java.util.Set;
 

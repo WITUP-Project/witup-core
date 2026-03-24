@@ -57,9 +57,11 @@ import sootup.core.types.Type;
 
 public abstract class SymExpr {
   private final SymKind kind;
+
   public SymExpr(final SymKind kind) {
     this.kind = kind;
   }
+
   public final SymKind getKind() {
     return kind;
   }
@@ -67,6 +69,7 @@ public abstract class SymExpr {
   public abstract <T> T accept(SymExprVisitor<T> visitor);
 
   public abstract SymExpr substitute(String varName, SymExpr replacement);
+
   /***
    * Ignored for most types, useful for SymParam
    *
@@ -77,14 +80,17 @@ public abstract class SymExpr {
   public SymExpr substituteParam(final int idx, final SymExpr actual) {
     return this; // default: no substitution
   }
+
   public abstract String toString();
+
   public abstract boolean contains(String varName);
+
   /** save allocation on hot path */
   public boolean containsParam(final int idx) {
     return false;
   }
 
-  /** also saves on hot path*/
+  /** also saves on hot path */
   public boolean containsUnboxing() {
     return false;
   }

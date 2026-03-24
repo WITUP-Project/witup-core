@@ -7,7 +7,6 @@ public final class SymConst extends SymExpr {
   private final Object value;
   private String cachedToString;
 
-
   public SymConst(final Object value, final SymKind kind) {
     super(kind);
     this.value = value;

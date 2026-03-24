@@ -5,18 +5,16 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jgrapht.GraphPath;
@@ -32,19 +30,9 @@ public final class MethodSummariser implements SummaryResolver {
   public static final int MAX_THROW_FREE_PATHS = 10000;
 
   private final WITUpGraph cpg;
-  private final Map<WITUpNode, List<List<SymbolicConstraint>>> symbolicThrowConstraints =
-      new HashMap<>();
   private final GraphRepository graphRepository;
   private final SummaryRepository summaryRepository;
-
-  /**
-   * Intraproccedural summariser. Has no access to cached graphs or summaries
-   *
-   * @param cpg WITUpGraph
-   */
-  public MethodSummariser(final WITUpGraph cpg) {
-    this(cpg, null, null);
-  }
+  private final SymbolicConstraintGenerator symbolicConstraintGenerator;
 
   /**
    * Interprocedural MethodSummariser. As of now,
@@ -60,6 +48,7 @@ public final class MethodSummariser implements SummaryResolver {
     this.cpg = cpg;
     this.graphRepository = graphRepository;
     this.summaryRepository = summaryRepository;
+    this.symbolicConstraintGenerator = new SymbolicConstraintGenerator(cpg, this);
   }
 
   /** Recursively produces MethodSummary. */
@@ -78,7 +67,9 @@ public final class MethodSummariser implements SummaryResolver {
 
     List<List<SymbolicConstraint>> paths =
         cpg.getThrowNodes().stream()
-            .flatMap(throwNode -> buildSymbolicConstraintPaths(throwNode).stream())
+            .flatMap(
+                throwNode ->
+                    symbolicConstraintGenerator.buildSymbolicConstraintPaths(throwNode).stream())
             .collect(Collectors.toList());
 
     List<SymParamRef> formals = buildFormals(cpg);
@@ -122,23 +113,10 @@ public final class MethodSummariser implements SummaryResolver {
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
       SymExpr cond =
-          c.truthValue()
-              ? c.symExpr()
-              : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
+          c.truthValue() ? c.symExpr() : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());
     }
     return result;
-  }
-
-  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
-    return symbolicThrowConstraints.computeIfAbsent(
-        throwNode,
-        node -> {
-          var constraintPaths = cpg.getConstraintPaths(node);
-          SymbolicConstraintGenerator sg =
-              new SymbolicConstraintGenerator(cpg, constraintPaths, this);
-          return sg.generateSymbolicConstraintPaths();
-        });
   }
 
   private static List<SymParamRef> buildFormals(final WITUpGraph cpg) {
@@ -160,12 +138,10 @@ public final class MethodSummariser implements SummaryResolver {
       return null;
     }
 
-    SymbolicConstraintGenerator sg = new SymbolicConstraintGenerator(cpg, List.of(), this);
-
     SymExpr result = null;
 
     for (ReturnStatementNode returnNode : returnNodes) {
-      SymExpr returnExpr = sg.generateReturnExpression(returnNode);
+      SymExpr returnExpr = symbolicConstraintGenerator.generateReturnExpression(returnNode);
       if (returnExpr == null) {
         continue;
       }
@@ -194,8 +170,7 @@ public final class MethodSummariser implements SummaryResolver {
 
     for (int p = paths.size() - 1; p >= 0; p--) {
       List<List<SymbolicConstraint>> generated =
-          new SymbolicConstraintGenerator(cpg, List.of(paths.get(p)), this)
-              .generateSymbolicConstraintPaths();
+          symbolicConstraintGenerator.generateSymbolicConstraintPaths(List.of(paths.get(p)));
 
       if (generated.isEmpty() || generated.getFirst().isEmpty()) {
         return SymIntConst.one(); // unconditional path exists — always reachable

@@ -28,7 +28,7 @@ public final class SymLongConstant extends SymExpr {
 
   @Override
   public String toString() {
-    if  (cachedToString == null) {
+    if (cachedToString == null) {
       cachedToString = Long.toString(value);
     }
     return cachedToString;

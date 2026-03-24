@@ -80,9 +80,7 @@ public final class SymDynamicInvoke extends SymExpr {
       }
     }
 
-    return newArgs != null
-            ? new SymDynamicInvoke(signature, newArgs, getKind())
-            : this;
+    return newArgs != null ? new SymDynamicInvoke(signature, newArgs, getKind()) : this;
   }
 
   @Override

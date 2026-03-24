@@ -24,7 +24,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -39,7 +39,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -54,7 +54,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -71,7 +71,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -88,7 +88,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -105,7 +105,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -121,7 +121,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(2, conditionNodes.size());
   }
 
@@ -137,7 +137,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(2, conditionNodes.size());
   }
 
@@ -153,7 +153,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(2, conditionNodes.size());
   }
 
@@ -170,7 +170,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -186,7 +186,7 @@ public class ArrayGraphTest {
     assertEquals(1, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -202,7 +202,7 @@ public class ArrayGraphTest {
     assertEquals(3, throwNodes.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 
@@ -221,7 +221,7 @@ public class ArrayGraphTest {
     assertEquals(1, conditionNodes0.size());
 
     List<WITUpNode> conditionNodes =
-            cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
+        cpg.getThrowConditionNodes((ThrowStatementNode) throwNodes.getFirst());
     assertEquals(1, conditionNodes.size());
   }
 }

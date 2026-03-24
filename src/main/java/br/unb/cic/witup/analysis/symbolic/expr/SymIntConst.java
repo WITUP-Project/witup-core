@@ -42,7 +42,7 @@ public final class SymIntConst extends SymExpr {
 
   @Override
   public String toString() {
-    if   (cachedToString == null) {
+    if (cachedToString == null) {
       cachedToString = Integer.toString(value);
     }
     return cachedToString;

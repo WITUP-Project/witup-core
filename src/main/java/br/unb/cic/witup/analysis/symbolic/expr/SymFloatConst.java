@@ -28,7 +28,7 @@ public final class SymFloatConst extends SymExpr {
 
   @Override
   public String toString() {
-    if  (cachedToString == null) {
+    if (cachedToString == null) {
       cachedToString = Float.toString(value);
     }
     return cachedToString;

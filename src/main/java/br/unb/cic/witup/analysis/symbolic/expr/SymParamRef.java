@@ -46,7 +46,7 @@ public final class SymParamRef extends SymExpr {
 
   @Override
   public String toString() {
-    if  (cachedToString == null) {
+    if (cachedToString == null) {
       cachedToString = "@parameter" + this.index + ": " + this.paramType;
     }
     return cachedToString;

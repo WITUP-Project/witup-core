@@ -1,5 +1,7 @@
 package br.unb.cic.witup.solver;
 
+import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymArray;
 import br.unb.cic.witup.analysis.symbolic.expr.SymArrayRef;
@@ -10,7 +12,6 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymDoubleConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymDynamicInvoke;
-import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.expr.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.expr.SymFloatConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
@@ -31,7 +32,6 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymStringConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymThisRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
-import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import com.microsoft.z3.ArithExpr;
 import com.microsoft.z3.ArrayExpr;

@@ -35,7 +35,7 @@ public final class SymInstanceOf extends SymExpr {
 
   @Override
   public String toString() {
-    if  (cachedToString == null) {
+    if (cachedToString == null) {
       cachedToString = op.toString() + "_instanceof_" + type.replace(".", "_");
     }
     return cachedToString;

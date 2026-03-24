@@ -2,7 +2,6 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -90,7 +89,7 @@ public final class SymNewMultiArray extends SymExpr {
 
   @Override
   public String toString() {
-    if  (cachedToString == null) {
+    if (cachedToString == null) {
       StringBuilder sb = new StringBuilder("newmultiarray(");
       sb.append(objectType).append(")");
       for (SymExpr size : sizes) {

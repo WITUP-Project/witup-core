@@ -48,31 +48,25 @@ import sootup.core.jimple.common.stmt.Stmt;
  */
 public final class SymbolicConstraintGenerator {
   private final WITUpGraph cpg;
-  private final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
-  
+
   /**
    * Interprocedural constructor.
    *
    * @param cpg a WITUpGraph with the CPG of the method under analysis
-   * @param constraintPaths List<GraphPath<WITUpNode, WITUpEdge>> paths that represent symbolic
-   *     constraints
    * @param resolver a MethodSummariser that recursively resolves interprocedural calls.
    */
-  public SymbolicConstraintGenerator(
-      final WITUpGraph cpg,
-      final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths,
-      final SummaryResolver resolver) {
+  public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
     this.cpg = cpg;
-    this.constraintPaths = constraintPaths;
     this.resolver = resolver;
   }
 
-  public List<List<SymbolicConstraint>> generateSymbolicConstraintPaths() {
+  public List<List<SymbolicConstraint>> generateSymbolicConstraintPaths(
+      final List<GraphPath<WITUpNode, WITUpEdge>> constraintPaths) {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> p : this.constraintPaths) {
+    for (GraphPath<WITUpNode, WITUpEdge> p : constraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
 
       if (!resolved.isEmpty()) {
@@ -121,6 +115,19 @@ public final class SymbolicConstraintGenerator {
     this.currentPathNodes = new HashSet<>(p.getVertexList());
   }
 
+  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
+    List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths = cpg.getConstraintPaths(throwNode);
+    List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
+    for (GraphPath<WITUpNode, WITUpEdge> p : throwConstraintPaths) {
+      List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
+
+      if (!resolved.isEmpty()) {
+        symbolicConstraints.add(resolved);
+      }
+    }
+    return symbolicConstraints;
+  }
+
   private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> extraConstraints) {}
 
   private SubstituteResult substituteWithPreconditions(
@@ -143,25 +150,13 @@ public final class SymbolicConstraintGenerator {
     return SymExpr.stripBooleanEncoding(symExpr);
   }
 
-  public SymExpr generateSymbolicExpression(final WITUpNode constraintNode) {
-    StmtGraphNode n = (StmtGraphNode) constraintNode.getNode();
-    if (n.getStmt() instanceof JIfStmt ifStmt) {
-      return substitute(SymExpr.fromJimple(ifStmt.getCondition()), constraintNode);
-    }
-    if (constraintNode instanceof CaughtExceptionNode caught) {
-      return new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
-    }
-    throw new IllegalStateException(
-        "Unexpected constraint node type: " + constraintNode.getClass());
-  }
-
   public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {
     List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
     if (paths.isEmpty()) {
       return SymExpr.fromJimple(returnNode.getOp());
     }
     if (paths.size() == 1) {
-      setCurrentPath(paths.get(0));
+      setCurrentPath(paths.getFirst());
       return substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
     }
 
@@ -182,14 +177,13 @@ public final class SymbolicConstraintGenerator {
   // effectively duplicates MethodSummariser.buildPathCondition
   // still work to do in the boundaries between here and there.
   private SymExpr buildPathConditionFromPath(final GraphPath<WITUpNode, WITUpEdge> path) {
-    List<List<SymbolicConstraint>> generated =
-        new SymbolicConstraintGenerator(cpg, List.of(path), null).generateSymbolicConstraintPaths();
+    List<List<SymbolicConstraint>> generated = generateSymbolicConstraintPaths(List.of(path));
 
-    if (generated.isEmpty() || generated.get(0).isEmpty()) {
+    if (generated.isEmpty() || generated.getFirst().isEmpty()) {
       return SymIntConst.one();
     }
 
-    List<SymbolicConstraint> constraints = generated.get(0);
+    List<SymbolicConstraint> constraints = generated.getFirst();
     return generatePathConditions(constraints);
   }
 
@@ -199,9 +193,7 @@ public final class SymbolicConstraintGenerator {
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
       SymExpr cond =
-              c.truthValue()
-                      ? c.symExpr()
-                      : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
+          c.truthValue() ? c.symExpr() : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());
     }
     return result;
@@ -217,7 +209,7 @@ public final class SymbolicConstraintGenerator {
 
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(node)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
-      if (!isNodeInPath(sourceNode)) {
+      if (nodeNotInPath(sourceNode)) {
         continue;
       }
       if (!(sourceNode instanceof SimpleNode sn)) {
@@ -284,7 +276,7 @@ public final class SymbolicConstraintGenerator {
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
 
-      if (!isNodeInPath(sourceNode)) {
+      if (nodeNotInPath(sourceNode)) {
         continue;
       }
 
@@ -397,8 +389,8 @@ public final class SymbolicConstraintGenerator {
     return resolver.resolveReturnExpr(calleeSig, actuals);
   }
 
-  private boolean isNodeInPath(final WITUpNode node) {
-    return currentPathNodes.contains(node);
+  private boolean nodeNotInPath(final WITUpNode node) {
+    return !currentPathNodes.contains(node);
   }
 
   private static String getVariableName(final Value value) {
