@@ -164,7 +164,7 @@ public class IntSummaryTest {
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
-    assertEquals(2, summary.getSymbolicConstraintPaths().size());
+    assertEquals(2, summary.getExceptionPaths().size());
     // constraint path 0: (a >= 0, true) -> (0 == 0, false), UNSAT
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
         assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
@@ -172,7 +172,7 @@ public class IntSummaryTest {
     assertTrue(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a >= 0"));
     // constraint path 1: (a >= 0, false) -> (1 == 0, false), SAT
-    List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
+    List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
     assertFalse(path1.getFirst().truthValue());
     assertTrue(path1.getFirst().symExpr().toString().contains("a >= 0"));
     assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().get(1).getExceptionQualifiedName());
@@ -195,7 +195,7 @@ public class IntSummaryTest {
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.getMethodSignature());
-    assertEquals(2, summary.getSymbolicConstraintPaths().size());
+    assertEquals(2, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
         assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
@@ -203,7 +203,7 @@ public class IntSummaryTest {
     assertTrue(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a >= 0"));
 
-    List<SymbolicConstraint> path1 = summary.getSymbolicConstraintPaths().get(1);
+    List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
     assertFalse(path1.getFirst().truthValue());
     assertTrue(path1.getFirst().symExpr().toString().contains("a >= 0"));
     // formal params
