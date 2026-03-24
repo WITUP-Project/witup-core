@@ -5,12 +5,12 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
-import br.unb.cic.witup.analysis.symbolic.BinOp;
-import br.unb.cic.witup.analysis.symbolic.SymBinOp;
-import br.unb.cic.witup.analysis.symbolic.SymExpr;
-import br.unb.cic.witup.analysis.symbolic.SymITE;
-import br.unb.cic.witup.analysis.symbolic.SymIntConst;
-import br.unb.cic.witup.analysis.symbolic.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
+import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import java.util.ArrayList;
@@ -66,6 +66,8 @@ public final class MethodSummariser implements SummaryResolver {
   public MethodSummary summarise() {
     String sig = getMethodSignature();
 
+    // this should never be null so consider ensuring that upstream
+    // code will always set it
     if (summaryRepository != null) {
       Optional<MethodSummary> cached = summaryRepository.getSummary(sig);
       if (cached.isPresent()) {
@@ -76,7 +78,7 @@ public final class MethodSummariser implements SummaryResolver {
 
     List<List<SymbolicConstraint>> paths =
         cpg.getThrowNodes().stream()
-            .flatMap(node -> buildSymbolicConstraintPaths(node).stream())
+            .flatMap(throwNode -> buildSymbolicConstraintPaths(throwNode).stream())
             .collect(Collectors.toList());
 
     List<SymParamRef> formals = buildFormals(cpg);
@@ -101,19 +103,20 @@ public final class MethodSummariser implements SummaryResolver {
     // for each path, build the negation of its conjunction
     // throw-free means: NOT(path1) AND NOT(path2) AND ...
     // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
-    // but for simplicity encode as ITE tree
+    // but for simplicity encode as ITE tree (may cost a lot of memory)
     // throw-free precondition: all throw paths are false
     // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
     SymExpr result = SymIntConst.one();
     for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
-      SymExpr pathCond = buildPathConjunction(path);
+      SymExpr pathCond = generatePathConditions(path);
       result = new SymITE(pathCond, SymIntConst.zero(), result);
     }
     return result;
   }
 
-  private SymExpr buildPathConjunction(final List<SymbolicConstraint> constraints) {
+  public static SymExpr generatePathConditions(final List<SymbolicConstraint> constraints) {
     SymExpr result = SymIntConst.one();
+    // traverse constraints backwards to build the recursive ITE
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
       SymExpr cond =
@@ -192,21 +195,11 @@ public final class MethodSummariser implements SummaryResolver {
           new SymbolicConstraintGenerator(cpg, List.of(paths.get(p)), this)
               .generateSymbolicConstraintPaths();
 
-      if (generated.isEmpty() || generated.get(0).isEmpty()) {
+      if (generated.isEmpty() || generated.getFirst().isEmpty()) {
         return SymIntConst.one(); // unconditional path exists — always reachable
       }
-
-      List<SymbolicConstraint> constraints = generated.get(0);
-      SymExpr pathCond = SymIntConst.one();
-      for (int i = constraints.size() - 1; i >= 0; i--) {
-        SymbolicConstraint c = constraints.get(i);
-        SymExpr cond =
-            c.truthValue()
-                ? c.symExpr()
-                : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
-        pathCond = new SymITE(cond, pathCond, SymIntConst.zero());
-      }
-
+      List<SymbolicConstraint> constraints = generated.getFirst();
+      SymExpr pathCond = generatePathConditions(constraints);
       // disjoin: if this path's condition holds, result is 1
       result = new SymITE(pathCond, SymIntConst.one(), result);
     }
@@ -252,10 +245,6 @@ public final class MethodSummariser implements SummaryResolver {
 
     log.debug("summarising callee {}", calleeSignature);
     MethodSummary calleeSummary = calleeAnalysis.summarise();
-    //    log.debug(
-    //        "summarise() returned for {} — returnExpr={}",
-    //        calleeSignature,
-    //        calleeSummary.getReturnExpr());
 
     summaryRepository.putSummary(calleeSignature, calleeSummary);
     return instantiate(calleeSummary, actuals);

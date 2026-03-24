@@ -10,6 +10,12 @@ import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
+import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -189,13 +195,18 @@ public final class SymbolicConstraintGenerator {
     }
 
     List<SymbolicConstraint> constraints = generated.get(0);
+    return generatePathConditions(constraints);
+  }
+
+  public static SymExpr generatePathConditions(final List<SymbolicConstraint> constraints) {
     SymExpr result = SymIntConst.one();
+    // traverse constraints backwards to build the recursive ITE
     for (int i = constraints.size() - 1; i >= 0; i--) {
       SymbolicConstraint c = constraints.get(i);
       SymExpr cond =
-          c.truthValue()
-              ? c.symExpr()
-              : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
+              c.truthValue()
+                      ? c.symExpr()
+                      : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
       result = new SymITE(cond, result, SymIntConst.zero());
     }
     return result;

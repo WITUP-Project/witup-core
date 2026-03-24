@@ -1,5 +1,6 @@
-package br.unb.cic.witup.analysis.symbolic;
+package br.unb.cic.witup.analysis.symbolic.expr;
 
+import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import sootup.core.jimple.common.constant.FloatConstant;
 
 public final class SymFloatConst extends SymExpr {

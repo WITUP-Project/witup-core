@@ -1,6 +1,6 @@
 package br.unb.cic.witup.analysis;
 
-import br.unb.cic.witup.analysis.symbolic.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import java.util.List;
 import java.util.Optional;
 

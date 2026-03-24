@@ -1,4 +1,6 @@
-package br.unb.cic.witup.analysis.symbolic;
+package br.unb.cic.witup.analysis.symbolic.expr;
+
+import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 
 public final class SymITE extends SymExpr {
   private final SymExpr condition;

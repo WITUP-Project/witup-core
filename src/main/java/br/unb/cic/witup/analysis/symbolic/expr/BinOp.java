@@ -1,4 +1,4 @@
-package br.unb.cic.witup.analysis.symbolic;
+package br.unb.cic.witup.analysis.symbolic.expr;
 
 public enum BinOp {
   EQ("=="),

@@ -1,13 +1,14 @@
-package br.unb.cic.witup.analysis.symbolic;
+package br.unb.cic.witup.analysis.symbolic.expr;
 
+import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
+import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
 import sootup.core.types.PrimitiveType;
 
-public final class SymVirtualInvoke extends SymExpr {
+public final class SymSpecialInvoke extends SymExpr {
   private final SymExpr base; // e.g. s
   private final String signature; // e.g. length
   private final boolean returnsBoolean;
@@ -18,11 +19,7 @@ public final class SymVirtualInvoke extends SymExpr {
     return base;
   }
 
-  public String getSignature() {
-    return signature;
-  }
-
-  public static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
+  public static SymExpr fromSpecialInvokeExpr(final JSpecialInvokeExpr e) {
     SymExpr base = fromJimple(e.getBase());
     String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
     boolean returnsBoolean =
@@ -30,10 +27,10 @@ public final class SymVirtualInvoke extends SymExpr {
 
     List<SymExpr> args = e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
 
-    return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean, args);
+    return new SymSpecialInvoke(base, invokedMethodName, returnsBoolean, args);
   }
 
-  public SymVirtualInvoke(
+  public SymSpecialInvoke(
       final SymExpr base,
       final String signature,
       final boolean returnsBoolean,
@@ -47,7 +44,7 @@ public final class SymVirtualInvoke extends SymExpr {
 
   @Override
   public <T> T accept(final SymExprVisitor<T> visitor) {
-    return visitor.visitVirtualInvoke(this);
+    return visitor.visitSpecialInvoke(this);
   }
 
   @Override
@@ -69,7 +66,7 @@ public final class SymVirtualInvoke extends SymExpr {
     }
 
     if (newBase != base || newArgs != null) {
-      return new SymVirtualInvoke(
+      return new SymSpecialInvoke(
           newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;
@@ -97,18 +94,10 @@ public final class SymVirtualInvoke extends SymExpr {
     }
 
     if (newBase != base || newArgs != null) {
-      return new SymVirtualInvoke(
+      return new SymSpecialInvoke(
           newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;
-  }
-
-  @Override
-  public boolean containsUnboxing() {
-    if (SymExpr.isUnboxingCall(signature)) {
-      return true;
-    }
-    return base.containsUnboxing();
   }
 
   @Override
@@ -126,7 +115,15 @@ public final class SymVirtualInvoke extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return base.contains(varName) || args.stream().anyMatch(a -> a.contains(varName));
+    if (base.contains(varName)) {
+      return true;
+    }
+    for (SymExpr arg : args) {
+      if (arg.contains(varName)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
@@ -135,7 +132,7 @@ public final class SymVirtualInvoke extends SymExpr {
       return cachedToString;
     }
     StringBuilder sb = new StringBuilder(base.toString());
-    sb.append(".").append(signature).append("(");
+    sb.append(".<").append(signature).append(">(");
     if (!args.isEmpty()) {
       sb.append(args.get(0).toString());
       for (int i = 1; i < args.size(); i++) {

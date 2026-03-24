@@ -1,20 +1,22 @@
-package br.unb.cic.witup.analysis.symbolic;
+package br.unb.cic.witup.analysis.symbolic.expr;
 
+import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.ref.JThisRef;
 
-public final class SymNew extends SymExpr {
+public final class SymThisRef extends SymExpr {
+  private final String type;
   private final String cachedToString;
 
-  public SymNew(final JNewExpr expr) {
+  public SymThisRef(final JThisRef r) {
     super(SymKind.OTHER);
-    String classType = expr.getType().toString();
-    this.cachedToString = "new " + classType;
+    type = r.getType().toString();
+    this.cachedToString = "@this:" + type;
   }
 
   @Override
   public <T> T accept(final SymExprVisitor<T> visitor) {
-    return visitor.visitNewRef(this);
+    return visitor.visitThisRef(this);
   }
 
   @Override
@@ -30,5 +32,9 @@ public final class SymNew extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return false;
+  }
+
+  public String getType() {
+    return type;
   }
 }

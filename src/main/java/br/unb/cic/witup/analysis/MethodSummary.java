@@ -1,7 +1,7 @@
 package br.unb.cic.witup.analysis;
 
-import br.unb.cic.witup.analysis.symbolic.SymExpr;
-import br.unb.cic.witup.analysis.symbolic.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import java.util.List;
 
