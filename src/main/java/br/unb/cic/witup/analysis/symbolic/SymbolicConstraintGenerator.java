@@ -51,6 +51,7 @@ public final class SymbolicConstraintGenerator {
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
+  public static final int MAX_THROW_FREE_PATHS = 10000;
 
   /**
    * Interprocedural constructor.
@@ -187,7 +188,29 @@ public final class SymbolicConstraintGenerator {
     return generatePathConditions(constraints);
   }
 
-  public static SymExpr generatePathConditions(final List<SymbolicConstraint> constraints) {
+  // if a callee returned, it means one of its return paths was reached
+  // for each path, build the negation of its conjunction
+  // throw-free means: NOT(path1) AND NOT(path2) AND ...
+  // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
+  // but for simplicity encode as ITE tree (may cost a lot of memory)
+  // throw-free precondition: all throw paths are false
+  // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
+  public SymExpr buildThrowFreePrecondition(final List<List<SymbolicConstraint>> paths) {
+    if (paths == null || paths.isEmpty()) {
+      return null;
+    }
+    List<List<SymbolicConstraint>> boundedThrowFreePaths =
+            paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
+
+    SymExpr result = SymIntConst.one();
+    for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
+      SymExpr pathCond = generatePathConditions(path);
+      result = new SymITE(pathCond, SymIntConst.zero(), result);
+    }
+    return result;
+  }
+
+  public SymExpr generatePathConditions(final List<SymbolicConstraint> constraints) {
     SymExpr result = SymIntConst.one();
     // traverse constraints backwards to build the recursive ITE
     for (int i = constraints.size() - 1; i >= 0; i--) {

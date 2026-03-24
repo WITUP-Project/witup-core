@@ -23,7 +23,6 @@ import sootup.core.types.Type;
  */
 public final class MethodSummariser implements SummaryResolver {
   private static final Logger log = LoggerFactory.getLogger("MethodSummariser");
-  public static final int MAX_THROW_FREE_PATHS = 10000;
 
   private final WITUpGraph cpg;
   private final GraphRepository graphRepository;
@@ -70,7 +69,7 @@ public final class MethodSummariser implements SummaryResolver {
 
     List<SymParamRef> formals = buildFormals(cpg);
     SymExpr returnExpr = symbolicConstraintGenerator.traceReturnExpr();
-    SymExpr throwFreePrecondition = buildThrowFreePrecondition(paths);
+    SymExpr throwFreePrecondition = symbolicConstraintGenerator.buildThrowFreePrecondition(paths);
     MethodSummary summary =
         new MethodSummary(getMethodSignature(), paths, formals, returnExpr, throwFreePrecondition);
 
@@ -79,40 +78,6 @@ public final class MethodSummariser implements SummaryResolver {
     }
 
     return summary;
-  }
-
-  // if a callee returned, it means one of its return paths was reached
-  // for each path, build the negation of its conjunction
-  // throw-free means: NOT(path1) AND NOT(path2) AND ...
-  // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
-  // but for simplicity encode as ITE tree (may cost a lot of memory)
-  // throw-free precondition: all throw paths are false
-  // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
-  private SymExpr buildThrowFreePrecondition(final List<List<SymbolicConstraint>> paths) {
-    if (paths == null || paths.isEmpty()) {
-      return null;
-    }
-    List<List<SymbolicConstraint>> boundedThrowFreePaths =
-        paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
-
-    SymExpr result = SymIntConst.one();
-    for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
-      SymExpr pathCond = generatePathConditions(path);
-      result = new SymITE(pathCond, SymIntConst.zero(), result);
-    }
-    return result;
-  }
-
-  public static SymExpr generatePathConditions(final List<SymbolicConstraint> constraints) {
-    SymExpr result = SymIntConst.one();
-    // traverse constraints backwards to build the recursive ITE
-    for (int i = constraints.size() - 1; i >= 0; i--) {
-      SymbolicConstraint c = constraints.get(i);
-      SymExpr cond =
-          c.truthValue() ? c.symExpr() : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
-      result = new SymITE(cond, result, SymIntConst.zero());
-    }
-    return result;
   }
 
   private static List<SymParamRef> buildFormals(final WITUpGraph cpg) {
