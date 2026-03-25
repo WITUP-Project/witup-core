@@ -85,7 +85,6 @@ public final class MethodSummariser implements SummaryResolver {
     MethodSummary summary =
         new MethodSummary(
             cpg.getMethodSignature(),
-            paths,
             exceptionPaths,
             formals,
             returnExpr,

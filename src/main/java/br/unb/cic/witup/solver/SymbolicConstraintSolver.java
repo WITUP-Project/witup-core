@@ -2,6 +2,7 @@ package br.unb.cic.witup.solver;
 
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
 
+import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.model.ArrayValue;
@@ -54,10 +55,10 @@ public final class SymbolicConstraintSolver {
       String sig = summary.getMethodSignature();
       try {
         List<SolverResult> results = new ArrayList<>();
-        List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
+        List<ExceptionPath> paths = summary.getExceptionPaths();
         for (int i = 0; i < paths.size(); i++) {
           log.debug("Solving path {}/{} for {}", i + 1, paths.size(), sig);
-          results.add(checkPath(sig + "#" + i, paths.get(i)));
+          results.add(checkPath(sig + "#" + i, paths.get(i).getConstraints()));
         }
         methodSolutions.put(sig, results);
       } catch (Exception e) {
