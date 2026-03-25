@@ -23,9 +23,13 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr[i] != 0"));
@@ -49,8 +53,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
-
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -74,9 +79,13 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -101,7 +110,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -125,7 +136,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -150,7 +163,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -177,7 +192,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -204,7 +221,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -230,7 +249,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -263,7 +284,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.NullPointerException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.NullPointerException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -286,7 +309,9 @@ public class ArraySummaryTest {
     assertEquals(methodSignature, summary.getMethodSignature());
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.NullPointerException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.NullPointerException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());

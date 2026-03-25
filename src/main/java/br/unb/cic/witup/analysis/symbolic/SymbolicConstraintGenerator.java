@@ -4,8 +4,8 @@ import br.unb.cic.witup.analysis.ResolvedCallee;
 import br.unb.cic.witup.analysis.SummaryResolver;
 import br.unb.cic.witup.analysis.ThrowConstraint;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.graph.WITUpPath;
 import br.unb.cic.witup.analysis.graph.edge.DataDependencyEdge;
-import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jgrapht.GraphPath;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.LValue;
@@ -53,15 +52,14 @@ public final class SymbolicConstraintGenerator {
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
-  public static final int MAX_THROW_FREE_PATHS = 10000;
+  public static final int MAX_THROW_FREE_PATHS = 1;
 
   public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
     this.cpg = cpg;
     this.resolver = resolver;
   }
 
-  public List<SymbolicConstraint> generateSymbolicConstraints(
-      final GraphPath<WITUpNode, WITUpEdge> p) {
+  public List<SymbolicConstraint> generateSymbolicConstraints(final WITUpPath p) {
 
     this.setCurrentPath(p);
     List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
@@ -95,19 +93,19 @@ public final class SymbolicConstraintGenerator {
     return symbolicConstraints;
   }
 
-  private void setCurrentPath(final GraphPath<WITUpNode, WITUpEdge> p) {
-    this.currentPathNodes = new HashSet<>(p.getVertexList());
+  private void setCurrentPath(final WITUpPath p) {
+    this.currentPathNodes = new HashSet<>(p.nodes());
   }
 
   public List<List<SymbolicConstraint>> buildNodeConstraintPaths(final WITUpNode throwNode) {
-    List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths = cpg.getConstraintPaths(throwNode);
+    List<WITUpPath> throwConstraintPaths = cpg.getConstraintPaths(throwNode);
     return generateThrowConstraintPath(throwConstraintPaths);
   }
 
   private List<List<SymbolicConstraint>> generateThrowConstraintPath(
-      final List<GraphPath<WITUpNode, WITUpEdge>> throwConstraintPaths) {
+      final List<WITUpPath> throwConstraintPaths) {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> p : throwConstraintPaths) {
+    for (WITUpPath p : throwConstraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
 
       if (!resolved.isEmpty()) {
@@ -139,7 +137,7 @@ public final class SymbolicConstraintGenerator {
   }
 
   public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {
-    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
+    List<WITUpPath> paths = cpg.getAllPathsToReturn(returnNode);
     if (paths.isEmpty()) {
       return SymExpr.fromJimple(returnNode.getOp());
     }
@@ -162,7 +160,7 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
-  private SymExpr buildPathConditionExpr(final GraphPath<WITUpNode, WITUpEdge> path) {
+  private SymExpr buildPathConditionExpr(final WITUpPath path) {
     List<List<SymbolicConstraint>> generated = generateThrowConstraintPath(List.of(path));
 
     if (generated.isEmpty() || generated.getFirst().isEmpty()) {
@@ -364,7 +362,7 @@ public final class SymbolicConstraintGenerator {
   }
 
   public SymExpr buildPathCondition(final ReturnStatementNode returnNode) {
-    List<GraphPath<WITUpNode, WITUpEdge>> paths = cpg.getAllPathsToReturn(returnNode);
+    List<WITUpPath> paths = cpg.getAllPathsToReturn(returnNode);
     if (paths.isEmpty()) {
       return SymIntConst.one();
     }

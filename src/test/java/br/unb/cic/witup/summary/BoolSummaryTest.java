@@ -27,7 +27,9 @@ public class BoolSummaryTest {
     // first path: value != null && !value.equals(trueValue) && !value.equals(falseValue)
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
 
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertEquals(3, path0.size());
     assertTrue(path0.get(0).truthValue());
@@ -41,7 +43,9 @@ public class BoolSummaryTest {
 
     // second path: arr != null && i < 0.
     List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().get(1).getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().get(1).getExceptionQualifiedName());
 
     assertEquals(3, path1.size());
 

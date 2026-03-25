@@ -7,7 +7,9 @@ import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -22,6 +24,8 @@ public final class MethodSummariser implements SummaryResolver {
   private final GraphRepository graphRepository;
   private final SummaryRepository summaryRepository;
   private final SymbolicConstraintGenerator symbolicConstraintGenerator;
+  private final Map<InstantiationKey, Optional<ResolvedCallee>> instantiationCache =
+      new HashMap<>();
 
   /**
    * Interprocedural MethodSummariser. As of now,
@@ -141,6 +145,13 @@ public final class MethodSummariser implements SummaryResolver {
       return Optional.empty();
     }
 
+    InstantiationKey key = new InstantiationKey(summary.getMethodSignature(), actuals);
+    Optional<ResolvedCallee> cachedResolvedCallee = instantiationCache.get(key);
+    if (cachedResolvedCallee != null) {
+      log.debug("resolved callee cache hit for {}", summary.getMethodSignature());
+      return cachedResolvedCallee;
+    }
+
     List<SymParamRef> formals = summary.getFormalParams();
     if (formals == null || formals.size() != actuals.size()) {
       log.error("Formal/actual mismatch for {}", summary.getMethodSignature());
@@ -154,11 +165,46 @@ public final class MethodSummariser implements SummaryResolver {
       int idx = formals.get(i).getIndex();
       SymExpr actual = actuals.get(i);
       returnExpr = returnExpr.substituteParam(idx, actual);
-      returnExpr = returnExpr.substituteParam(idx, actual);
       if (precondition != null) {
         precondition = precondition.substituteParam(idx, actual);
       }
     }
-    return Optional.of(new ResolvedCallee(returnExpr, precondition));
+    var result = Optional.of(new ResolvedCallee(returnExpr, precondition));
+    instantiationCache.put(key, result);
+    return result;
+  }
+
+  private record InstantiationKey(String calleeSig, List<SymExpr> actuals) {
+
+    public static final int THIRTY_ONE = 31;
+
+    @Override
+    public boolean equals(final Object o) {
+      if (!(o instanceof InstantiationKey k)) {
+        return false;
+      }
+      if (!calleeSig.equals(k.calleeSig)) {
+        return false;
+      }
+      if (actuals.size() != k.actuals.size()) {
+        return false;
+      }
+      for (int i = 0; i < actuals.size(); i++) {
+        // strings are all cached already so we are not suffering much here
+        if (!actuals.get(i).toString().equals(k.actuals.get(i).toString())) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int h = calleeSig.hashCode();
+      for (SymExpr a : actuals) {
+        h = THIRTY_ONE * h + System.identityHashCode(a);
+      }
+      return h;
+    }
   }
 }

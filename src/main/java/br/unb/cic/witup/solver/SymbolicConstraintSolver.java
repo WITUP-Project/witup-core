@@ -34,11 +34,9 @@ public final class SymbolicConstraintSolver {
   public static final String FIELD_FUNC_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
   public static final int TWENTY_SECONDS = 20000;
-  private Map<String, MethodSummary> methodSummaries = new HashMap<>();
+  private final Map<String, MethodSummary> methodSummaries;
   private final Context ctx = new Context();
   private final Solver solver = ctx.mkSolver();
-
-  public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {}
 
   // the method that receives method summaries needs to, for each set
   // of symbolic constraints, translate them to z3, solve

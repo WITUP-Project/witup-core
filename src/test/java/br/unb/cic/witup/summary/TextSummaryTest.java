@@ -24,7 +24,9 @@ public class TextSummaryTest {
     assertNotNull(summary);
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -47,7 +49,9 @@ public class TextSummaryTest {
     assertNotNull(summary);
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
@@ -69,7 +73,9 @@ public class TextSummaryTest {
     assertNotNull(summary);
 
     assertEquals(1, summary.getExceptionPaths().size());
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());

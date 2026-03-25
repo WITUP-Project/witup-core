@@ -36,11 +36,11 @@ public class MathSolverTest {
 
     SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
-    assertTrue(sol0.getInt("p") < 0, "Expected p < 0");
+    assertTrue(sol0.getInt("p") > 1, "Expected p > 1");
 
     SolverResult sol1 = analysis.solutions().get(1);
     assertTrue(sol1.isSat());
-    assertTrue(sol1.getInt("p") > 1, "Expected p > 1");
+    assertTrue(sol1.getInt("p") < 0, "Expected p < 0");
   }
 
   @Test
