@@ -108,12 +108,13 @@ public final class ProjectAnalyser implements GraphRepository {
     // initialise view if not already done
     if (view == null) {
       AnalysisInputLocation inputLocation =
-              new JavaClassPathAnalysisInputLocation(jarPath.toAbsolutePath().toString());
+          new JavaClassPathAnalysisInputLocation(jarPath.toAbsolutePath().toString());
       view = new JavaView(inputLocation);
     }
 
     if (callGraph == null) {
-      Set<String> allSignatures = view.getClasses()
+      Set<String> allSignatures =
+          view.getClasses()
               .flatMap(c -> c.getMethods().stream())
               .filter(JavaSootMethod::hasBody)
               .map(m -> m.getSignature().toString())
@@ -129,10 +130,10 @@ public final class ProjectAnalyser implements GraphRepository {
         continue;
       }
       view.getClasses()
-              .flatMap(c -> c.getMethods().stream())
-              .filter(m -> m.getSignature().toString().equals(sig) && m.hasBody())
-              .findFirst()
-              .ifPresent(m -> methodGraphs.put(sig, CPGBuilder.buildForMethod(m)));
+          .flatMap(c -> c.getMethods().stream())
+          .filter(m -> m.getSignature().toString().equals(sig) && m.hasBody())
+          .findFirst()
+          .ifPresent(m -> methodGraphs.put(sig, CPGBuilder.buildForMethod(m)));
     }
 
     return analyseMethod(methodSignature);

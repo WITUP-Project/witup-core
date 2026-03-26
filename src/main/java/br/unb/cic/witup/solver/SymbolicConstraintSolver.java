@@ -35,6 +35,7 @@ public final class SymbolicConstraintSolver {
   public static final String FIELD_FUNC_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
   public static final int TWENTY_SECONDS = 20000;
+  static final int MAX_CONSTRAINT_DEPTH = 50;
   private final Map<String, MethodSummary> methodSummaries;
   private final Context ctx = new Context();
   private final Solver solver = ctx.mkSolver();
@@ -73,8 +74,20 @@ public final class SymbolicConstraintSolver {
     solver.push();
     Z3Translator translator = new Z3Translator(ctx);
 
-    for (SymbolicConstraint c : constraints) {
-      // should probably remove
+    int skipped = 0;
+    for (int i = 0; i < constraints.size(); i++) {
+      SymbolicConstraint c = constraints.get(i);
+      int d = c.symExpr().depth();
+      if (d > MAX_CONSTRAINT_DEPTH) {
+        log.info(
+            "Skipping constraint {}/{} for {} — depth {} exceeds bound",
+            i + 1,
+            constraints.size(),
+            pathId,
+            d);
+        skipped++;
+        continue;
+      }
       try {
         solver.add(translator.translateConstraint(c));
       } catch (Exception e) {
@@ -92,7 +105,8 @@ public final class SymbolicConstraintSolver {
 
     solver.pop();
 
-    return new SolverResult(pathId, status, modelValueMap);
+    SolverStatus solverStatus = skipped > 0 ? SolverStatus.MAYBE : SolverStatus.fromZ3(status);
+    return new SolverResult(pathId, solverStatus, modelValueMap);
   }
 
   private Map<String, ModelValue> extractModel(final Model model, final Z3Translator translator) {
@@ -108,9 +122,9 @@ public final class SymbolicConstraintSolver {
   }
 
   private void extractDeclarations(
-          final Model model,
-          final Z3Translator translator,
-          final Map<String, ModelValue> modelValueMap) {
+      final Model model,
+      final Z3Translator translator,
+      final Map<String, ModelValue> modelValueMap) {
     Map<String, String> descriptions = translator.getIdDescriptions();
     for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
       String id = entry.getKey();
@@ -118,8 +132,8 @@ public final class SymbolicConstraintSolver {
       String modelKey = descriptions.getOrDefault(id, id);
       try {
         if (expr.getSort().getSortKind() == Z3_ARRAY_SORT) {
-          modelValueMap.put(toModelKey(modelKey),
-                  new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
+          modelValueMap.put(
+              toModelKey(modelKey), new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
         } else {
           Expr<?> evaluated = model.eval(expr, true);
           modelValueMap.put(modelKey, ModelValue.fromExpr(evaluated, model, ctx));
@@ -130,7 +144,7 @@ public final class SymbolicConstraintSolver {
   }
 
   private static void extractFieldFunctions(
-          final Model model, final Context ctx, final Map<String, ModelValue> modelValueMap) {
+      final Model model, final Context ctx, final Map<String, ModelValue> modelValueMap) {
     for (FuncDecl<?> decl : model.getDecls()) {
       if (decl.getArity() != 1) {
         continue;

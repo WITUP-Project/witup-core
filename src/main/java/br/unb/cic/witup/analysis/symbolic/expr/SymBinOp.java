@@ -80,6 +80,11 @@ public final class SymBinOp extends SymExpr {
   }
 
   @Override
+  public int depth() {
+    return 1 + Math.max(lhs.depth(), rhs.depth());
+  }
+
+  @Override
   public boolean containsUnboxing() {
     return lhs.containsUnboxing() || rhs.containsUnboxing();
   }

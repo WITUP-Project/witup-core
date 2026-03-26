@@ -58,6 +58,11 @@ public final class SymITE extends SymExpr {
   }
 
   @Override
+  public int depth() {
+    return 1 + Math.max(condition.depth(), Math.max(thenExpr.depth(), elseExpr.depth()));
+  }
+
+  @Override
   public boolean containsUnboxing() {
     return condition.containsUnboxing()
         || thenExpr.containsUnboxing()
