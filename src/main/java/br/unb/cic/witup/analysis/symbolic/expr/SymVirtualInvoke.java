@@ -19,6 +19,10 @@ public final class SymVirtualInvoke extends SymExpr {
     return base;
   }
 
+  public List<SymExpr> getArgs() {
+    return args;
+  }
+
   public String getSignature() {
     return signature;
   }

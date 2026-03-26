@@ -111,22 +111,20 @@ public final class SymbolicConstraintSolver {
           final Model model,
           final Z3Translator translator,
           final Map<String, ModelValue> modelValueMap) {
+    Map<String, String> descriptions = translator.getIdDescriptions();
     for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
-      String name = entry.getKey();
+      String id = entry.getKey();
       Expr<?> expr = entry.getValue();
-
+      String modelKey = descriptions.getOrDefault(id, id);
       try {
         if (expr.getSort().getSortKind() == Z3_ARRAY_SORT) {
-          // Store under the Z3 constant name (e.g. "arr"), not the cache key
-          // very hacky and implemented like this after too much time debugging
-          String modelKey = this.toModelKey(name);
-          modelValueMap.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
+          modelValueMap.put(toModelKey(modelKey),
+                  new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
         } else {
           Expr<?> evaluated = model.eval(expr, true);
-          modelValueMap.put(name, ModelValue.fromExpr(evaluated, model, ctx));
+          modelValueMap.put(modelKey, ModelValue.fromExpr(evaluated, model, ctx));
         }
       } catch (IllegalStateException ignored) {
-        // unsupported sort — skip for now. maybe throw to force correct implementation
       }
     }
   }
