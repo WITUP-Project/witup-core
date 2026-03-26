@@ -6,12 +6,12 @@ import br.unb.cic.witup.solver.model.IntValue;
 import br.unb.cic.witup.solver.model.ModelValue;
 import br.unb.cic.witup.solver.model.ObjectValue;
 import br.unb.cic.witup.solver.model.StringValue;
-import com.microsoft.z3.Status;
 import java.util.Map;
 
-public record SolverResult(String pathId, Status status, Map<String, ModelValue> modelValueMap) {
+public record SolverResult(
+    String pathId, SolverStatus status, Map<String, ModelValue> modelValueMap) {
 
-  public Status getStatus() {
+  public SolverStatus getStatus() {
     return status;
   }
 
@@ -24,11 +24,15 @@ public record SolverResult(String pathId, Status status, Map<String, ModelValue>
   }
 
   public boolean isSat() {
-    return status == Status.SATISFIABLE;
+    return status == SolverStatus.SAT;
   }
 
   public boolean isUnsat() {
-    return status == Status.UNSATISFIABLE;
+    return status == SolverStatus.UNSAT;
+  }
+
+  public boolean isMaybe() {
+    return status == SolverStatus.MAYBE;
   }
 
   public int getInt(final String name) {

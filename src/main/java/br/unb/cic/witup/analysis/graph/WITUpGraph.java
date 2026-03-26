@@ -54,7 +54,7 @@ import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
-  private static final int MAX_CONSTRAINT_PATHS = 16;
+  private static final int MAX_CONSTRAINT_PATHS = 8;
   private String methodSignature;
   private JavaSootMethod method;
   // dot for debugging purposes
@@ -178,7 +178,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       if (head.equals(start)) {
         result.add(current);
         if (result.size() >= MAX_CONSTRAINT_PATHS) {
-          log.warn(
+          log.info(
               "Path count truncated to {} for {} in {}",
               MAX_CONSTRAINT_PATHS,
               end,
@@ -214,7 +214,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       if (tail.equals(end)) {
         result.add(current);
         if (result.size() >= MAX_CONSTRAINT_PATHS) {
-          log.warn(
+          log.info(
               "Return paths truncated to {} for {} in {}",
               MAX_CONSTRAINT_PATHS,
               end,

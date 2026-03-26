@@ -517,14 +517,18 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   private String idFor(final SymExpr expr) {
-    return exprIds.computeIfAbsent(expr, e -> {
-      String id = "expr_" + exprCounter++;
-      String raw = describeExpr(e);
-      idToTruncatedDescription.put(id, raw.length() > MAX_DESCRIPTION_CHARS
-              ? raw.substring(0, MAX_DESCRIPTION_CHARS) + "..."
-              : raw);
-      return id;
-    });
+    return exprIds.computeIfAbsent(
+        expr,
+        e -> {
+          String id = "expr_" + exprCounter++;
+          String raw = describeExpr(e);
+          idToTruncatedDescription.put(
+              id,
+              raw.length() > MAX_DESCRIPTION_CHARS
+                  ? raw.substring(0, MAX_DESCRIPTION_CHARS) + "..."
+                  : raw);
+          return id;
+        });
   }
 
   private static String describeExpr(final SymExpr expr) {
@@ -533,8 +537,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       case SymParamRef p -> p.toString();
       case SymLength l -> safeDescribe(l.getOp()) + ".length()";
       case SymCast c -> "(" + c.getType() + ")" + safeDescribe(c.getOp());
-      case SymInstanceOf i -> safeDescribe(i.getOp())
-              + "_instanceof_" + i.getType().replace(".", "_");
+      case SymInstanceOf i ->
+          safeDescribe(i.getOp()) + "_instanceof_" + i.getType().replace(".", "_");
       case SymVirtualInvoke i -> {
         StringBuilder sb = new StringBuilder(safeDescribe(i.getBase()));
         sb.append(".").append(i.getSignature()).append("(");
@@ -563,5 +567,4 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public Map<String, String> getIdDescriptions() {
     return Collections.unmodifiableMap(idToTruncatedDescription);
   }
-
 }

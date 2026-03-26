@@ -85,6 +85,11 @@ public abstract class SymExpr {
 
   public abstract boolean contains(String varName);
 
+  /** trim ITEs that are too massive */
+  public int depth() {
+    return 1;
+  }
+
   /** save allocation on hot path */
   public boolean containsParam(final int idx) {
     return false;

@@ -286,12 +286,6 @@ public final class SymbolicConstraintGenerator {
     }
     visited.add(currentNode);
 
-    Set<String> freeVars = new VariableCollector().collect(symExpr);
-
-    if (freeVars.isEmpty()) {
-      return symExpr;
-    }
-
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
       if (nodeNotInPath(sourceNode)) {
@@ -325,7 +319,7 @@ public final class SymbolicConstraintGenerator {
 
         if (resolved.isPresent()) {
           String definedVar = getVariableName(assign.getLeftOp());
-          if (freeVars.contains(definedVar)) {
+          if (symExpr.contains(definedVar)) {
             symExpr = symExpr.substitute(definedVar, resolved.get().returnExpr());
             // add callee's throw-free precondition as extra constraint
             if (resolved.get().precondition() != null) {
@@ -348,7 +342,7 @@ public final class SymbolicConstraintGenerator {
       // local variable on the lhs e.g. $stack1 == 0
       String definedVar = getVariableName(lhsOp);
 
-      if (!freeVars.contains(definedVar)) {
+      if (!symExpr.contains(definedVar)) {
         continue;
       }
 
