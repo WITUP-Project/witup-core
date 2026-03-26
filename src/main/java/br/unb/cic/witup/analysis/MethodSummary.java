@@ -33,7 +33,7 @@ public final class MethodSummary {
   }
 
   public static MethodSummary empty(final String sig) {
-    return new MethodSummary(sig,  null, null, null, null);
+    return new MethodSummary(sig, null, null, null, null);
   }
 
   public String getMethodSignature() {

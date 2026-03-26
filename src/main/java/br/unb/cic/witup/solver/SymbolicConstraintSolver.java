@@ -21,6 +21,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,20 +38,14 @@ public final class SymbolicConstraintSolver {
 
   // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
-  public static final String IS_NULL = "_is_null";
-  public static final int TWENTY_SECONDS = 20000;
+  public static final int TWENTY_SECONDS_MILLISECONDS = 2000;
   private final Map<String, MethodSummary> methodSummaries;
-  private final Context ctx = new Context();
-  private final Solver solver = ctx.mkSolver();
 
   // the method that receives method summaries needs to, for each set
   // of symbolic constraints, translate them to z3, solve
   // we produce MethodSolutions, that map method name to solutions
   public SymbolicConstraintSolver(final Map<String, MethodSummary> methodSummaries) {
     this.methodSummaries = methodSummaries;
-    Params params = ctx.mkParams();
-    params.add("timeout", TWENTY_SECONDS);
-    solver.setParameters(params);
   }
 
   public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
@@ -70,13 +69,19 @@ public final class SymbolicConstraintSolver {
   }
 
   public SolverResult checkPath(final String pathId, final List<SymbolicConstraint> constraints) {
-    solver.push();
-    Z3Translator translator = new Z3Translator(ctx);
+    HashMap<String, String> cfg = new HashMap<>();
+    cfg.put("timeout", "2000");
+    Context pathCtx = new Context(cfg);
+    Solver pathSolver = pathCtx.mkSolver();
+    Params params = pathCtx.mkParams();
+    params.add("timeout", TWENTY_SECONDS_MILLISECONDS);
+    pathSolver.setParameters(params);
+
+    Z3Translator translator = new Z3Translator(pathCtx);
 
     for (SymbolicConstraint c : constraints) {
-      // should probably remove
       try {
-        solver.add(translator.translateConstraint(c));
+        pathSolver.add(translator.translateConstraint(c));
       } catch (Exception e) {
         log.error("Z3 error adding constraint for {}: {}", pathId, e.getMessage());
         log.error("Stack trace: ", e);
@@ -84,30 +89,52 @@ public final class SymbolicConstraintSolver {
       }
     }
 
-    Status status = solver.check();
+    ExecutorService exec = Executors.newSingleThreadExecutor();
+    Future<Status> future = exec.submit(() -> pathSolver.check());
+
+    Status status;
+    try {
+      status = future.get(TWENTY_SECONDS_MILLISECONDS, TimeUnit.MILLISECONDS);
+    } catch (TimeoutException e) {
+      log.warn("Z3 hard timeout for path {}", pathId);
+      future.cancel(true);
+      // rebuild solver and context — don't try to reuse
+      status = Status.UNKNOWN;
+    } catch (Exception e) {
+      log.error("Z3 execution failed for {}: {}", pathId, e.getMessage(), e);
+      status = Status.UNKNOWN;
+    } finally {
+      exec.shutdownNow();
+    }
+
+    if (status == Status.UNKNOWN) {
+      log.warn("Z3 UNKNOWN for {}: {}", pathId, pathSolver.getReasonUnknown());
+    }
+
     boolean isSat = status == Status.SATISFIABLE;
 
-    Model model = isSat ? solver.getModel() : null;
-    Map<String, ModelValue> modelValueMap = isSat ? extractModel(model, translator) : Map.of();
-
-    solver.pop();
+    Model model = isSat ? pathSolver.getModel() : null;
+    Map<String, ModelValue> modelValueMap =
+        isSat ? extractModel(pathCtx, model, translator) : Map.of();
 
     return new SolverResult(pathId, status, modelValueMap);
   }
 
-  private Map<String, ModelValue> extractModel(final Model model, final Z3Translator translator) {
+  private Map<String, ModelValue> extractModel(
+      final Context pathCtx, final Model model, final Z3Translator translator) {
     Map<String, ModelValue> modelValueMap = new HashMap<>();
 
     // should cover variables, virtual invokes, lengths, casts, field accesses
     // when they are all implemented
-    extractDeclarations(model, translator, modelValueMap);
+    extractDeclarations(pathCtx, model, translator, modelValueMap);
     // Also extract field functions (arity-1 decls named "field_*")
-    extractFieldFunctions(model, ctx, modelValueMap);
+    extractFieldFunctions(pathCtx, model, modelValueMap);
 
     return modelValueMap;
   }
 
   private void extractDeclarations(
+      final Context pathCtx,
       final Model model,
       final Z3Translator translator,
       final Map<String, ModelValue> modelValueMap) {
@@ -120,10 +147,10 @@ public final class SymbolicConstraintSolver {
           // Store under the Z3 constant name (e.g. "arr"), not the cache key
           // very hacky and implemented like this after too much time debugging
           String modelKey = this.toModelKey(name);
-          modelValueMap.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
+          modelValueMap.put(modelKey, new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, pathCtx));
         } else {
           Expr<?> evaluated = model.eval(expr, true);
-          modelValueMap.put(name, ModelValue.fromExpr(evaluated, model, ctx));
+          modelValueMap.put(name, ModelValue.fromExpr(evaluated, model, pathCtx));
         }
       } catch (IllegalStateException ignored) {
         // unsupported sort — skip for now. maybe throw to force correct implementation
@@ -132,7 +159,8 @@ public final class SymbolicConstraintSolver {
   }
 
   private static void extractFieldFunctions(
-      final Model model, final Context ctx, final Map<String, ModelValue> modelValueMap) {
+          final Context pathCtx,
+      final Model model, final Map<String, ModelValue> modelValueMap) {
     for (FuncDecl<?> decl : model.getDecls()) {
       if (decl.getArity() != 1) {
         continue;
@@ -153,7 +181,7 @@ public final class SymbolicConstraintSolver {
         String baseArg = e.getArgs()[0].toString();
         String key = baseArg + "." + fieldName;
         try {
-          modelValueMap.put(key, ModelValue.fromExpr(e.getValue(), model, ctx));
+          modelValueMap.put(key, ModelValue.fromExpr(e.getValue(), model, pathCtx));
         } catch (IllegalStateException ignored) {
         }
       }
