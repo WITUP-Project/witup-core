@@ -38,4 +38,20 @@ public final class SymFloatConst extends SymExpr {
   public boolean contains(final String varName) {
     return Float.toString(value).contains(varName);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymFloatConst fc)) {
+      return false;
+    }
+    return Float.compare(value, fc.value) == 0;
+  }
+
+  @Override
+  public int hashCode() {
+    return Float.hashCode(value);
+  }
 }

@@ -61,4 +61,20 @@ public final class SymParamRef extends SymExpr {
   public boolean contains(final String varName) {
     return Integer.toString(index).contains(varName);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymParamRef pr)) {
+      return false;
+    }
+    return index == pr.index && paramType.equals(pr.paramType);
+  }
+
+  @Override
+  public int hashCode() {
+    return HASH_PRIME * Integer.hashCode(index) + paramType.hashCode();
+  }
 }

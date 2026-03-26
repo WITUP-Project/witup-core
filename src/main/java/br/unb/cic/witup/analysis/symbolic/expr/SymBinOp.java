@@ -115,7 +115,6 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * (prime * op.hashCode() + lhs.hashCode()) + rhs.hashCode();
+    return HASH_PRIME * (HASH_PRIME * op.hashCode() + lhs.hashCode()) + rhs.hashCode();
   }
 }

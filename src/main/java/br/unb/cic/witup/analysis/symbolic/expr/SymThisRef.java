@@ -37,4 +37,20 @@ public final class SymThisRef extends SymExpr {
   public String getType() {
     return type;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymThisRef tr)) {
+      return false;
+    }
+    return type.equals(tr.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return type.hashCode();
+  }
 }

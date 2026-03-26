@@ -30,4 +30,14 @@ public final class SymNull extends SymExpr {
   public String toString() {
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    return o instanceof SymNull;
+  }
+
+  @Override
+  public int hashCode() {
+    return 0;
+  }
 }

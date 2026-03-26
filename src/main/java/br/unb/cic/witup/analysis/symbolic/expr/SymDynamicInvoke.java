@@ -116,4 +116,20 @@ public final class SymDynamicInvoke extends SymExpr {
   public boolean contains(final String varName) {
     return args.stream().anyMatch(a -> a.contains(varName));
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymDynamicInvoke di)) {
+      return false;
+    }
+    return signature.equals(di.signature) && args.equals(di.args);
+  }
+
+  @Override
+  public int hashCode() {
+    return HASH_PRIME * signature.hashCode() + args.hashCode();
+  }
 }

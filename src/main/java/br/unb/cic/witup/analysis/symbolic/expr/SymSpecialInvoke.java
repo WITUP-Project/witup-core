@@ -143,4 +143,26 @@ public final class SymSpecialInvoke extends SymExpr {
     cachedToString = sb.toString();
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymSpecialInvoke si)) {
+      return false;
+    }
+    return signature.equals(si.signature)
+        && returnsBoolean == si.returnsBoolean
+        && base.equals(si.base)
+        && args.equals(si.args);
+  }
+
+  @Override
+  public int hashCode() {
+    int h = HASH_PRIME * signature.hashCode() + base.hashCode();
+    h = HASH_PRIME * h + args.hashCode();
+    h = HASH_PRIME * h + Boolean.hashCode(returnsBoolean);
+    return h;
+  }
 }

@@ -38,4 +38,20 @@ public final class SymDoubleConst extends SymExpr {
   public boolean contains(final String varName) {
     return Double.toString(value).contains(varName);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymDoubleConst dc)) {
+      return false;
+    }
+    return Double.compare(value, dc.value) == 0;
+  }
+
+  @Override
+  public int hashCode() {
+    return Double.hashCode(value);
+  }
 }

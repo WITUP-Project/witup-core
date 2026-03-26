@@ -83,4 +83,23 @@ public final class SymArray extends SymExpr {
   public boolean contains(final String varName) {
     return size != null && size.contains(varName);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymArray sa)) {
+      return false;
+    }
+    return name.equals(sa.name)
+        && objectType.equals(sa.objectType)
+        && java.util.Objects.equals(size, sa.size);
+  }
+
+  @Override
+  public int hashCode() {
+    int h = HASH_PRIME * name.hashCode() + objectType.hashCode();
+    return HASH_PRIME * h + (size != null ? size.hashCode() : 0);
+  }
 }

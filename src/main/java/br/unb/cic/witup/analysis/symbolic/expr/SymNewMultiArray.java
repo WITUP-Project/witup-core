@@ -99,4 +99,20 @@ public final class SymNewMultiArray extends SymExpr {
     }
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymNewMultiArray nma)) {
+      return false;
+    }
+    return objectType.equals(nma.objectType) && sizes.equals(nma.sizes);
+  }
+
+  @Override
+  public int hashCode() {
+    return HASH_PRIME * objectType.hashCode() + sizes.hashCode();
+  }
 }

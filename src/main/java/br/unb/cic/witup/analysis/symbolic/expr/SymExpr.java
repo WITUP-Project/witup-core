@@ -56,6 +56,7 @@ import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 
 public abstract class SymExpr {
+  protected static final int HASH_PRIME = 31;
   private final SymKind kind;
 
   public SymExpr(final SymKind kind) {

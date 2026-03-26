@@ -83,4 +83,23 @@ public final class SymITE extends SymExpr {
     }
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymITE ite)) {
+      return false;
+    }
+    return condition.equals(ite.condition)
+        && thenExpr.equals(ite.thenExpr)
+        && elseExpr.equals(ite.elseExpr);
+  }
+
+  @Override
+  public int hashCode() {
+    return HASH_PRIME * (HASH_PRIME * condition.hashCode() + thenExpr.hashCode())
+        + elseExpr.hashCode();
+  }
 }

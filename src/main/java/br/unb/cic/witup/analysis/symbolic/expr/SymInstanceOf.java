@@ -45,4 +45,20 @@ public final class SymInstanceOf extends SymExpr {
   public boolean contains(final String varName) {
     return op.contains(varName);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymInstanceOf si)) {
+      return false;
+    }
+    return type.equals(si.type) && op.equals(si.op);
+  }
+
+  @Override
+  public int hashCode() {
+    return HASH_PRIME * type.hashCode() + op.hashCode();
+  }
 }

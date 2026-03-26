@@ -131,4 +131,23 @@ public final class SymStaticInvoke extends SymExpr {
     cachedToString = sb.toString();
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymStaticInvoke si)) {
+      return false;
+    }
+    return invokeName.equals(si.invokeName)
+        && returnsBoolean == si.returnsBoolean
+        && args.equals(si.args);
+  }
+
+  @Override
+  public int hashCode() {
+    int h = HASH_PRIME * invokeName.hashCode() + args.hashCode();
+    return HASH_PRIME * h + Boolean.hashCode(returnsBoolean);
+  }
 }

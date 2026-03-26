@@ -48,4 +48,20 @@ public final class SymLength extends SymExpr {
   public boolean contains(final String varName) {
     return op.contains(varName);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymLength sl)) {
+      return false;
+    }
+    return op.equals(sl.op);
+  }
+
+  @Override
+  public int hashCode() {
+    return HASH_PRIME + op.hashCode();
+  }
 }

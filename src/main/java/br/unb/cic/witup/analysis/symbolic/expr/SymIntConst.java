@@ -52,4 +52,20 @@ public final class SymIntConst extends SymExpr {
   public boolean contains(final String varName) {
     return Integer.toString(value).contains(varName);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymIntConst ic)) {
+      return false;
+    }
+    return value == ic.value;
+  }
+
+  @Override
+  public int hashCode() {
+    return Integer.hashCode(value);
+  }
 }

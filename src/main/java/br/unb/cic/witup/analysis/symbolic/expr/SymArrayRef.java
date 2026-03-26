@@ -68,4 +68,20 @@ public final class SymArrayRef extends SymExpr {
     }
     return SymKind.OTHER;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymArrayRef ar)) {
+      return false;
+    }
+    return array.equals(ar.array) && index.equals(ar.index);
+  }
+
+  @Override
+  public int hashCode() {
+    return HASH_PRIME * array.hashCode() + index.hashCode();
+  }
 }

@@ -78,7 +78,6 @@ public final class SymFieldAccess extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * base.hashCode() + fieldName.hashCode();
+    return HASH_PRIME * base.hashCode() + fieldName.hashCode();
   }
 }
