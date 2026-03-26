@@ -2,6 +2,7 @@ package br.unb.cic.witup.solver;
 
 import static com.microsoft.z3.enumerations.Z3_sort_kind.Z3_ARRAY_SORT;
 
+import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.model.ArrayValue;
@@ -34,11 +35,9 @@ public final class SymbolicConstraintSolver {
   public static final String FIELD_FUNC_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
   public static final int TWENTY_SECONDS = 20000;
-  private Map<String, MethodSummary> methodSummaries = new HashMap<>();
+  private final Map<String, MethodSummary> methodSummaries;
   private final Context ctx = new Context();
   private final Solver solver = ctx.mkSolver();
-
-  public SymbolicConstraintSolver(final List<List<SymbolicConstraint>> symbolicConstraintPaths) {}
 
   // the method that receives method summaries needs to, for each set
   // of symbolic constraints, translate them to z3, solve
@@ -56,10 +55,10 @@ public final class SymbolicConstraintSolver {
       String sig = summary.getMethodSignature();
       try {
         List<SolverResult> results = new ArrayList<>();
-        List<List<SymbolicConstraint>> paths = summary.getSymbolicConstraintPaths();
+        List<ExceptionPath> paths = summary.getExceptionPaths();
         for (int i = 0; i < paths.size(); i++) {
           log.debug("Solving path {}/{} for {}", i + 1, paths.size(), sig);
-          results.add(checkPath(sig + "#" + i, paths.get(i)));
+          results.add(checkPath(sig + "#" + i, paths.get(i).getConstraints()));
         }
         methodSolutions.put(sig, results);
       } catch (Exception e) {
@@ -109,9 +108,9 @@ public final class SymbolicConstraintSolver {
   }
 
   private void extractDeclarations(
-      final Model model,
-      final Z3Translator translator,
-      final Map<String, ModelValue> modelValueMap) {
+          final Model model,
+          final Z3Translator translator,
+          final Map<String, ModelValue> modelValueMap) {
     for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
       String name = entry.getKey();
       Expr<?> expr = entry.getValue();
@@ -133,7 +132,7 @@ public final class SymbolicConstraintSolver {
   }
 
   private static void extractFieldFunctions(
-      final Model model, final Context ctx, final Map<String, ModelValue> modelValueMap) {
+          final Model model, final Context ctx, final Map<String, ModelValue> modelValueMap) {
     for (FuncDecl<?> decl : model.getDecls()) {
       if (decl.getArity() != 1) {
         continue;

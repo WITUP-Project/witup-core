@@ -94,6 +94,7 @@ public final class ProjectAnalyser implements GraphRepository {
         summariseSCC(relevant, methodGraphs, summaryCache, localSummaries, failures);
       }
     }
+    summariseMethod(methodSignature, methodGraphs, summaryCache, localSummaries, failures);
 
     MethodSummary summary = localSummaries.get(methodSignature);
     SymbolicConstraintSolver solver =
@@ -103,6 +104,41 @@ public final class ProjectAnalyser implements GraphRepository {
     return new AnalysisResult(graph, summary, solutions.get(methodSignature), failures);
   }
 
+  public AnalysisResult analyseSingleMethod(final String methodSignature) {
+    // initialise view if not already done
+    if (view == null) {
+      AnalysisInputLocation inputLocation =
+              new JavaClassPathAnalysisInputLocation(jarPath.toAbsolutePath().toString());
+      view = new JavaView(inputLocation);
+    }
+
+    if (callGraph == null) {
+      Set<String> allSignatures = view.getClasses()
+              .flatMap(c -> c.getMethods().stream())
+              .filter(JavaSootMethod::hasBody)
+              .map(m -> m.getSignature().toString())
+              .collect(Collectors.toSet());
+
+      CallGraphBuilder builder = new CallGraphBuilder(view);
+      callGraph = builder.build(allSignatures);
+      analysisOrder = builder.buildAnalysisOrder(callGraph);
+    }
+    Set<String> reachable = findReachable(methodSignature);
+    for (String sig : reachable) {
+      if (methodGraphs.containsKey(sig)) {
+        continue;
+      }
+      view.getClasses()
+              .flatMap(c -> c.getMethods().stream())
+              .filter(m -> m.getSignature().toString().equals(sig) && m.hasBody())
+              .findFirst()
+              .ifPresent(m -> methodGraphs.put(sig, CPGBuilder.buildForMethod(m)));
+    }
+
+    return analyseMethod(methodSignature);
+  }
+
+  // bit of an ugly hack and would like for it to go
   private Set<String> findReachable(final String root) {
     Set<String> reachable = new HashSet<>();
     Deque<String> worklist = new ArrayDeque<>();

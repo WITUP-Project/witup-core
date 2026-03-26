@@ -7,7 +7,9 @@ import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -22,6 +24,8 @@ public final class MethodSummariser implements SummaryResolver {
   private final GraphRepository graphRepository;
   private final SummaryRepository summaryRepository;
   private final SymbolicConstraintGenerator symbolicConstraintGenerator;
+  private final Map<InstantiationKey, Optional<ResolvedCallee>> instantiationCache =
+      new HashMap<>();
 
   /**
    * Interprocedural MethodSummariser. As of now,
@@ -80,12 +84,7 @@ public final class MethodSummariser implements SummaryResolver {
     SymExpr throwFreePrecondition = symbolicConstraintGenerator.buildThrowFreePrecondition(paths);
     MethodSummary summary =
         new MethodSummary(
-            cpg.getMethodSignature(),
-            paths,
-            exceptionPaths,
-            formals,
-            returnExpr,
-            throwFreePrecondition);
+            cpg.getMethodSignature(), exceptionPaths, formals, returnExpr, throwFreePrecondition);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);
@@ -114,7 +113,7 @@ public final class MethodSummariser implements SummaryResolver {
 
     Optional<MethodSummary> cachedSummary = summaryRepository.getSummary(calleeSignature);
     if (cachedSummary.isPresent()) {
-      log.debug("Cache hit for {}", calleeSignature);
+      log.debug("summary cache hit for {}", calleeSignature);
       return instantiate(cachedSummary.get(), actuals);
     }
 
@@ -141,6 +140,13 @@ public final class MethodSummariser implements SummaryResolver {
       return Optional.empty();
     }
 
+    InstantiationKey key = new InstantiationKey(summary.getMethodSignature(), actuals);
+    Optional<ResolvedCallee> cachedResolvedCallee = instantiationCache.get(key);
+    if (cachedResolvedCallee != null) {
+      log.debug("resolved callee cache hit for {}", summary.getMethodSignature());
+      return cachedResolvedCallee;
+    }
+
     List<SymParamRef> formals = summary.getFormalParams();
     if (formals == null || formals.size() != actuals.size()) {
       log.error("Formal/actual mismatch for {}", summary.getMethodSignature());
@@ -154,11 +160,12 @@ public final class MethodSummariser implements SummaryResolver {
       int idx = formals.get(i).getIndex();
       SymExpr actual = actuals.get(i);
       returnExpr = returnExpr.substituteParam(idx, actual);
-      returnExpr = returnExpr.substituteParam(idx, actual);
       if (precondition != null) {
         precondition = precondition.substituteParam(idx, actual);
       }
     }
-    return Optional.of(new ResolvedCallee(returnExpr, precondition));
+    var result = Optional.of(new ResolvedCallee(returnExpr, precondition));
+    instantiationCache.put(key, result);
+    return result;
   }
 }

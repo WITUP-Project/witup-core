@@ -26,7 +26,9 @@ public class IntSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
 
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("(a + b) <= 256"));
@@ -50,7 +52,9 @@ public class IntSummaryTest {
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a >= 0"));
@@ -73,7 +77,9 @@ public class IntSummaryTest {
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("0 <= a"));
@@ -96,7 +102,9 @@ public class IntSummaryTest {
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a != 0"));
@@ -119,7 +127,9 @@ public class IntSummaryTest {
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("0 != a"));
@@ -142,7 +152,9 @@ public class IntSummaryTest {
     // constraint paths
     assertEquals(1, summary.getExceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a > 0"));
@@ -167,7 +179,9 @@ public class IntSummaryTest {
     assertEquals(2, summary.getExceptionPaths().size());
     // constraint path 0: (a >= 0, true) -> (0 == 0, false), UNSAT
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertTrue(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a >= 0"));
@@ -175,7 +189,9 @@ public class IntSummaryTest {
     List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
     assertFalse(path1.getFirst().truthValue());
     assertTrue(path1.getFirst().symExpr().toString().contains("a >= 0"));
-    assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().get(1).getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().get(1).getExceptionQualifiedName());
 
     // formal params
     assertEquals(2, summary.getFormalParams().size());
@@ -198,7 +214,9 @@ public class IntSummaryTest {
     assertEquals(2, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertTrue(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a >= 0"));
@@ -224,7 +242,9 @@ public class IntSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertEquals(2, path0.size());
     // SymIte is (((((a + b) <= 256) == 0) ? 1 : 0) ? 0 : 1), truthValue=true
@@ -256,7 +276,9 @@ public class IntSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     // condition from callee
     assertTrue(path0.getFirst().truthValue());
@@ -281,7 +303,9 @@ public class IntSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     // too hard to assert on ITE trees when doing interprocedural.
@@ -300,7 +324,9 @@ public class IntSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("(x * 2) >= 0"));
@@ -322,7 +348,9 @@ public class IntSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertEquals(2, path0.size());
     // condition from callee
@@ -351,7 +379,9 @@ public class IntSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-        assertEquals("java.lang.IllegalArgumentException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.IllegalArgumentException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertEquals(2, path0.size());
     // condition from callee. it throws if a + b <= 256

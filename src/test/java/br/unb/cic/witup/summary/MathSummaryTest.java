@@ -27,7 +27,9 @@ public class MathSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("this.radius >= 0"));
@@ -50,7 +52,9 @@ public class MathSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("y != 0"));
@@ -76,19 +80,27 @@ public class MathSummaryTest {
     assertEquals(2, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
-    assertTrue(path0.getFirst().truthValue());
+    assertEquals(2, path0.size());
+
+    assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("p < 0"));
 
+    assertFalse(path0.get(1).truthValue());
+    assertTrue(path0.get(1).symExpr().toString().contains("p <= 1"));
+
     List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().get(1).getExceptionQualifiedName());
+    assertEquals(1, path1.size());
 
-    assertFalse(path1.getFirst().truthValue());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().get(1).getExceptionQualifiedName());
+
+    assertTrue(path1.getFirst().truthValue());
     assertTrue(path1.getFirst().symExpr().toString().contains("p < 0"));
-
-    assertFalse(path1.get(1).truthValue());
-    assertTrue(path1.get(1).symExpr().toString().contains("p <= 1"));
 
     assertEquals(2, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
@@ -107,7 +119,9 @@ public class MathSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("truncated >= 0"));
@@ -129,7 +143,9 @@ public class MathSummaryTest {
     assertEquals(1, summary.getExceptionPaths().size());
 
     List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
-    assertEquals("java.lang.RuntimeException", summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+    assertEquals(
+        "java.lang.RuntimeException",
+        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("(int)d >= 0"));

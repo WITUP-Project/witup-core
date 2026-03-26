@@ -15,7 +15,9 @@ import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,12 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jgrapht.GraphPath;
-import org.jgrapht.alg.shortestpath.AllDirectedPaths;
 import org.jgrapht.graph.AsSubgraph;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
@@ -52,17 +54,16 @@ import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
-  public static final int MAX_PATH_LENGTH = 50;
+  private static final int MAX_CONSTRAINT_PATHS = 16;
   private String methodSignature;
   private JavaSootMethod method;
   // dot for debugging purposes
   private String dot;
   private WITUpNode entryNode;
-  private AllDirectedPaths<WITUpNode, WITUpEdge> allDirectedPaths;
-  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedConstraintPaths =
-      new HashMap<>();
-  private final Map<WITUpNode, List<GraphPath<WITUpNode, WITUpEdge>>> cachedReturnPaths =
-      new HashMap<>();
+  private final Map<WITUpNode, List<WITUpPath>> cachedConstraintPaths = new HashMap<>();
+  private final Map<WITUpNode, List<WITUpPath>> cachedReturnPaths = new HashMap<>();
+
+  private static final Logger log = LoggerFactory.getLogger(WITUpGraph.class);
 
   public String getMethodSignature() {
     return methodSignature;
@@ -165,32 +166,98 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
-  public List<GraphPath<WITUpNode, WITUpEdge>> getConstraintPaths(final WITUpNode throwNode) {
+  private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
+    List<WITUpPath> result = new ArrayList<>();
+    Deque<WITUpPath> stack = new ArrayDeque<>();
+    stack.push(new WITUpPath(new ArrayList<>(List.of(end)), new ArrayList<>()));
+
+    while (!stack.isEmpty()) {
+      WITUpPath current = stack.pop();
+      WITUpNode head = current.nodes().getFirst();
+
+      if (head.equals(start)) {
+        result.add(current);
+        if (result.size() >= MAX_CONSTRAINT_PATHS) {
+          log.warn(
+              "Path count truncated to {} for {} in {}",
+              MAX_CONSTRAINT_PATHS,
+              end,
+              getMethodSignature());
+          break;
+        }
+        continue;
+      }
+
+      for (WITUpEdge edge : getCfg().incomingEdgesOf(head)) {
+        WITUpNode pred = edge.getSource();
+        if (!current.nodes().contains(pred)) {
+          List<WITUpNode> newNodes = new ArrayList<>(current.nodes());
+          newNodes.addFirst(pred);
+          List<WITUpEdge> newEdges = new ArrayList<>(current.edges());
+          newEdges.addFirst(edge);
+          stack.push(new WITUpPath(newNodes, newEdges));
+        }
+      }
+    }
+    return result;
+  }
+
+  private List<WITUpPath> forwardDFS(final WITUpNode start, final WITUpNode end) {
+    List<WITUpPath> result = new ArrayList<>();
+    Deque<WITUpPath> stack = new ArrayDeque<>();
+    stack.push(new WITUpPath(new ArrayList<>(List.of(start)), new ArrayList<>()));
+
+    while (!stack.isEmpty()) {
+      WITUpPath current = stack.pop();
+      WITUpNode tail = current.nodes().getLast();
+
+      if (tail.equals(end)) {
+        result.add(current);
+        if (result.size() >= MAX_CONSTRAINT_PATHS) {
+          log.warn(
+              "Return paths truncated to {} for {} in {}",
+              MAX_CONSTRAINT_PATHS,
+              end,
+              getMethodSignature());
+          break;
+        }
+        continue;
+      }
+
+      for (WITUpEdge edge : getCfg().outgoingEdgesOf(tail)) {
+        WITUpNode succ = edge.getTarget();
+        if (!current.nodes().contains(succ)) {
+          List<WITUpNode> newNodes = new ArrayList<>(current.nodes());
+          newNodes.add(succ);
+          List<WITUpEdge> newEdges = new ArrayList<>(current.edges());
+          newEdges.add(edge);
+          stack.push(new WITUpPath(newNodes, newEdges));
+        }
+      }
+    }
+    return result;
+  }
+
+  public List<WITUpPath> getConstraintPaths(final WITUpNode throwNode) {
     return cachedConstraintPaths.computeIfAbsent(throwNode, this::computeConstraintPaths);
   }
 
-  private List<GraphPath<WITUpNode, WITUpEdge>> computeConstraintPaths(final WITUpNode throwNode) {
+  private List<WITUpPath> computeConstraintPaths(final WITUpNode throwNode) {
     WITUpNode entry = findEntryNode();
-    List<GraphPath<WITUpNode, WITUpEdge>> throwPaths =
-        getAllDirectedPaths().getAllPaths(entry, throwNode, true, null);
-
-    List<GraphPath<WITUpNode, WITUpEdge>> pathsWithConstraints = new ArrayList<>();
-    for (GraphPath<WITUpNode, WITUpEdge> path : throwPaths) {
-      for (WITUpNode node : path.getVertexList()) {
+    List<WITUpPath> throwPaths = backwardDFS(entry, throwNode);
+    List<WITUpPath> pathsWithConstraints = new ArrayList<>();
+    for (WITUpPath path : throwPaths) {
+      for (WITUpNode node : path.nodes()) {
         if (node instanceof IfStatementNode || node instanceof CaughtExceptionNode) {
           pathsWithConstraints.add(path);
           break;
         }
       }
+      if (pathsWithConstraints.size() >= MAX_CONSTRAINT_PATHS) {
+        break;
+      }
     }
     return pathsWithConstraints;
-  }
-
-  private AllDirectedPaths<WITUpNode, WITUpEdge> getAllDirectedPaths() {
-    if (allDirectedPaths == null) {
-      allDirectedPaths = new AllDirectedPaths<>(getCfg());
-    }
-    return allDirectedPaths;
   }
 
   private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
@@ -234,15 +301,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     throw new IllegalStateException("No entry JIdentityStmt node in graph");
   }
 
-  public List<ThrowConstraint> getThrowConstraints(final GraphPath<WITUpNode, WITUpEdge> path) {
+  public List<ThrowConstraint> getThrowConstraints(final WITUpPath path) {
     List<ThrowConstraint> throwConstraints = new ArrayList<>();
-    for (WITUpEdge e : path.getEdgeList()) {
-      if (e instanceof BooleanCFGEdge) {
-        WITUpNode sourceNode = e.getSource();
-        throwConstraints.add(new ThrowConstraint(sourceNode, ((BooleanCFGEdge) e).getCondition()));
+    for (WITUpEdge e : path.edges()) {
+      if (e instanceof BooleanCFGEdge boolEdge) {
+        throwConstraints.add(new ThrowConstraint(e.getSource(), boolEdge.getCondition()));
       } else if (e instanceof ExceptionalCFGEdge) {
-        WITUpNode targetNode = e.getTarget();
-        throwConstraints.add(new ThrowConstraint(targetNode, true));
+        throwConstraints.add(new ThrowConstraint(e.getTarget(), true));
       }
     }
     return throwConstraints;
@@ -265,14 +330,12 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         .collect(Collectors.toList());
   }
 
-  public List<GraphPath<WITUpNode, WITUpEdge>> getAllPathsToReturn(final WITUpNode returnNode) {
+  public List<WITUpPath> getAllPathsToReturn(final WITUpNode returnNode) {
     return cachedReturnPaths.computeIfAbsent(returnNode, this::computeAllPathsToReturn);
   }
 
-  private List<GraphPath<WITUpNode, WITUpEdge>> computeAllPathsToReturn(
-      final WITUpNode returnNode) {
-    WITUpNode entry = findEntryNode();
-    return getAllDirectedPaths().getAllPaths(entry, returnNode, true, MAX_PATH_LENGTH);
+  private List<WITUpPath> computeAllPathsToReturn(final WITUpNode returnNode) {
+    return forwardDFS(findEntryNode(), returnNode);
   }
 
   // The Jimple pattern seems very consitent (hopefully an invariant):
