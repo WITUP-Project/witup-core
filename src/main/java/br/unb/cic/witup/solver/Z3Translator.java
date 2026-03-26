@@ -12,6 +12,7 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymDoubleConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymDynamicInvoke;
+import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymFieldAccess;
 import br.unb.cic.witup.analysis.symbolic.expr.SymFloatConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
@@ -48,6 +49,8 @@ import com.microsoft.z3.Sort;
 import com.microsoft.z3.UninterpretedSort;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,7 +72,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private final Z3SortDetector sortInferrer;
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
+  public static final int MAX_DESCRIPTION_CHARS = 256;
   private final Log log = LogFactory.getLog("Z3Translator");
+
+  private final Map<SymExpr, String> exprIds = new IdentityHashMap<>();
+  private final Map<String, String> idToTruncatedDescription = new HashMap<>();
+  private int exprCounter = 0;
 
   public Z3Translator(final Context context) {
     this.context = context;
@@ -91,7 +99,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
           "Failed on: "
               + constraint.symExpr().getClass().getSimpleName()
               + " = "
-              + constraint.symExpr());
+              + idFor(constraint.symExpr()));
       throw e;
     }
   }
@@ -326,19 +334,19 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitVirtualInvoke(final SymVirtualInvoke i) {
-    return makeInvokeConst(i.toString(), i.getKind());
+    return makeInvokeConst(i, i.getKind());
   }
 
   // const is enough for our purposes. the symbolic constraint generator
   // resolves them recursively before we get here
   @Override
   public Expr<?> visitStaticInvoke(final SymStaticInvoke i) {
-    return makeInvokeConst(i.toString(), i.getKind());
+    return makeInvokeConst(i, i.getKind());
   }
 
   @Override
   public Expr<?> visitInterfaceInvoke(final SymInterfaceInvoke i) {
-    return makeInvokeConst(i.toString(), i.getKind());
+    return makeInvokeConst(i, i.getKind());
   }
 
   @Override
@@ -349,16 +357,18 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitSpecialInvoke(final SymSpecialInvoke i) {
-    return makeInvokeConst(i.toString(), i.getKind());
+    return makeInvokeConst(i, i.getKind());
   }
 
-  private Expr<?> makeInvokeConst(final String key, final SymKind kind) {
-    String typedKey = key + (kind == SymKind.BOOLEAN_METHOD ? BOOL_SUFFIX : INT_SUFFIX);
+  private Expr<?> makeInvokeConst(final SymExpr invokeExpr, final SymKind kind) {
+    String id = idFor(invokeExpr);
+    String typedKey = id + (kind == SymKind.BOOLEAN_METHOD ? BOOL_SUFFIX : INT_SUFFIX);
+
     Expr<?> expr =
         exprMap.computeIfAbsent(
             typedKey,
             k -> kind == SymKind.BOOLEAN_METHOD ? context.mkBoolConst(k) : context.mkIntConst(k));
-    exprMap.put(key, expr); // store under original key for model extraction
+    exprMap.put(id, expr); // store under original key for model extraction
     return expr;
   }
 
@@ -382,7 +392,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitArrayRef(final SymArrayRef ref) {
-    String key = toArrayRefKey(ref);
+    String key = idFor(ref);
     Expr<?> cached = exprMap.get(key);
     if (cached != null) {
       return cached;
@@ -397,22 +407,19 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitNewMultiArray(final SymNewMultiArray e) {
-    return exprMap.computeIfAbsent(e.toString(), context::mkIntConst);
-  }
-
-  private static String toArrayRefKey(final SymArrayRef ref) {
-    return ARRAY_SELECT + ref.toString();
+    return exprMap.computeIfAbsent(idFor(e), context::mkIntConst);
   }
 
   @Override
   public Expr<?> visitLength(final SymLength l) {
-    String key = l.toString();
-    return exprMap.computeIfAbsent(key, context::mkIntConst);
+    // String is safe; it will not blow up recursively
+    return exprMap.computeIfAbsent(l.toString(), context::mkIntConst);
   }
 
   @Override
   public Expr<?> visitCast(final SymCast c) {
-    return exprMap.computeIfAbsent(c.toString(), context::mkIntConst);
+    // String is safe; it will not blow up recursively
+    return exprMap.computeIfAbsent(idFor(c), context::mkIntConst);
   }
 
   @Override
@@ -437,7 +444,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitParamRef(final SymParamRef r) {
     return exprMap.computeIfAbsent(
-        r.toString(),
+        idFor(r),
         name -> {
           Sort sort = r.accept(sortInferrer);
           return context.mkConst(name, sort);
@@ -462,7 +469,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitNewRef(final SymNew n) {
-    return exprMap.computeIfAbsent("new_" + n.toString().replace(".", "_"), context::mkIntConst);
+    return exprMap.computeIfAbsent(idFor(n), context::mkIntConst);
   }
 
   @Override
@@ -508,4 +515,53 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
     return context.mkITE(condExpr, thenExpr, elseExpr);
   }
+
+  private String idFor(final SymExpr expr) {
+    return exprIds.computeIfAbsent(expr, e -> {
+      String id = "expr_" + exprCounter++;
+      String raw = describeExpr(e);
+      idToTruncatedDescription.put(id, raw.length() > MAX_DESCRIPTION_CHARS
+              ? raw.substring(0, MAX_DESCRIPTION_CHARS) + "..."
+              : raw);
+      return id;
+    });
+  }
+
+  private static String describeExpr(final SymExpr expr) {
+    return switch (expr) {
+      case SymVar v -> v.getName();
+      case SymParamRef p -> p.toString();
+      case SymLength l -> safeDescribe(l.getOp()) + ".length()";
+      case SymCast c -> "(" + c.getType() + ")" + safeDescribe(c.getOp());
+      case SymInstanceOf i -> safeDescribe(i.getOp())
+              + "_instanceof_" + i.getType().replace(".", "_");
+      case SymVirtualInvoke i -> {
+        StringBuilder sb = new StringBuilder(safeDescribe(i.getBase()));
+        sb.append(".").append(i.getSignature()).append("(");
+        List<SymExpr> args = i.getArgs();
+        if (!args.isEmpty()) {
+          sb.append(safeDescribe(args.get(0)));
+          for (int k = 1; k < args.size(); k++) {
+            sb.append(",").append(safeDescribe(args.get(k)));
+          }
+        }
+        sb.append(")");
+        yield sb.toString();
+      }
+      default -> expr.getClass().getSimpleName() + "@" + System.identityHashCode(expr);
+    };
+  }
+
+  private static String safeDescribe(final SymExpr expr) {
+    return switch (expr) {
+      case SymVar v -> v.getName();
+      case SymParamRef p -> p.toString();
+      default -> expr.getClass().getSimpleName() + "@" + System.identityHashCode(expr);
+    };
+  }
+
+  public Map<String, String> getIdDescriptions() {
+    return Collections.unmodifiableMap(idToTruncatedDescription);
+  }
+
 }
