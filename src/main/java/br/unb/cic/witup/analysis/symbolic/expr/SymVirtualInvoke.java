@@ -13,6 +13,7 @@ public final class SymVirtualInvoke extends SymExpr {
   private final String signature; // e.g. length
   private final boolean returnsBoolean;
   private final List<SymExpr> args;
+  private final boolean hasUnboxing;
   private String cachedToString;
 
   public SymExpr getBase() {
@@ -48,6 +49,8 @@ public final class SymVirtualInvoke extends SymExpr {
     this.signature = signature;
     this.returnsBoolean = returnsBoolean;
     this.args = args;
+    this.hasUnboxing =
+        SymExpr.isUnboxingCall(signature) || base.containsUnboxing();
   }
 
   @Override
@@ -110,10 +113,7 @@ public final class SymVirtualInvoke extends SymExpr {
 
   @Override
   public boolean containsUnboxing() {
-    if (SymExpr.isUnboxingCall(signature)) {
-      return true;
-    }
-    return base.containsUnboxing();
+    return hasUnboxing;
   }
 
   @Override

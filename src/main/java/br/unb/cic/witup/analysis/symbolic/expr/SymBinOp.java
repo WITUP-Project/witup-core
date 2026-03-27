@@ -8,6 +8,7 @@ public final class SymBinOp extends SymExpr {
   private final BinOp op;
   private final SymExpr lhs;
   private final SymExpr rhs;
+  private final boolean hasUnboxing;
   private String cachedToString;
 
   public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
@@ -22,6 +23,7 @@ public final class SymBinOp extends SymExpr {
     this.op = op;
     this.lhs = lhs;
     this.rhs = rhs;
+    this.hasUnboxing = lhs.containsUnboxing() || rhs.containsUnboxing();
   }
 
   private static SymKind deriveKind(final SymExpr left, final SymExpr right) {
@@ -86,7 +88,7 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public boolean containsUnboxing() {
-    return lhs.containsUnboxing() || rhs.containsUnboxing();
+    return hasUnboxing;
   }
 
   @Override

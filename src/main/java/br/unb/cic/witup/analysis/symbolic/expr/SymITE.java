@@ -6,6 +6,7 @@ public final class SymITE extends SymExpr {
   private final SymExpr condition;
   private final SymExpr thenExpr;
   private final SymExpr elseExpr;
+  private final boolean hasUnboxing;
   private String cachedToString;
 
   public SymITE(final SymExpr condition, final SymExpr thenExpr, final SymExpr elseExpr) {
@@ -13,6 +14,8 @@ public final class SymITE extends SymExpr {
     this.condition = condition;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
+    this.hasUnboxing =
+        condition.containsUnboxing() || thenExpr.containsUnboxing() || elseExpr.containsUnboxing();
   }
 
   public SymExpr getCondition() {
@@ -64,9 +67,7 @@ public final class SymITE extends SymExpr {
 
   @Override
   public boolean containsUnboxing() {
-    return condition.containsUnboxing()
-        || thenExpr.containsUnboxing()
-        || elseExpr.containsUnboxing();
+    return hasUnboxing;
   }
 
   @Override
