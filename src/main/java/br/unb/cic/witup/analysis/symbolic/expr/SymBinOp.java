@@ -9,6 +9,7 @@ public final class SymBinOp extends SymExpr {
   private final SymExpr lhs;
   private final SymExpr rhs;
   private final boolean hasUnboxing;
+  private final int cachedDepth;
   private String cachedToString;
 
   public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
@@ -24,6 +25,7 @@ public final class SymBinOp extends SymExpr {
     this.lhs = lhs;
     this.rhs = rhs;
     this.hasUnboxing = lhs.containsUnboxing() || rhs.containsUnboxing();
+    this.cachedDepth = 1 + Math.max(lhs.depth(), rhs.depth());
   }
 
   private static SymKind deriveKind(final SymExpr left, final SymExpr right) {
@@ -83,7 +85,7 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public int depth() {
-    return 1 + Math.max(lhs.depth(), rhs.depth());
+    return cachedDepth;
   }
 
   @Override

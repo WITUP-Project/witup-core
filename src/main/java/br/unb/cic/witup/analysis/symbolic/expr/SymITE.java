@@ -7,6 +7,7 @@ public final class SymITE extends SymExpr {
   private final SymExpr thenExpr;
   private final SymExpr elseExpr;
   private final boolean hasUnboxing;
+  private final int cachedDepth;
   private String cachedToString;
 
   public SymITE(final SymExpr condition, final SymExpr thenExpr, final SymExpr elseExpr) {
@@ -17,6 +18,8 @@ public final class SymITE extends SymExpr {
     this.elseExpr = elseExpr;
     this.hasUnboxing =
         condition.containsUnboxing() || thenExpr.containsUnboxing() || elseExpr.containsUnboxing();
+    this.cachedDepth =
+        1 + Math.max(condition.depth(), Math.max(thenExpr.depth(), elseExpr.depth()));
   }
 
   public SymExpr getCondition() {
@@ -63,7 +66,7 @@ public final class SymITE extends SymExpr {
 
   @Override
   public int depth() {
-    return 1 + Math.max(condition.depth(), Math.max(thenExpr.depth(), elseExpr.depth()));
+    return cachedDepth;
   }
 
   @Override
