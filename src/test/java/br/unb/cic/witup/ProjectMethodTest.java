@@ -3,9 +3,7 @@ package br.unb.cic.witup;
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import java.nio.file.Path;
-
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 public class ProjectMethodTest {
   private static final Path PROJECT_JARS_DIR = Path.of("./project-jars");

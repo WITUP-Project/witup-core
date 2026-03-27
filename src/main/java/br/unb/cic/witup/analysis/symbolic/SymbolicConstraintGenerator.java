@@ -20,8 +20,10 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -271,18 +273,33 @@ public final class SymbolicConstraintGenerator {
     return Optional.empty();
   }
 
-  // it's ok to reassign current in a recursive function
-  // given a Jimple statement, produces a SymExpr by backwards
-  // tracing temporaries back to their origins
   private SymExpr backwardSubstitute(
-      SymExpr symExpr, // SUPPRESS CHECKSTYLE FinalParameters
+      final SymExpr symExpr,
+      final WITUpNode currentNode,
+      final Set<WITUpNode> visited,
+      final boolean followIdentity,
+      final List<SymbolicConstraint> extraConstraints) {
+
+    Set<String> freeVars = new HashSet<>();
+    symExpr.collectVarNames(freeVars);
+    if (freeVars.isEmpty()) {
+      return symExpr;
+    }
+    Map<String, SymExpr> env = new HashMap<>();
+    collectBindings(freeVars, env, currentNode, visited, followIdentity, extraConstraints);
+    return env.isEmpty() ? symExpr : symExpr.resolveWith(env);
+  }
+
+  private void collectBindings(
+      final Set<String> freeVars,
+      final Map<String, SymExpr> env,
       final WITUpNode currentNode,
       final Set<WITUpNode> visited,
       final boolean followIdentity,
       final List<SymbolicConstraint> extraConstraints) {
 
     if (visited.contains(currentNode)) {
-      return symExpr;
+      return;
     }
     visited.add(currentNode);
 
@@ -309,8 +326,6 @@ public final class SymbolicConstraintGenerator {
         rhsOp = assign.getRightOp();
         lhsOp = assign.getLeftOp();
 
-        // this is the interprocedural hook.
-        // need to add hooks for other invokes
         Optional<ResolvedCallee> resolved = tryResolveInterprocedural(rhsOp);
 
         if (resolved.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
@@ -319,14 +334,12 @@ public final class SymbolicConstraintGenerator {
 
         if (resolved.isPresent()) {
           String definedVar = getVariableName(assign.getLeftOp());
-          if (symExpr.contains(definedVar)) {
-            symExpr = symExpr.substitute(definedVar, resolved.get().returnExpr());
-            // add callee's throw-free precondition as extra constraint
+          if (freeVars.contains(definedVar)) {
+            addBinding(freeVars, env, definedVar, resolved.get().returnExpr());
             if (resolved.get().precondition() != null) {
               extraConstraints.add(new SymbolicConstraint(resolved.get().precondition(), true));
             }
-            symExpr =
-                backwardSubstitute(symExpr, sourceNode, visited, followIdentity, extraConstraints);
+            collectBindings(freeVars, env, sourceNode, visited, followIdentity, extraConstraints);
           }
           continue;
         }
@@ -339,20 +352,34 @@ public final class SymbolicConstraintGenerator {
       } else {
         continue;
       }
-      // local variable on the lhs e.g. $stack1 == 0
+
       String definedVar = getVariableName(lhsOp);
 
-      if (!symExpr.contains(definedVar)) {
+      if (!freeVars.contains(definedVar)) {
         continue;
       }
 
       SymExpr rhsSymExpr = SymExpr.fromJimple(rhsOp);
 
-      symExpr = symExpr.substitute(definedVar, rhsSymExpr);
-      symExpr = backwardSubstitute(symExpr, sourceNode, visited, followIdentity, extraConstraints);
+      addBinding(freeVars, env, definedVar, rhsSymExpr);
+      collectBindings(freeVars, env, sourceNode, visited, followIdentity, extraConstraints);
     }
+  }
 
-    return symExpr;
+  private static void addBinding(
+      final Set<String> freeVars,
+      final Map<String, SymExpr> env,
+      final String varName,
+      final SymExpr expr) {
+    SymExpr existing = env.get(varName);
+    if (existing != null) {
+      // variable redefined on the path — compose with the earlier binding
+      env.put(varName, existing.substitute(varName, expr));
+    } else {
+      env.put(varName, expr);
+    }
+    freeVars.remove(varName);
+    expr.collectVarNames(freeVars);
   }
 
   public SymExpr buildPathCondition(final ReturnStatementNode returnNode) {

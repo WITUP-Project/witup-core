@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Map;
+import java.util.Set;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.basic.Value;
 import sootup.core.jimple.common.constant.ClassConstant;
@@ -108,6 +110,13 @@ public abstract class SymExpr {
   /** also saves on hot path */
   public boolean containsUnboxing() {
     return false;
+  }
+
+  public void collectVarNames(final Set<String> vars) {}
+
+  /** avoid tree recomputation on backwardSubstitute */
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    return this;
   }
 
   public static SymExpr fromJimple(final Value value) {

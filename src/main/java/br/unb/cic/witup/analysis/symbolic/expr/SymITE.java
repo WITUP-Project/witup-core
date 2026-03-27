@@ -1,6 +1,8 @@
 package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
+import java.util.Map;
+import java.util.Set;
 
 public final class SymITE extends SymExpr {
   private final SymExpr condition;
@@ -78,6 +80,23 @@ public final class SymITE extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return condition.contains(varName) || thenExpr.contains(varName) || elseExpr.contains(varName);
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    condition.collectVarNames(vars);
+    thenExpr.collectVarNames(vars);
+    elseExpr.collectVarNames(vars);
+  }
+
+  @Override
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    SymExpr newCond = condition.resolveWith(env);
+    SymExpr newThen = thenExpr.resolveWith(env);
+    SymExpr newElse = elseExpr.resolveWith(env);
+    return (newCond != condition || newThen != thenExpr || newElse != elseExpr)
+        ? new SymITE(newCond, newThen, newElse)
+        : this;
   }
 
   @Override
