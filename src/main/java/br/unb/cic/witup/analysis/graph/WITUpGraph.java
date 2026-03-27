@@ -24,8 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import org.jgrapht.graph.AsSubgraph;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
@@ -62,7 +60,8 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private WITUpNode entryNode;
   private final Map<WITUpNode, List<WITUpPath>> cachedConstraintPaths = new HashMap<>();
   private final Map<WITUpNode, List<WITUpPath>> cachedReturnPaths = new HashMap<>();
-  private AsSubgraph<WITUpNode, WITUpEdge> cachedCfg;
+  private Map<WITUpNode, List<WITUpEdge>> cfgIncoming;
+  private Map<WITUpNode, List<WITUpEdge>> cfgOutgoing;
 
   private static final Logger log = LoggerFactory.getLogger(WITUpGraph.class);
 
@@ -171,17 +170,43 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
+  private record DFSEntry(WITUpNode node, WITUpEdge edge, DFSEntry parent) {
+    boolean contains(final WITUpNode n) {
+      for (DFSEntry e = this; e != null; e = e.parent) {
+        if (e.node.equals(n)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    WITUpPath toPath() {
+      int len = 0;
+      for (DFSEntry e = this; e != null; e = e.parent) {
+        len++;
+      }
+      List<WITUpNode> nodes = new ArrayList<>(len);
+      List<WITUpEdge> edges = new ArrayList<>(len - 1);
+      for (DFSEntry e = this; e != null; e = e.parent) {
+        nodes.add(e.node);
+        if (e.edge != null) {
+          edges.add(e.edge);
+        }
+      }
+      return new WITUpPath(nodes, edges);
+    }
+  }
+
   private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
     List<WITUpPath> result = new ArrayList<>();
-    Deque<WITUpPath> stack = new ArrayDeque<>();
-    stack.push(new WITUpPath(new ArrayList<>(List.of(end)), new ArrayList<>()));
+    Deque<DFSEntry> stack = new ArrayDeque<>();
+    stack.push(new DFSEntry(end, null, null));
 
     while (!stack.isEmpty()) {
-      WITUpPath current = stack.pop();
-      WITUpNode head = current.nodes().getFirst();
+      DFSEntry current = stack.pop();
 
-      if (head.equals(start)) {
-        result.add(current);
+      if (current.node.equals(start)) {
+        result.add(current.toPath());
         if (result.size() >= MAX_CONSTRAINT_PATHS) {
           log.info(
               "Path count truncated to {} for {} in {}",
@@ -193,14 +218,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         continue;
       }
 
-      for (WITUpEdge edge : getCfg().incomingEdgesOf(head)) {
+      for (WITUpEdge edge : cfgIncomingEdgesOf(current.node)) {
         WITUpNode pred = edge.getSource();
-        if (!current.nodes().contains(pred)) {
-          List<WITUpNode> newNodes = new ArrayList<>(current.nodes());
-          newNodes.addFirst(pred);
-          List<WITUpEdge> newEdges = new ArrayList<>(current.edges());
-          newEdges.addFirst(edge);
-          stack.push(new WITUpPath(newNodes, newEdges));
+        if (!current.contains(pred)) {
+          stack.push(new DFSEntry(pred, edge, current));
         }
       }
     }
@@ -229,7 +250,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         continue;
       }
 
-      for (WITUpEdge edge : getCfg().outgoingEdgesOf(tail)) {
+      for (WITUpEdge edge : cfgOutgoingEdgesOf(tail)) {
         WITUpNode succ = edge.getTarget();
         if (!current.nodes().contains(succ)) {
           List<WITUpNode> newNodes = new ArrayList<>(current.nodes());
@@ -265,18 +286,28 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return pathsWithConstraints;
   }
 
-  private AsSubgraph<WITUpNode, WITUpEdge> getCfg() {
-    if (cachedCfg != null) {
-      return cachedCfg;
+  private void buildCfgMaps() {
+    if (cfgIncoming != null) {
+      return;
     }
-    cachedCfg =
-        new AsSubgraph<>(
-            this,
-            null,
-            this.edgeSet().stream()
-                .filter(edge -> edge instanceof CFGEdge)
-                .collect(Collectors.toSet()));
-    return cachedCfg;
+    cfgIncoming = new HashMap<>();
+    cfgOutgoing = new HashMap<>();
+    for (WITUpEdge edge : this.edgeSet()) {
+      if (edge instanceof CFGEdge) {
+        cfgIncoming.computeIfAbsent(edge.getTarget(), k -> new ArrayList<>()).add(edge);
+        cfgOutgoing.computeIfAbsent(edge.getSource(), k -> new ArrayList<>()).add(edge);
+      }
+    }
+  }
+
+  private List<WITUpEdge> cfgIncomingEdgesOf(final WITUpNode node) {
+    buildCfgMaps();
+    return cfgIncoming.getOrDefault(node, List.of());
+  }
+
+  private List<WITUpEdge> cfgOutgoingEdgesOf(final WITUpNode node) {
+    buildCfgMaps();
+    return cfgOutgoing.getOrDefault(node, List.of());
   }
 
   private WITUpNode findEntryNode() {
@@ -334,10 +365,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<ReturnStatementNode> getReturnNodes() {
-    return vertexSet().stream()
-        .filter(n -> n instanceof ReturnStatementNode)
-        .map(n -> (ReturnStatementNode) n)
-        .collect(Collectors.toList());
+    List<ReturnStatementNode> result = new ArrayList<>();
+    for (WITUpNode n : this.vertexSet()) {
+      if (n instanceof ReturnStatementNode r) {
+        result.add(r);
+      }
+    }
+    return result;
   }
 
   public List<WITUpPath> getAllPathsToReturn(final WITUpNode returnNode) {

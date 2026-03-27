@@ -2,9 +2,6 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.types.PrimitiveType;
 
@@ -12,7 +9,7 @@ public final class SymVirtualInvoke extends SymExpr {
   private final SymExpr base; // e.g. s
   private final String signature; // e.g. length
   private final boolean returnsBoolean;
-  private final List<SymExpr> args;
+  private final SymExpr[] args;
   private final boolean hasUnboxing;
   private String cachedToString;
 
@@ -20,7 +17,7 @@ public final class SymVirtualInvoke extends SymExpr {
     return base;
   }
 
-  public List<SymExpr> getArgs() {
+  public SymExpr[] getArgs() {
     return args;
   }
 
@@ -34,7 +31,7 @@ public final class SymVirtualInvoke extends SymExpr {
     boolean returnsBoolean =
         e.getMethodSignature().getSubSignature().getType() instanceof PrimitiveType.BooleanType;
 
-    List<SymExpr> args = e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
+    SymExpr[] args = e.getArgs().stream().map(SymExpr::fromJimple).toArray(SymExpr[]::new);
 
     return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean, args);
   }
@@ -43,7 +40,7 @@ public final class SymVirtualInvoke extends SymExpr {
       final SymExpr base,
       final String signature,
       final boolean returnsBoolean,
-      final List<SymExpr> args) {
+      final SymExpr[] args) {
     super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER, baseArgsMask(base, args));
     this.base = base;
     this.signature = signature;
@@ -61,17 +58,14 @@ public final class SymVirtualInvoke extends SymExpr {
   public SymExpr substitute(final String varName, final SymExpr replacement) {
     SymExpr newBase = base.substitute(varName, replacement);
 
-    List<SymExpr> newArgs = null;
-    for (int i = 0; i < args.size(); i++) {
-      SymExpr newArg = args.get(i).substitute(varName, replacement);
-      if (newArg != args.get(i) && newArgs == null) {
-        newArgs = new ArrayList<>(args.size());
-        for (int j = 0; j < i; j++) {
-          newArgs.add(args.get(j));
+    SymExpr[] newArgs = null;
+    for (int i = 0; i < args.length; i++) {
+      SymExpr newArg = args[i].substitute(varName, replacement);
+      if (newArg != args[i]) {
+        if (newArgs == null) {
+          newArgs = args.clone();
         }
-      }
-      if (newArgs != null) {
-        newArgs.add(newArg);
+        newArgs[i] = newArg;
       }
     }
 
@@ -88,18 +82,14 @@ public final class SymVirtualInvoke extends SymExpr {
     }
     SymExpr newBase = base.substituteParam(idx, actual);
 
-    List<SymExpr> newArgs = null;
-    for (int i = 0; i < args.size(); i++) {
-      SymExpr newArg = args.get(i).substituteParam(idx, actual);
-      if (newArg != args.get(i) && newArgs == null) {
-        // first change — copy up to this point
-        newArgs = new ArrayList<>(args.size());
-        for (int j = 0; j < i; j++) {
-          newArgs.add(args.get(j));
+    SymExpr[] newArgs = null;
+    for (int i = 0; i < args.length; i++) {
+      SymExpr newArg = args[i].substituteParam(idx, actual);
+      if (newArg != args[i]) {
+        if (newArgs == null) {
+          newArgs = args.clone();
         }
-      }
-      if (newArgs != null) {
-        newArgs.add(newArg);
+        newArgs[i] = newArg;
       }
     }
 
@@ -115,7 +105,7 @@ public final class SymVirtualInvoke extends SymExpr {
     return hasUnboxing;
   }
 
-  private static long baseArgsMask(final SymExpr base, final List<SymExpr> args) {
+  private static long baseArgsMask(final SymExpr base, final SymExpr[] args) {
     long mask = base.getParamMask();
     for (SymExpr arg : args) {
       mask |= arg.getParamMask();
@@ -143,10 +133,10 @@ public final class SymVirtualInvoke extends SymExpr {
     }
     StringBuilder sb = new StringBuilder(base.toString());
     sb.append(".").append(signature).append("(");
-    if (!args.isEmpty()) {
-      sb.append(args.get(0).toString());
-      for (int i = 1; i < args.size(); i++) {
-        sb.append(",").append(args.get(i).toString());
+    if (args.length > 0) {
+      sb.append(args[0].toString());
+      for (int i = 1; i < args.length; i++) {
+        sb.append(",").append(args[i].toString());
       }
     }
     sb.append(")");
