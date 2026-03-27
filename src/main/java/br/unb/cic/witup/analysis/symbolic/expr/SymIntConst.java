@@ -49,7 +49,7 @@ public final class SymIntConst extends SymExpr {
   }
 
   @Override
-  public boolean contains(final String varName)  {
+  public boolean contains(final String varName) {
     return false;
   }
 }

@@ -90,7 +90,13 @@ public final class Driver {
 
     mapper.writeValue(projectResultsDir.resolve("witup-failures.json").toFile(), failures);
 
-    log.info("Results written to witup-results.json ({} methods)", methodSolutions.size());
-    log.info("Failures written to witup-failures.json ({} methods)", failures.size());
+    log.info(
+        "Results written to witup-results-{}.json ({} methods)",
+        WITUpGraph.getMaxConstraintPaths(),
+        methodSolutions.size());
+    log.info(
+        "Failures written to witup-failures-{}.json ({} methods)",
+        WITUpGraph.getMaxConstraintPaths(),
+        failures.size());
   }
 }

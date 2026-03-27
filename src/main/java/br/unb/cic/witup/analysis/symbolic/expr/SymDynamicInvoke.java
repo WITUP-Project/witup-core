@@ -13,7 +13,8 @@ public final class SymDynamicInvoke extends SymExpr {
   private String cachedToString;
 
   public SymDynamicInvoke(final JDynamicInvokeExpr e) {
-    this(e.toString(),
+    this(
+        e.toString(),
         e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList()),
         SymKind.OTHER);
   }
@@ -112,6 +113,11 @@ public final class SymDynamicInvoke extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return args.stream().anyMatch(a -> a.contains(varName));
+    for (SymExpr arg : args) {
+      if (arg.contains(varName)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

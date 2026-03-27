@@ -54,7 +54,7 @@ import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
-  private static final int MAX_CONSTRAINT_PATHS = 4096;
+  private static final int MAX_CONSTRAINT_PATHS = 8192;
   private String methodSignature;
   private JavaSootMethod method;
   // dot for debugging purposes
@@ -80,6 +80,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   public String getDot() {
     return dot;
+  }
+
+  public static int getMaxConstraintPaths() {
+    return MAX_CONSTRAINT_PATHS;
   }
 
   /**
@@ -265,12 +269,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     if (cachedCfg != null) {
       return cachedCfg;
     }
-    cachedCfg = new AsSubgraph<>(
+    cachedCfg =
+        new AsSubgraph<>(
             this,
             null,
             this.edgeSet().stream()
-                    .filter(edge -> edge instanceof CFGEdge)
-                    .collect(Collectors.toSet()));
+                .filter(edge -> edge instanceof CFGEdge)
+                .collect(Collectors.toSet()));
     return cachedCfg;
   }
 

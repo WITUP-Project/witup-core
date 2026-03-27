@@ -40,5 +40,9 @@ build/
 
 *.svg
 
+/project-sources
 /project-results
 /graphs
+
+### java flight recorder files
+*.jfr

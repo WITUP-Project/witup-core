@@ -11,7 +11,8 @@ public final class SymITE extends SymExpr {
   private String cachedToString;
 
   public SymITE(final SymExpr condition, final SymExpr thenExpr, final SymExpr elseExpr) {
-    super(thenExpr.getKind(),
+    super(
+        thenExpr.getKind(),
         condition.getParamMask() | thenExpr.getParamMask() | elseExpr.getParamMask());
     this.condition = condition;
     this.thenExpr = thenExpr;
