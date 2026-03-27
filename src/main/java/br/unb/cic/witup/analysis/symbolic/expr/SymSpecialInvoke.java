@@ -35,8 +35,7 @@ public final class SymSpecialInvoke extends SymExpr {
       final String signature,
       final boolean returnsBoolean,
       final List<SymExpr> args) {
-    super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER,
-        baseArgsMask(base, args));
+    super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER, baseArgsMask(base, args));
     this.base = base;
     this.signature = signature;
     this.returnsBoolean = returnsBoolean;

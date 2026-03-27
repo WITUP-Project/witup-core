@@ -82,6 +82,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return dot;
   }
 
+  public static int getMaxConstraintPaths() {
+    return MAX_CONSTRAINT_PATHS;
+  }
+
   /**
    * Creates a WITUpGraph from PropertyGraph from SootUp
    *
@@ -265,12 +269,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     if (cachedCfg != null) {
       return cachedCfg;
     }
-    cachedCfg = new AsSubgraph<>(
+    cachedCfg =
+        new AsSubgraph<>(
             this,
             null,
             this.edgeSet().stream()
-                    .filter(edge -> edge instanceof CFGEdge)
-                    .collect(Collectors.toSet()));
+                .filter(edge -> edge instanceof CFGEdge)
+                .collect(Collectors.toSet()));
     return cachedCfg;
   }
 

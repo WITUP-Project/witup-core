@@ -14,7 +14,8 @@ public final class SymStaticInvoke extends SymExpr {
   private String cachedToString;
 
   public SymStaticInvoke(final JStaticInvokeExpr e) {
-    this(e.getMethodSignature().toString(),
+    this(
+        e.getMethodSignature().toString(),
         deriveKind(e) == SymKind.BOOLEAN_METHOD,
         e.getArgs().stream().map(SymExpr::fromJimple).toList(),
         deriveKind(e));

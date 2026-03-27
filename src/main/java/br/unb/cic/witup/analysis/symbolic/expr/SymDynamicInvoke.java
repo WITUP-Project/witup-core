@@ -13,7 +13,8 @@ public final class SymDynamicInvoke extends SymExpr {
   private String cachedToString;
 
   public SymDynamicInvoke(final JDynamicInvokeExpr e) {
-    this(e.toString(),
+    this(
+        e.toString(),
         e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList()),
         SymKind.OTHER);
   }

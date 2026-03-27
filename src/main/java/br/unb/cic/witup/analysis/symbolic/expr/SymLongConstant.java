@@ -35,7 +35,7 @@ public final class SymLongConstant extends SymExpr {
   }
 
   @Override
-  public boolean contains(final String varName)  {
+  public boolean contains(final String varName) {
     return false;
   }
 }
