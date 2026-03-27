@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+JAVA_OPTS=${JAVA_OPTS:-"-Xms512m -Xmx4g"}
+
+CLASSPATH="$DIR/lib/*"
+
+export LD_LIBRARY_PATH="$DIR/native/linux:$LD_LIBRARY_PATH"
+
+exec java $JAVA_OPTS \
+  -Dlogback.configurationFile="$DIR/config/logback.xml" \
+  -cp "$CLASSPATH" \
+  br.unb.cic.witup.Driver "$@"

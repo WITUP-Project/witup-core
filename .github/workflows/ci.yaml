@@ -10,7 +10,7 @@ jobs:
 
     env:
       Z3_VERSION: z3-4.17.0
-      LD_LIBRARY_PATH: ${{ github.workspace }}/src/main/resources/native/linux
+      LD_LIBRARY_PATH: ${{ github.workspace }}/native/linux
 
     steps:
       - name: Checkout code
@@ -34,7 +34,7 @@ jobs:
         run: |
           if [ ! -f ~/.m2/repository/com/microsoft/z3/z3/4.17.0/z3-4.17.0.jar ]; then
             mvn install:install-file \
-              -Dfile=src/main/resources/native/linux/z3-4.17.0.jar \
+              -Dfile=native/linux/z3-4.17.0.jar \
               -DgroupId=com.microsoft.z3 \
               -DartifactId=z3 \
               -Dversion=4.17.0 \
