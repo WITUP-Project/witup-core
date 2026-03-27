@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+JAVA_OPTS=${JAVA_OPTS:-"-Xms512m -Xmx4g"}
+
+exec java $JAVA_OPTS \
+    -Djava.library.path="$SCRIPT_DIR/native/linux" \
+    -cp "$SCRIPT_DIR/lib/*" \
+    br.unb.cic.witup.Driver \
+    "$@"

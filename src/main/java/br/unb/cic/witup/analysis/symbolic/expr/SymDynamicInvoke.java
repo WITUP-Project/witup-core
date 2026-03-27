@@ -113,6 +113,11 @@ public final class SymDynamicInvoke extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return args.stream().anyMatch(a -> a.contains(varName));
+    for (SymExpr arg : args) {
+      if (arg.contains(varName)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

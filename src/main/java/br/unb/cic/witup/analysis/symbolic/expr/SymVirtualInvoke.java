@@ -125,7 +125,15 @@ public final class SymVirtualInvoke extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return base.contains(varName) || args.stream().anyMatch(a -> a.contains(varName));
+    if (base.contains(varName)) {
+      return true;
+    }
+    for (SymExpr arg : args) {
+      if (arg.contains(varName)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
