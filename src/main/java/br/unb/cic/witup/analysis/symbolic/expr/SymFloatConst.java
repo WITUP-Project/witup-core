@@ -35,7 +35,7 @@ public final class SymFloatConst extends SymExpr {
   }
 
   @Override
-  public boolean contains(final String varName) {
-    return Float.toString(value).contains(varName);
+  public boolean contains(final String varName)  {
+    return false;
   }
 }

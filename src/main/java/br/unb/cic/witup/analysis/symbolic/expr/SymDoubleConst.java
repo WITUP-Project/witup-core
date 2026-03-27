@@ -36,6 +36,6 @@ public final class SymDoubleConst extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return Double.toString(value).contains(varName);
+    return false;
   }
 }

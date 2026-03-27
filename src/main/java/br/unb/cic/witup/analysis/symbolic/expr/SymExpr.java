@@ -57,9 +57,19 @@ import sootup.core.types.Type;
 
 public abstract class SymExpr {
   private final SymKind kind;
+  private final long paramMask;
 
   public SymExpr(final SymKind kind) {
+    this(kind, 0L);
+  }
+
+  protected SymExpr(final SymKind kind, final long paramMask) {
     this.kind = kind;
+    this.paramMask = paramMask;
+  }
+
+  public final long getParamMask() {
+    return paramMask;
   }
 
   public final SymKind getKind() {
@@ -90,9 +100,9 @@ public abstract class SymExpr {
     return 1;
   }
 
-  /** save allocation on hot path */
+  /** O(1) bitmask check — summary bits propagated at construction */
   public boolean containsParam(final int idx) {
-    return false;
+    return idx < Long.SIZE && (paramMask & (1L << idx)) != 0;
   }
 
   /** also saves on hot path */

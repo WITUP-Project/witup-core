@@ -14,10 +14,10 @@ public final class SymStaticInvoke extends SymExpr {
   private String cachedToString;
 
   public SymStaticInvoke(final JStaticInvokeExpr e) {
-    super(deriveKind(e));
-    this.invokeName = e.getMethodSignature().toString();
-    this.returnsBoolean = getKind() == SymKind.BOOLEAN_METHOD;
-    this.args = e.getArgs().stream().map(SymExpr::fromJimple).toList();
+    this(e.getMethodSignature().toString(),
+        deriveKind(e) == SymKind.BOOLEAN_METHOD,
+        e.getArgs().stream().map(SymExpr::fromJimple).toList(),
+        deriveKind(e));
   }
 
   private SymStaticInvoke(
@@ -25,10 +25,18 @@ public final class SymStaticInvoke extends SymExpr {
       final boolean returnsBoolean,
       final List<SymExpr> args,
       final SymKind kind) {
-    super(kind);
+    super(kind, argsMask(args));
     this.invokeName = invokeName;
     this.returnsBoolean = returnsBoolean;
     this.args = args;
+  }
+
+  private static long argsMask(final List<SymExpr> args) {
+    long mask = 0;
+    for (SymExpr arg : args) {
+      mask |= arg.getParamMask();
+    }
+    return mask;
   }
 
   public List<SymExpr> getArgs() {
@@ -93,16 +101,6 @@ public final class SymStaticInvoke extends SymExpr {
       return new SymStaticInvoke(invokeName, returnsBoolean, newArgs, getKind());
     }
     return this;
-  }
-
-  @Override
-  public boolean containsParam(final int idx) {
-    for (SymExpr arg : args) {
-      if (arg.containsParam(idx)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   @Override

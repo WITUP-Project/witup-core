@@ -13,6 +13,7 @@ public final class SymVirtualInvoke extends SymExpr {
   private final String signature; // e.g. length
   private final boolean returnsBoolean;
   private final List<SymExpr> args;
+  private final boolean hasUnboxing;
   private String cachedToString;
 
   public SymExpr getBase() {
@@ -43,11 +44,14 @@ public final class SymVirtualInvoke extends SymExpr {
       final String signature,
       final boolean returnsBoolean,
       final List<SymExpr> args) {
-    super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER);
+    super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER,
+        baseArgsMask(base, args));
     this.base = base;
     this.signature = signature;
     this.returnsBoolean = returnsBoolean;
     this.args = args;
+    this.hasUnboxing =
+        SymExpr.isUnboxingCall(signature) || base.containsUnboxing();
   }
 
   @Override
@@ -110,23 +114,15 @@ public final class SymVirtualInvoke extends SymExpr {
 
   @Override
   public boolean containsUnboxing() {
-    if (SymExpr.isUnboxingCall(signature)) {
-      return true;
-    }
-    return base.containsUnboxing();
+    return hasUnboxing;
   }
 
-  @Override
-  public boolean containsParam(final int idx) {
-    if (base.containsParam(idx)) {
-      return true;
-    }
+  private static long baseArgsMask(final SymExpr base, final List<SymExpr> args) {
+    long mask = base.getParamMask();
     for (SymExpr arg : args) {
-      if (arg.containsParam(idx)) {
-        return true;
-      }
+      mask |= arg.getParamMask();
     }
-    return false;
+    return mask;
   }
 
   @Override

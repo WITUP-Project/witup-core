@@ -6,13 +6,20 @@ public final class SymITE extends SymExpr {
   private final SymExpr condition;
   private final SymExpr thenExpr;
   private final SymExpr elseExpr;
+  private final boolean hasUnboxing;
+  private final int cachedDepth;
   private String cachedToString;
 
   public SymITE(final SymExpr condition, final SymExpr thenExpr, final SymExpr elseExpr) {
-    super(thenExpr.getKind());
+    super(thenExpr.getKind(),
+        condition.getParamMask() | thenExpr.getParamMask() | elseExpr.getParamMask());
     this.condition = condition;
     this.thenExpr = thenExpr;
     this.elseExpr = elseExpr;
+    this.hasUnboxing =
+        condition.containsUnboxing() || thenExpr.containsUnboxing() || elseExpr.containsUnboxing();
+    this.cachedDepth =
+        1 + Math.max(condition.depth(), Math.max(thenExpr.depth(), elseExpr.depth()));
   }
 
   public SymExpr getCondition() {
@@ -59,21 +66,12 @@ public final class SymITE extends SymExpr {
 
   @Override
   public int depth() {
-    return 1 + Math.max(condition.depth(), Math.max(thenExpr.depth(), elseExpr.depth()));
+    return cachedDepth;
   }
 
   @Override
   public boolean containsUnboxing() {
-    return condition.containsUnboxing()
-        || thenExpr.containsUnboxing()
-        || elseExpr.containsUnboxing();
-  }
-
-  @Override
-  public boolean containsParam(final int idx) {
-    return condition.containsParam(idx)
-        || thenExpr.containsParam(idx)
-        || elseExpr.containsParam(idx);
+    return hasUnboxing;
   }
 
   @Override

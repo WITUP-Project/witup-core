@@ -10,13 +10,13 @@ public final class SymParamRef extends SymExpr {
   private String cachedToString;
 
   public SymParamRef(final JParameterRef r) {
-    super(fromJimpleType(r.getType()));
+    super(fromJimpleType(r.getType()), 1L << r.getIndex());
     this.index = r.getIndex();
     this.paramType = r.getType().toString();
   }
 
   public SymParamRef(final int index, final Type type) {
-    super(fromJimpleType(type));
+    super(fromJimpleType(type), 1L << index);
     this.index = index;
     this.paramType = type.toString();
   }
@@ -50,11 +50,6 @@ public final class SymParamRef extends SymExpr {
       cachedToString = "@parameter" + this.index + ": " + this.paramType;
     }
     return cachedToString;
-  }
-
-  @Override
-  public boolean containsParam(final int idx) {
-    return this.index == idx;
   }
 
   @Override

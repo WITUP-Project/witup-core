@@ -8,6 +8,8 @@ public final class SymBinOp extends SymExpr {
   private final BinOp op;
   private final SymExpr lhs;
   private final SymExpr rhs;
+  private final boolean hasUnboxing;
+  private final int cachedDepth;
   private String cachedToString;
 
   public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
@@ -18,10 +20,12 @@ public final class SymBinOp extends SymExpr {
   }
 
   public SymBinOp(final BinOp op, final SymExpr lhs, final SymExpr rhs) {
-    super(deriveKind(lhs, rhs));
+    super(deriveKind(lhs, rhs), lhs.getParamMask() | rhs.getParamMask());
     this.op = op;
     this.lhs = lhs;
     this.rhs = rhs;
+    this.hasUnboxing = lhs.containsUnboxing() || rhs.containsUnboxing();
+    this.cachedDepth = 1 + Math.max(lhs.depth(), rhs.depth());
   }
 
   private static SymKind deriveKind(final SymExpr left, final SymExpr right) {
@@ -81,17 +85,12 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public int depth() {
-    return 1 + Math.max(lhs.depth(), rhs.depth());
+    return cachedDepth;
   }
 
   @Override
   public boolean containsUnboxing() {
-    return lhs.containsUnboxing() || rhs.containsUnboxing();
-  }
-
-  @Override
-  public boolean containsParam(final int idx) {
-    return lhs.containsParam(idx) || rhs.containsParam(idx);
+    return hasUnboxing;
   }
 
   @Override
