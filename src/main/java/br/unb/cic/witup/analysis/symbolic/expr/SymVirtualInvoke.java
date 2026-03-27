@@ -44,7 +44,8 @@ public final class SymVirtualInvoke extends SymExpr {
       final String signature,
       final boolean returnsBoolean,
       final List<SymExpr> args) {
-    super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER);
+    super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER,
+        baseArgsMask(base, args));
     this.base = base;
     this.signature = signature;
     this.returnsBoolean = returnsBoolean;
@@ -116,17 +117,12 @@ public final class SymVirtualInvoke extends SymExpr {
     return hasUnboxing;
   }
 
-  @Override
-  public boolean containsParam(final int idx) {
-    if (base.containsParam(idx)) {
-      return true;
-    }
+  private static long baseArgsMask(final SymExpr base, final List<SymExpr> args) {
+    long mask = base.getParamMask();
     for (SymExpr arg : args) {
-      if (arg.containsParam(idx)) {
-        return true;
-      }
+      mask |= arg.getParamMask();
     }
-    return false;
+    return mask;
   }
 
   @Override

@@ -13,15 +13,23 @@ public final class SymDynamicInvoke extends SymExpr {
   private String cachedToString;
 
   public SymDynamicInvoke(final JDynamicInvokeExpr e) {
-    super(SymKind.OTHER);
-    this.signature = e.toString();
-    this.args = e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
+    this(e.toString(),
+        e.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList()),
+        SymKind.OTHER);
   }
 
   private SymDynamicInvoke(final String signature, final List<SymExpr> args, final SymKind kind) {
-    super(kind);
+    super(kind, argsMask(args));
     this.signature = signature;
     this.args = args;
+  }
+
+  private static long argsMask(final List<SymExpr> args) {
+    long mask = 0;
+    for (SymExpr arg : args) {
+      mask |= arg.getParamMask();
+    }
+    return mask;
   }
 
   public String getSignature() {
@@ -100,16 +108,6 @@ public final class SymDynamicInvoke extends SymExpr {
       }
     }
     return cachedToString;
-  }
-
-  @Override
-  public boolean containsParam(final int idx) {
-    for (SymExpr arg : args) {
-      if (arg.containsParam(idx)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   @Override

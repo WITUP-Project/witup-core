@@ -19,7 +19,7 @@ public final class SymBinOp extends SymExpr {
   }
 
   public SymBinOp(final BinOp op, final SymExpr lhs, final SymExpr rhs) {
-    super(deriveKind(lhs, rhs));
+    super(deriveKind(lhs, rhs), lhs.getParamMask() | rhs.getParamMask());
     this.op = op;
     this.lhs = lhs;
     this.rhs = rhs;
@@ -89,11 +89,6 @@ public final class SymBinOp extends SymExpr {
   @Override
   public boolean containsUnboxing() {
     return hasUnboxing;
-  }
-
-  @Override
-  public boolean containsParam(final int idx) {
-    return lhs.containsParam(idx) || rhs.containsParam(idx);
   }
 
   @Override
