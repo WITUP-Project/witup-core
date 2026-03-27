@@ -171,17 +171,43 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
+  private record DFSEntry(WITUpNode node, WITUpEdge edge, DFSEntry parent) {
+    boolean contains(final WITUpNode n) {
+      for (DFSEntry e = this; e != null; e = e.parent) {
+        if (e.node.equals(n)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    WITUpPath toPath() {
+      int len = 0;
+      for (DFSEntry e = this; e != null; e = e.parent) {
+        len++;
+      }
+      List<WITUpNode> nodes = new ArrayList<>(len);
+      List<WITUpEdge> edges = new ArrayList<>(len - 1);
+      for (DFSEntry e = this; e != null; e = e.parent) {
+        nodes.add(e.node);
+        if (e.edge != null) {
+          edges.add(e.edge);
+        }
+      }
+      return new WITUpPath(nodes, edges);
+    }
+  }
+
   private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
     List<WITUpPath> result = new ArrayList<>();
-    Deque<WITUpPath> stack = new ArrayDeque<>();
-    stack.push(new WITUpPath(new ArrayList<>(List.of(end)), new ArrayList<>()));
+    Deque<DFSEntry> stack = new ArrayDeque<>();
+    stack.push(new DFSEntry(end, null, null));
 
     while (!stack.isEmpty()) {
-      WITUpPath current = stack.pop();
-      WITUpNode head = current.nodes().getFirst();
+      DFSEntry current = stack.pop();
 
-      if (head.equals(start)) {
-        result.add(current);
+      if (current.node.equals(start)) {
+        result.add(current.toPath());
         if (result.size() >= MAX_CONSTRAINT_PATHS) {
           log.info(
               "Path count truncated to {} for {} in {}",
@@ -193,14 +219,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         continue;
       }
 
-      for (WITUpEdge edge : getCfg().incomingEdgesOf(head)) {
+      for (WITUpEdge edge : getCfg().incomingEdgesOf(current.node)) {
         WITUpNode pred = edge.getSource();
-        if (!current.nodes().contains(pred)) {
-          List<WITUpNode> newNodes = new ArrayList<>(current.nodes());
-          newNodes.addFirst(pred);
-          List<WITUpEdge> newEdges = new ArrayList<>(current.edges());
-          newEdges.addFirst(edge);
-          stack.push(new WITUpPath(newNodes, newEdges));
+        if (!current.contains(pred)) {
+          stack.push(new DFSEntry(pred, edge, current));
         }
       }
     }

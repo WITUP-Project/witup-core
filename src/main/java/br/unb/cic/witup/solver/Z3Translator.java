@@ -50,7 +50,6 @@ import com.microsoft.z3.UninterpretedSort;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -542,11 +541,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       case SymVirtualInvoke i -> {
         StringBuilder sb = new StringBuilder(safeDescribe(i.getBase()));
         sb.append(".").append(i.getSignature()).append("(");
-        List<SymExpr> args = i.getArgs();
-        if (!args.isEmpty()) {
-          sb.append(safeDescribe(args.get(0)));
-          for (int k = 1; k < args.size(); k++) {
-            sb.append(",").append(safeDescribe(args.get(k)));
+        SymExpr[] args = i.getArgs();
+        if (args.length > 0) {
+          sb.append(safeDescribe(args[0]));
+          for (int k = 1; k < args.length; k++) {
+            sb.append(",").append(safeDescribe(args[k]));
           }
         }
         sb.append(")");

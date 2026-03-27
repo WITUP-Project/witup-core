@@ -261,15 +261,15 @@ public abstract class SymExpr {
       // unwrap valueOf(e) -> e
       if (inner instanceof SymStaticInvoke staticInvoke
           && isBoxingCall(staticInvoke.getInvokeName())
-          && staticInvoke.getArgs().size() == 1) {
-        return staticInvoke.getArgs().get(0);
+          && staticInvoke.getArgs().length == 1) {
+        return staticInvoke.getArgs()[0];
       }
       return inner;
     }
     if (base instanceof SymStaticInvoke staticInvoke
         && isBoxingCall(staticInvoke.getInvokeName())
-        && staticInvoke.getArgs().size() == 1) {
-      return staticInvoke.getArgs().get(0);
+        && staticInvoke.getArgs().length == 1) {
+      return staticInvoke.getArgs()[0];
     }
     return simplified;
   }

@@ -2,29 +2,27 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-import java.util.ArrayList;
-import java.util.List;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.types.PrimitiveType;
 
 public final class SymStaticInvoke extends SymExpr {
   private final String invokeName; // e.g. length
   private final boolean returnsBoolean;
-  private final List<SymExpr> args;
+  private final SymExpr[] args;
   private String cachedToString;
 
   public SymStaticInvoke(final JStaticInvokeExpr e) {
     this(
         e.getMethodSignature().toString(),
         deriveKind(e) == SymKind.BOOLEAN_METHOD,
-        e.getArgs().stream().map(SymExpr::fromJimple).toList(),
+        e.getArgs().stream().map(SymExpr::fromJimple).toArray(SymExpr[]::new),
         deriveKind(e));
   }
 
   private SymStaticInvoke(
       final String invokeName,
       final boolean returnsBoolean,
-      final List<SymExpr> args,
+      final SymExpr[] args,
       final SymKind kind) {
     super(kind, argsMask(args));
     this.invokeName = invokeName;
@@ -32,7 +30,7 @@ public final class SymStaticInvoke extends SymExpr {
     this.args = args;
   }
 
-  private static long argsMask(final List<SymExpr> args) {
+  private static long argsMask(final SymExpr[] args) {
     long mask = 0;
     for (SymExpr arg : args) {
       mask |= arg.getParamMask();
@@ -40,7 +38,7 @@ public final class SymStaticInvoke extends SymExpr {
     return mask;
   }
 
-  public List<SymExpr> getArgs() {
+  public SymExpr[] getArgs() {
     return args;
   }
 
@@ -61,17 +59,14 @@ public final class SymStaticInvoke extends SymExpr {
 
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
-    List<SymExpr> newArgs = null;
-    for (int i = 0; i < args.size(); i++) {
-      SymExpr newArg = args.get(i).substitute(varName, replacement);
-      if (newArg != args.get(i) && newArgs == null) {
-        newArgs = new ArrayList<>(args.size());
-        for (int j = 0; j < i; j++) {
-          newArgs.add(args.get(j));
+    SymExpr[] newArgs = null;
+    for (int i = 0; i < args.length; i++) {
+      SymExpr newArg = args[i].substitute(varName, replacement);
+      if (newArg != args[i]) {
+        if (newArgs == null) {
+          newArgs = args.clone();
         }
-      }
-      if (newArgs != null) {
-        newArgs.add(newArg);
+        newArgs[i] = newArg;
       }
     }
     if (newArgs != null) {
@@ -85,17 +80,14 @@ public final class SymStaticInvoke extends SymExpr {
     if (!containsParam(idx)) {
       return this;
     }
-    List<SymExpr> newArgs = null;
-    for (int i = 0; i < args.size(); i++) {
-      SymExpr newArg = args.get(i).substituteParam(idx, actual);
-      if (newArg != args.get(i) && newArgs == null) {
-        newArgs = new ArrayList<>(args.size());
-        for (int j = 0; j < i; j++) {
-          newArgs.add(args.get(j));
+    SymExpr[] newArgs = null;
+    for (int i = 0; i < args.length; i++) {
+      SymExpr newArg = args[i].substituteParam(idx, actual);
+      if (newArg != args[i]) {
+        if (newArgs == null) {
+          newArgs = args.clone();
         }
-      }
-      if (newArgs != null) {
-        newArgs.add(newArg);
+        newArgs[i] = newArg;
       }
     }
     if (newArgs != null) {
@@ -120,10 +112,10 @@ public final class SymStaticInvoke extends SymExpr {
       return cachedToString;
     }
     StringBuilder sb = new StringBuilder(invokeName).append("(");
-    if (!args.isEmpty()) {
-      sb.append(args.get(0).toString());
-      for (int i = 1; i < args.size(); i++) {
-        sb.append(",").append(args.get(i).toString());
+    if (args.length > 0) {
+      sb.append(args[0].toString());
+      for (int i = 1; i < args.length; i++) {
+        sb.append(",").append(args[i].toString());
       }
     }
     sb.append(")");
