@@ -56,7 +56,7 @@ import sootup.core.types.Type;
  */
 public final class SymbolicConstraintGenerator {
   public static final String RET_PREFIX = "_ret_";
-  public static final String LOOP_PREFIX = "_loop_";
+  public static final String LOOP_INFIX = "_loop_";
   private static AtomicInteger globalFreshCounter = new AtomicInteger(0);
   private final WITUpGraph cpg;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
@@ -348,7 +348,7 @@ public final class SymbolicConstraintGenerator {
     InductionInfo induction = summary.inductionVars().get(varName);
 
     SymVar freshVar =
-        SymVar.fresh(LOOP_PREFIX + globalFreshCounter.getAndIncrement(), SymKind.INT);
+        SymVar.fresh(varName + LOOP_INFIX + globalFreshCounter.getAndIncrement(), SymKind.INT);
     addBinding(freeVars, env, varName, freshVar);
 
     if (induction != null) {
