@@ -262,7 +262,7 @@ public final class SymbolicConstraintGenerator {
                           : callee.guardedReturn().getFirst().value().getKind());
               addBinding(freeVars, env, definedVar, freshVar);
               for (GuardedExpr ge : callee.guardedReturn()) {
-                preconditions.addAll(ge.bindings());
+                preconditions.addAll(ge.preconditions());
                 SymExpr eq = new SymBinOp(BinOp.EQ, freshVar, ge.value());
                 SymExpr implication = encodeImplication(ge.guard(), eq);
                 preconditions.add(new SymbolicConstraint(implication, true));
@@ -289,14 +289,10 @@ public final class SymbolicConstraintGenerator {
       }
 
       String definedVar = getVariableName(lhsOp);
-
       if (!freeVars.contains(definedVar)) {
         continue;
       }
-
-      SymExpr rhsSymExpr = SymExpr.fromJimple(rhsOp);
-
-      addBinding(freeVars, env, definedVar, rhsSymExpr);
+      addBinding(freeVars, env, definedVar, SymExpr.fromJimple(rhsOp));
       collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
     }
   }

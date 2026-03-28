@@ -10,7 +10,7 @@ import java.util.List;
  * interprocedural resolution of callees).
  */
 public record GuardedExpr(
-    List<SymbolicConstraint> guard, SymExpr value, List<SymbolicConstraint> bindings) {
+    List<SymbolicConstraint> guard, SymExpr value, List<SymbolicConstraint> preconditions) {
 
   public GuardedExpr(final List<SymbolicConstraint> guard, final SymExpr value) {
     this(guard, value, List.of());
@@ -22,12 +22,12 @@ public record GuardedExpr(
       newGuard.add(
           new SymbolicConstraint(c.symExpr().substituteParam(idx, actual), c.truthValue()));
     }
-    List<SymbolicConstraint> newBindings = new ArrayList<>(bindings.size());
-    for (SymbolicConstraint c : bindings) {
-      newBindings.add(
+    List<SymbolicConstraint> newPreconditions = new ArrayList<>(preconditions.size());
+    for (SymbolicConstraint c : preconditions) {
+      newPreconditions.add(
           new SymbolicConstraint(c.symExpr().substituteParam(idx, actual), c.truthValue()));
     }
     SymExpr newValue = value.substituteParam(idx, actual);
-    return new GuardedExpr(newGuard, newValue, newBindings);
+    return new GuardedExpr(newGuard, newValue, newPreconditions);
   }
 }

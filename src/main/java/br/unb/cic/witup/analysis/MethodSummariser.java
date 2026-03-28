@@ -80,10 +80,6 @@ public final class MethodSummariser implements SummaryResolver {
   public Optional<ResolvedCallee> resolveReturnExpr(
       final String calleeSignature, final List<SymExpr> actuals) {
 
-    if (summaryRepository == null || graphRepository == null) {
-      return Optional.empty();
-    }
-
     log.debug(
         "resolveReturnExpr: cache present={} inProgress={}",
         summaryRepository.getSummary(calleeSignature).isPresent(),
@@ -134,15 +130,17 @@ public final class MethodSummariser implements SummaryResolver {
       return Optional.empty();
     }
 
-    List<GuardedExpr> guardedReturn = new ArrayList<>(summary.guardedReturn().size());
-    for (GuardedExpr ge : summary.guardedReturn()) {
-      GuardedExpr substituted = ge;
-      for (int i = 0; i < formals.size(); i++) {
-        substituted = substituted.substituteParam(formals.get(i).getIndex(), actuals.get(i));
-      }
-      guardedReturn.add(substituted);
-    }
+    List<GuardedExpr> guardedReturn = substituteGuardedReturn(summary, actuals, formals);
+    List<List<SymbolicConstraint>> throwPaths =
+        substituteThrowConstraints(summary, actuals, formals);
 
+    Optional<ResolvedCallee> resolvedCallee = Optional.of(new ResolvedCallee(guardedReturn, throwPaths));
+    instantiationCache.put(key, resolvedCallee);
+    return resolvedCallee;
+  }
+
+  private static List<List<SymbolicConstraint>> substituteThrowConstraints(
+      final MethodSummary summary, final List<SymExpr> actuals, final List<SymParamRef> formals) {
     List<List<SymbolicConstraint>> throwPaths = null;
     if (summary.throwConstraints() != null) {
       throwPaths = new ArrayList<>(summary.throwConstraints().size());
@@ -158,9 +156,19 @@ public final class MethodSummariser implements SummaryResolver {
         throwPaths.add(substituted);
       }
     }
+    return throwPaths;
+  }
 
-    var result = Optional.of(new ResolvedCallee(guardedReturn, throwPaths));
-    instantiationCache.put(key, result);
-    return result;
+  private static List<GuardedExpr> substituteGuardedReturn(
+      final MethodSummary summary, final List<SymExpr> actuals, final List<SymParamRef> formals) {
+    List<GuardedExpr> guardedReturn = new ArrayList<>(summary.guardedReturn().size());
+    for (GuardedExpr ge : summary.guardedReturn()) {
+      GuardedExpr substituted = ge;
+      for (int i = 0; i < formals.size(); i++) {
+        substituted = substituted.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+      }
+      guardedReturn.add(substituted);
+    }
+    return guardedReturn;
   }
 }
