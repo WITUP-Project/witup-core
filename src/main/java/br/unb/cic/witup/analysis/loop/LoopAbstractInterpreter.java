@@ -75,8 +75,7 @@ public final class LoopAbstractInterpreter {
 
   private record AssignInfo(String varName, Value rhs, WITUpNode node) {}
 
-  private static Map<String, AssignInfo> findAssignments(
-      final NaturalLoop loop) {
+  private static Map<String, AssignInfo> findAssignments(final NaturalLoop loop) {
     Map<String, AssignInfo> assignments = new HashMap<>();
     for (WITUpNode node : loop.body()) {
       if (!(node.getNode() instanceof StmtGraphNode stmtNode)) {
@@ -86,9 +85,30 @@ public final class LoopAbstractInterpreter {
         continue;
       }
       String lhs = assign.getLeftOp().toString();
-      assignments.put(lhs, new AssignInfo(lhs, assign.getRightOp(), node));
+      // only track loop-carried variables: those whose RHS directly uses the
+      // same Local as the LHS (e.g. sum = sum + arr[i], i = i + 1).
+      // Variables like $stack5 = arr[i] are NOT loop-carried — they get a
+      // fresh value each iteration and should be traced normally by the DDG.
+      if (rhsUsesLocal(assign.getRightOp(), lhs)) {
+        assignments.put(lhs, new AssignInfo(lhs, assign.getRightOp(), node));
+      }
     }
     return assignments;
+  }
+
+  /** Check if a Jimple value directly uses a Local with the given name as an operand. */
+  private static boolean rhsUsesLocal(final Value rhs, final String localName) {
+    if (rhs instanceof Local l) {
+      return l.toString().equals(localName);
+    }
+    if (rhs instanceof AbstractBinopExpr binop) {
+      return isLocal(binop.getOp1(), localName) || isLocal(binop.getOp2(), localName);
+    }
+    return false;
+  }
+
+  private static boolean isLocal(final Value v, final String name) {
+    return v instanceof Local l && l.toString().equals(name);
   }
 
   // ── Initial state from pre-loop definitions ──

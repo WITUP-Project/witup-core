@@ -6,6 +6,7 @@ import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.GuardedExpr;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.loop.LoopAnalyser;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
@@ -43,7 +44,8 @@ public final class MethodSummariser implements SummaryResolver {
     this.cpg = cpg;
     this.graphRepository = graphRepository;
     this.summaryRepository = summaryRepository;
-    this.symbolicConstraintGenerator = new SymbolicConstraintGenerator(cpg, this);
+    this.symbolicConstraintGenerator =
+        new SymbolicConstraintGenerator(cpg, this, LoopAnalyser.analyse(cpg));
   }
 
   /** Recursively produces MethodSummary. */

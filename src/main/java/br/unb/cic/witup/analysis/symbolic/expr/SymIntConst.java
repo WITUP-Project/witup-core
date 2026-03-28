@@ -8,6 +8,10 @@ public final class SymIntConst extends SymExpr {
   private final int value;
   private String cachedToString;
 
+  public static SymIntConst of(final int value) {
+    return new SymIntConst(value);
+  }
+
   public static SymIntConst one() {
     return new SymIntConst(1);
   }

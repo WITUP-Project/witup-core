@@ -10,6 +10,9 @@ import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.loop.InductionInfo;
+import br.unb.cic.witup.analysis.loop.Interval;
+import br.unb.cic.witup.analysis.loop.LoopSummary;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
@@ -53,14 +56,24 @@ import sootup.core.types.Type;
  */
 public final class SymbolicConstraintGenerator {
   public static final String RET_PREFIX = "_ret_";
+  public static final String LOOP_PREFIX = "_loop_";
   private static AtomicInteger globalFreshCounter = new AtomicInteger(0);
   private final WITUpGraph cpg;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   private final SummaryResolver resolver;
+  private final Map<WITUpNode, LoopSummary> loopSummaries;
 
   public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
+    this(cpg, resolver, Map.of());
+  }
+
+  public SymbolicConstraintGenerator(
+      final WITUpGraph cpg,
+      final SummaryResolver resolver,
+      final Map<WITUpNode, LoopSummary> loopSummaries) {
     this.cpg = cpg;
     this.resolver = resolver;
+    this.loopSummaries = loopSummaries;
   }
 
   public List<SymbolicConstraint> generateSymbolicConstraints(final WITUpPath p) {
@@ -292,6 +305,13 @@ public final class SymbolicConstraintGenerator {
       if (!freeVars.contains(definedVar)) {
         continue;
       }
+
+      // loop-aware binding: if the definition is inside a loop and the variable is loop-modified,
+      // bind to a fresh variable with range preconditions instead of tracing to the initial value
+      if (bindFromLoopSummary(sourceNode, definedVar, freeVars, env, preconditions)) {
+        continue;
+      }
+
       addBinding(freeVars, env, definedVar, SymExpr.fromJimple(rhsOp));
       collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
     }
@@ -311,6 +331,47 @@ public final class SymbolicConstraintGenerator {
     }
     freeVars.remove(varName);
     expr.collectVarNames(freeVars);
+  }
+
+  private boolean bindFromLoopSummary(
+      final WITUpNode sourceNode,
+      final String varName,
+      final Set<String> freeVars,
+      final Map<String, SymExpr> env,
+      final List<SymbolicConstraint> preconditions) {
+    LoopSummary summary = loopSummaries.get(sourceNode);
+    if (summary == null || !summary.variableIntervals().containsKey(varName)) {
+      return false;
+    }
+
+    Interval interval = summary.variableIntervals().get(varName);
+    InductionInfo induction = summary.inductionVars().get(varName);
+
+    SymVar freshVar =
+        SymVar.fresh(LOOP_PREFIX + globalFreshCounter.getAndIncrement(), SymKind.INT);
+    addBinding(freeVars, env, varName, freshVar);
+
+    if (induction != null) {
+      preconditions.add(
+          new SymbolicConstraint(
+              new SymBinOp(BinOp.GE, freshVar, induction.initExpr()), true));
+      preconditions.add(
+          new SymbolicConstraint(
+              new SymBinOp(induction.comparison(), freshVar, induction.boundExpr()), true));
+    } else if (interval instanceof Interval.Range range) {
+      if (range.lo() != Long.MIN_VALUE) {
+        preconditions.add(
+            new SymbolicConstraint(
+                new SymBinOp(BinOp.GE, freshVar, SymIntConst.of((int) range.lo())), true));
+      }
+      if (range.hi() != Long.MAX_VALUE) {
+        preconditions.add(
+            new SymbolicConstraint(
+                new SymBinOp(BinOp.LE, freshVar, SymIntConst.of((int) range.hi())), true));
+      }
+    }
+    // Top or Range(-inf, inf): freshVar is unconstrained, no preconditions needed
+    return true;
   }
 
   private static SymExpr encodeImplication(
