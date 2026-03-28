@@ -37,7 +37,7 @@ public class MathSummaryTest {
     assertEquals(1, summary.getFormalParams().size());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().getFirst().getKind());
 
-    assertEquals("((3.14 * this.radius) * this.radius)", summary.getReturnExpr().toString());
+    assertEquals("((3.14 * this.radius) * this.radius)", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -64,7 +64,7 @@ public class MathSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-    assertTrue(summary.getReturnExpr().toString().contains("x / y"));
+    assertTrue(summary.getGuardedReturn().getFirst().value().toString().contains("x / y"));
   }
 
   @Test
@@ -106,7 +106,7 @@ public class MathSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertEquals("p", summary.getReturnExpr().toString());
+    assertEquals("p", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -130,7 +130,7 @@ public class MathSummaryTest {
     assertEquals(SymKind.REAL, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertEquals("truncated", summary.getReturnExpr().toString());
+    assertEquals("truncated", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -154,6 +154,6 @@ public class MathSummaryTest {
     assertEquals(SymKind.REAL, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertEquals("(int)d", summary.getReturnExpr().toString());
+    assertEquals("(int)d", summary.getGuardedReturn().getFirst().value().toString());
   }
 }

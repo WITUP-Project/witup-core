@@ -82,18 +82,10 @@ public final class MethodSummariser implements SummaryResolver {
             .collect(Collectors.toList());
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
-    SymExpr returnExpr = symbolicConstraintGenerator.traceReturnExpr();
-    SymExpr throwFreePrecondition = symbolicConstraintGenerator.buildThrowFreePrecondition(paths);
     List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceReturnGuarded();
     MethodSummary summary =
         new MethodSummary(
-            cpg.getMethodSignature(),
-            exceptionPaths,
-            formals,
-            returnExpr,
-            throwFreePrecondition,
-            guardedReturn,
-            paths);
+            cpg.getMethodSignature(), exceptionPaths, formals, guardedReturn, paths);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);
@@ -162,28 +154,13 @@ public final class MethodSummariser implements SummaryResolver {
       return Optional.empty();
     }
 
-    SymExpr returnExpr = summary.getReturnExpr();
-    SymExpr precondition = summary.getThrowFreePrecondition();
-
-    for (int i = 0; i < formals.size(); i++) {
-      int idx = formals.get(i).getIndex();
-      SymExpr actual = actuals.get(i);
-      returnExpr = returnExpr.substituteParam(idx, actual);
-      if (precondition != null) {
-        precondition = precondition.substituteParam(idx, actual);
+    List<GuardedExpr> guardedReturn = new ArrayList<>(summary.getGuardedReturn().size());
+    for (GuardedExpr ge : summary.getGuardedReturn()) {
+      GuardedExpr substituted = ge;
+      for (int i = 0; i < formals.size(); i++) {
+        substituted = substituted.substituteParam(formals.get(i).getIndex(), actuals.get(i));
       }
-    }
-
-    List<GuardedExpr> guardedReturn = null;
-    if (summary.getGuardedReturn() != null) {
-      guardedReturn = new ArrayList<>(summary.getGuardedReturn().size());
-      for (GuardedExpr ge : summary.getGuardedReturn()) {
-        GuardedExpr substituted = ge;
-        for (int i = 0; i < formals.size(); i++) {
-          substituted = substituted.substituteParam(formals.get(i).getIndex(), actuals.get(i));
-        }
-        guardedReturn.add(substituted);
-      }
+      guardedReturn.add(substituted);
     }
 
     List<List<SymbolicConstraint>> throwPaths = null;
@@ -202,8 +179,7 @@ public final class MethodSummariser implements SummaryResolver {
       }
     }
 
-    var result =
-        Optional.of(new ResolvedCallee(returnExpr, precondition, guardedReturn, throwPaths));
+    var result = Optional.of(new ResolvedCallee(guardedReturn, throwPaths));
     instantiationCache.put(key, result);
     return result;
   }

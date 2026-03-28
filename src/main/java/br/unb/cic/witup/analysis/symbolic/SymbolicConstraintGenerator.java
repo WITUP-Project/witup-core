@@ -140,75 +140,6 @@ public final class SymbolicConstraintGenerator {
     return SymExpr.stripBooleanEncoding(symExpr);
   }
 
-  public SymExpr generateReturnExpression(final ReturnStatementNode returnNode) {
-    List<WITUpPath> paths = cpg.getAllPathsToReturn(returnNode);
-    if (paths.isEmpty()) {
-      return SymExpr.fromJimple(returnNode.getOp());
-    }
-    if (paths.size() == 1) {
-      setCurrentPath(paths.getFirst());
-      return substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
-    }
-
-    // multiple paths to same return — fold into ITE - fits Z3 well
-    setCurrentPath(paths.getLast());
-    SymExpr result = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
-
-    for (int i = paths.size() - 2; i >= 0; i--) {
-      setCurrentPath(paths.get(i));
-      SymExpr pathExpr = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
-      SymExpr pathCondition = buildPathConditionExpr(paths.get(i));
-      result = new SymITE(pathCondition, pathExpr, result);
-    }
-
-    return result;
-  }
-
-  private SymExpr buildPathConditionExpr(final WITUpPath path) {
-    List<List<SymbolicConstraint>> generated = generateThrowConstraintPath(List.of(path));
-
-    if (generated.isEmpty() || generated.getFirst().isEmpty()) {
-      return SymIntConst.one();
-    }
-
-    List<SymbolicConstraint> constraints = generated.getFirst();
-    return generatePathConditionExpr(constraints);
-  }
-
-  // if a callee returned, it means one of its return paths was reached
-  // for each path, build the negation of its conjunction
-  // throw-free means: NOT(path1) AND NOT(path2) AND ...
-  // NOT(path) = NOT(c1 AND c2 AND ...) = NOT(c1) OR NOT(c2) OR ...
-  // but for simplicity encode as ITE tree (may cost a lot of memory)
-  // throw-free precondition: all throw paths are false
-  // encode as: ITE(throwCond1, 0, ITE(throwCond2, 0, 1))
-  public SymExpr buildThrowFreePrecondition(final List<List<SymbolicConstraint>> paths) {
-    if (paths == null || paths.isEmpty()) {
-      return null;
-    }
-    List<List<SymbolicConstraint>> boundedThrowFreePaths =
-        paths.size() > MAX_THROW_FREE_PATHS ? paths.subList(0, MAX_THROW_FREE_PATHS) : paths;
-
-    SymExpr result = SymIntConst.one();
-    for (List<SymbolicConstraint> path : boundedThrowFreePaths) {
-      SymExpr pathCond = generatePathConditionExpr(path);
-      result = new SymITE(pathCond, SymIntConst.zero(), result);
-    }
-    return result;
-  }
-
-  public SymExpr generatePathConditionExpr(final List<SymbolicConstraint> constraints) {
-    SymExpr result = SymIntConst.one();
-    // traverse constraints backwards to build the recursive ITE
-    for (int i = constraints.size() - 1; i >= 0; i--) {
-      SymbolicConstraint c = constraints.get(i);
-      SymExpr cond =
-          c.truthValue() ? c.symExpr() : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
-      result = new SymITE(cond, result, SymIntConst.zero());
-    }
-    return result;
-  }
-
   public List<SymParamRef> buildFormals() {
     List<Type> paramTypes = cpg.getMethod().getParameterTypes();
     List<SymParamRef> formals = new ArrayList<>();
@@ -357,11 +288,6 @@ public final class SymbolicConstraintGenerator {
                   extraConstraints.add(new SymbolicConstraint(throwGuard, false));
                 }
               }
-            } else {
-              addBinding(freeVars, env, definedVar, callee.returnExpr());
-              if (callee.precondition() != null) {
-                extraConstraints.add(new SymbolicConstraint(callee.precondition(), true));
-              }
             }
             collectBindings(freeVars, env, sourceNode, visited, followIdentity, extraConstraints);
           }
@@ -432,31 +358,6 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
-  public SymExpr buildPathCondition(final ReturnStatementNode returnNode) {
-    List<WITUpPath> paths = cpg.getAllPathsToReturn(returnNode);
-    if (paths.isEmpty()) {
-      return SymIntConst.one();
-    }
-
-    // build a condition per path, then disjoin them
-    // ITE(cond1, 1, ITE(cond2, 1, ITE(cond3, 1, 0)))
-    SymExpr result = SymIntConst.zero();
-
-    for (int p = paths.size() - 1; p >= 0; p--) {
-      List<List<SymbolicConstraint>> generated = generateThrowConstraintPath(List.of(paths.get(p)));
-
-      if (generated.isEmpty() || generated.getFirst().isEmpty()) {
-        return SymIntConst.one(); // unconditional path exists — always reachable
-      }
-      List<SymbolicConstraint> constraints = generated.getFirst();
-      SymExpr pathCond = generatePathConditionExpr(constraints);
-      // disjoin: if this path's condition holds, result is 1
-      result = new SymITE(pathCond, SymIntConst.one(), result);
-    }
-
-    return result;
-  }
-
   public List<GuardedExpr> traceReturnGuarded() {
     List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
     if (returnNodes.isEmpty()) {
@@ -485,32 +386,6 @@ public final class SymbolicConstraintGenerator {
       List<SymbolicConstraint> guard = generateSymbolicConstraints(path);
       result.add(new GuardedExpr(guard, value));
     }
-    return result;
-  }
-
-  public SymExpr traceReturnExpr() {
-    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
-    if (returnNodes.isEmpty()) {
-      return null;
-    }
-
-    SymExpr result = null;
-
-    for (ReturnStatementNode returnNode : returnNodes) {
-      SymExpr returnExpr = generateReturnExpression(returnNode);
-      if (returnExpr == null) {
-        continue;
-      }
-
-      if (result == null) {
-        // base case — last return in iteration becomes the else branch
-        result = returnExpr;
-      } else {
-        SymExpr pathCondition = buildPathCondition(returnNode);
-        result = new SymITE(pathCondition, returnExpr, result);
-      }
-    }
-
     return result;
   }
 

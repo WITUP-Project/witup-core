@@ -39,7 +39,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
     // return expr
-    assertTrue(summary.getReturnExpr().toString().contains("a + b"));
+    assertTrue(summary.getGuardedReturn().getFirst().value().toString().contains("a + b"));
   }
 
   @Test
@@ -64,7 +64,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     // return expr
-    assertEquals("a", summary.getReturnExpr().toString());
+    assertEquals("a", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -89,7 +89,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     // return expr
-    assertEquals("a", summary.getReturnExpr().toString());
+    assertEquals("a", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -114,7 +114,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     // return expr
-    assertEquals("a", summary.getReturnExpr().toString());
+    assertEquals("a", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -139,7 +139,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     // return expr
-    assertEquals("a", summary.getReturnExpr().toString());
+    assertEquals("a", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -164,7 +164,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     // return expr
-    assertEquals("a", summary.getReturnExpr().toString());
+    assertEquals("a", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -265,7 +265,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-//    assertTrue(summary.getReturnExpr().toString().contains("_ret_"));
+//    assertTrue(summary.getGuardedReturn().getFirst().value().toString().contains("_ret_"));
   }
 
   @Test
@@ -350,7 +350,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-//    assertTrue(summary.getReturnExpr().toString().contains("x * 2"));
+//    assertTrue(summary.getGuardedReturn().getFirst().value().toString().contains("x * 2"));
   }
 
   @Test
@@ -383,7 +383,7 @@ public class IntSummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-//    assertTrue(summary.getReturnExpr().toString().contains("a + b"));
+//    assertTrue(summary.getGuardedReturn().getFirst().value().toString().contains("a + b"));
   }
 
   @Test

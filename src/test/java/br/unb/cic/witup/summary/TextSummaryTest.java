@@ -36,7 +36,7 @@ public class TextSummaryTest {
     assertEquals(SymKind.STRING, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertEquals(1, Integer.parseInt(summary.getReturnExpr().toString()));
+    assertEquals(1, Integer.parseInt(summary.getGuardedReturn().getFirst().value().toString()));
   }
 
   @Test
@@ -61,7 +61,7 @@ public class TextSummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertTrue(summary.getReturnExpr().toString().contains("(java.lang.String)s"));
+    assertTrue(summary.getGuardedReturn().getFirst().value().toString().contains("(java.lang.String)s"));
   }
 
   @Test
@@ -81,6 +81,6 @@ public class TextSummaryTest {
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("s.length() != 0"));
 
-    assertEquals(1, Integer.parseInt(summary.getReturnExpr().toString()));
+    assertEquals(1, Integer.parseInt(summary.getGuardedReturn().getFirst().value().toString()));
   }
 }
