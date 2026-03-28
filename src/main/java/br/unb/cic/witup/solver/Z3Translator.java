@@ -164,6 +164,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Sort nullSort = context.mkUninterpretedSort("Null");
     Sort intSort = context.getIntSort();
     Sort strSort = context.getStringSort();
+    Sort realSort = context.getRealSort();
 
     if (lhs instanceof BoolExpr boolLhs && rightSort.equals(context.getIntSort())) {
       return new ExprPair(toArith(boolLhs), rhs);
@@ -210,6 +211,17 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     }
     if (rightSort.equals(objSort) && leftSort.equals(strSort)) {
       return new ExprPair(lhs, coerceToString(rhs));
+    }
+    // lhs Int, rhs Real
+    if (leftSort.equals(intSort) && rightSort.equals(realSort)) {
+      Expr<?> lhsAsReal = context.mkInt2Real((IntExpr) lhs);
+      return new ExprPair(lhsAsReal, rhs);
+    }
+
+    // lhs Real, rhs Int
+    if (leftSort.equals(realSort) && rightSort.equals(intSort)) {
+      Expr<?> rhsAsReal = context.mkInt2Real((IntExpr) rhs);
+      return new ExprPair(lhs, rhsAsReal);
     }
     throw new IllegalStateException("Cannot compare sorts: " + leftSort + " vs " + rightSort);
   }
