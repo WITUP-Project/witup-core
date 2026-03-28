@@ -3,6 +3,7 @@ package br.unb.cic.witup.analysis;
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
+import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.GuardedExpr;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
@@ -13,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,26 +60,17 @@ public final class MethodSummariser implements SummaryResolver {
       summaryRepository.markInProgress(sig);
     }
 
-    List<ExceptionPath> exceptionPaths =
-        cpg.getThrowNodes().stream()
-            .flatMap(
-                throwNode -> {
-                  String exceptionQualifiedName =
-                      cpg.resolveExceptionType((ThrowStatementNode) throwNode);
-
-                  return symbolicConstraintGenerator.buildNodeConstraintPaths(throwNode).stream()
-                      .map(
-                          constraints ->
-                              new ExceptionPath(constraints, throwNode, exceptionQualifiedName));
-                })
-            .toList();
-
-    List<List<SymbolicConstraint>> paths =
-        cpg.getThrowNodes().stream()
-            .flatMap(
-                throwNode ->
-                    symbolicConstraintGenerator.buildNodeConstraintPaths(throwNode).stream())
-            .collect(Collectors.toList());
+    List<ExceptionPath> exceptionPaths = new ArrayList<>();
+    List<List<SymbolicConstraint>> paths = new ArrayList<>();
+    for (WITUpNode throwNode : cpg.getThrowNodes()) {
+      String exceptionQualifiedName =
+          cpg.resolveExceptionType((ThrowStatementNode) throwNode);
+      for (List<SymbolicConstraint> constraints
+              : symbolicConstraintGenerator.buildNodeConstraintPaths(throwNode)) {
+        exceptionPaths.add(new ExceptionPath(constraints, throwNode, exceptionQualifiedName));
+        paths.add(constraints);
+      }
+    }
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
     List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceReturnGuarded();

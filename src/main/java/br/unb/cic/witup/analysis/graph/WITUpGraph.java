@@ -170,14 +170,16 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
-  private record DFSEntry(WITUpNode node, WITUpEdge edge, DFSEntry parent) {
+  private record DFSEntry(
+      WITUpNode node, WITUpEdge edge, DFSEntry parent, Set<WITUpNode> visited) {
     boolean contains(final WITUpNode n) {
-      for (DFSEntry e = this; e != null; e = e.parent) {
-        if (e.node.equals(n)) {
-          return true;
-        }
-      }
-      return false;
+      return visited.contains(n);
+    }
+
+    DFSEntry push(final WITUpNode n, final WITUpEdge e) {
+      Set<WITUpNode> next = new HashSet<>(visited);
+      next.add(n);
+      return new DFSEntry(n, e, this, next);
     }
 
     WITUpPath toPath() {
@@ -200,7 +202,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
     List<WITUpPath> result = new ArrayList<>();
     Deque<DFSEntry> stack = new ArrayDeque<>();
-    stack.push(new DFSEntry(end, null, null));
+    stack.push(new DFSEntry(end, null, null, Set.of(end)));
 
     while (!stack.isEmpty()) {
       DFSEntry current = stack.pop();
@@ -221,7 +223,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       for (WITUpEdge edge : cfgIncomingEdgesOf(current.node)) {
         WITUpNode pred = edge.getSource();
         if (!current.contains(pred)) {
-          stack.push(new DFSEntry(pred, edge, current));
+          stack.push(current.push(pred, edge));
         }
       }
     }
