@@ -407,6 +407,36 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
+  public List<GuardedExpr> traceReturnGuarded() {
+    List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
+    if (returnNodes.isEmpty()) {
+      return List.of();
+    }
+
+    List<GuardedExpr> result = new ArrayList<>();
+    for (int i = returnNodes.size() - 1; i >= 0; i--) {
+      result.addAll(generateReturnGuarded(returnNodes.get(i)));
+    }
+    return result;
+  }
+
+  private List<GuardedExpr> generateReturnGuarded(final ReturnStatementNode returnNode) {
+    List<WITUpPath> paths = cpg.getAllPathsToReturn(returnNode);
+    if (paths.isEmpty()) {
+      SymExpr value = SymExpr.fromJimple(returnNode.getOp());
+      return List.of(new GuardedExpr(List.of(), value));
+    }
+
+    List<GuardedExpr> result = new ArrayList<>(paths.size());
+    for (WITUpPath path : paths) {
+      setCurrentPath(path);
+      SymExpr value = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+      List<SymbolicConstraint> guard = generateSymbolicConstraints(path);
+      result.add(new GuardedExpr(guard, value));
+    }
+    return result;
+  }
+
   public SymExpr traceReturnExpr() {
     List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
     if (returnNodes.isEmpty()) {
