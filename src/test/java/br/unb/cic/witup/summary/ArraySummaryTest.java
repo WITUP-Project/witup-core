@@ -20,29 +20,29 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
     // constraint paths
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr[i] != 0"));
     // formal params
-    assertEquals(3, summary.getFormalParams().size());
+    assertEquals(3, summary.formalParams().size());
     // is this correct? paramType is int[]
-    assertEquals("int[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+    assertEquals("int[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(2).getKind());
 
     // return expr
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("arr[i]", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -51,25 +51,25 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
     // constraint paths
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr.length != 0"));
     // formal params
-    assertEquals(2, summary.getFormalParams().size());
+    assertEquals(2, summary.formalParams().size());
     // is this correct? paramType is int[]
-    assertEquals("int[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+    assertEquals("int[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
 
     // return expr
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("arr.length", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("arr.length", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -78,29 +78,29 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
     // constraint paths
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("n >= 0"));
     // formal params
-    assertEquals(2, summary.getFormalParams().size());
+    assertEquals(2, summary.formalParams().size());
     // is this correct? paramType is int[]
-    assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+    assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
 
     // return expr
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("newarray(int[])[n]", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("newarray(int[])[n]", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -110,24 +110,24 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr[0] != 'abc'"));
 
-    assertEquals(3, summary.getFormalParams().size());
-    assertEquals("java.lang.String[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+    assertEquals(3, summary.formalParams().size());
+    assertEquals("java.lang.String[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(2).getKind());
 
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("arr[i]", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -137,24 +137,24 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr[0] != 'abc'"));
 
-    assertEquals(3, summary.getFormalParams().size());
-    assertEquals("java.lang.Object[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+    assertEquals(3, summary.formalParams().size());
+    assertEquals("java.lang.Object[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(2).getKind());
 
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("arr[i]", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -165,27 +165,27 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr[0].value <= 10"));
 
-    assertEquals(3, summary.getFormalParams().size());
+    assertEquals(3, summary.formalParams().size());
     assertEquals(
         "br.unb.cic.witup.samples.Array$MyObject[]",
-        summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+        summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.OBJECT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.INT, summary.formalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(2).getKind());
 
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("arr[i]", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -195,24 +195,24 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("0 >= arr.length"));
 
     assertFalse(path0.get(1).truthValue());
     assertTrue(path0.get(1).symExpr().toString().contains("arr[i] != 0"));
 
-    assertEquals(2, summary.getFormalParams().size());
-    assertEquals("int[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+    assertEquals(2, summary.formalParams().size());
+    assertEquals("int[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
 
     // returnExpr here is always giving 0 as we do not handle loop-carried acc
   }
@@ -224,21 +224,21 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("0 >= arr.length"));
 
-    assertEquals(2, summary.getFormalParams().size());
-    assertEquals("int[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+    assertEquals(2, summary.formalParams().size());
+    assertEquals("int[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
 
     assertFalse(path0.get(1).truthValue());
     assertTrue(path0.get(1).symExpr().toString().contains("arr[i] != 0"));
@@ -252,21 +252,21 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("0 >= arr.length"));
 
-    assertEquals(2, summary.getFormalParams().size());
-    assertEquals("int[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+    assertEquals(2, summary.formalParams().size());
+    assertEquals("int[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
 
     assertFalse(path0.get(1).truthValue());
     // we can't "know" which temporary/local we'll get here with
@@ -287,21 +287,21 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.NullPointerException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("o != null"));
 
-    assertEquals(2, summary.getFormalParams().size());
-    assertEquals("java.lang.Object", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+    assertEquals(2, summary.formalParams().size());
+    assertEquals("java.lang.Object", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.OBJECT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
 
     assertTrue(path0.getFirst().symExpr().toString().contains("o != null"), "Expected o != null");
   }
@@ -312,24 +312,24 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(1, summary.getExceptionPaths().size());
+    assertEquals(1, summary.exceptionPaths().size());
     assertEquals(
         "java.lang.NullPointerException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr != null"));
 
-    assertEquals(2, summary.getFormalParams().size());
-    assertEquals("int[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
+    assertEquals(2, summary.formalParams().size());
+    assertEquals("int[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
 
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("arr", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("arr", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -339,23 +339,23 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(3, summary.getExceptionPaths().size());
+    assertEquals(3, summary.exceptionPaths().size());
     // first path: arr == null
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("arr != null"));
 
     // second path: arr != null && i < 0.
-    List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
+    List<SymbolicConstraint> path1 = summary.exceptionPaths().get(1).getConstraints();
     assertTrue(path1.getFirst().truthValue());
     assertTrue(path1.getFirst().symExpr().toString().contains("arr != null"));
 
     assertFalse(path1.get(1).truthValue());
     assertTrue(path1.get(1).symExpr().toString().contains("i >= 0"));
 
-    List<SymbolicConstraint> path3 = summary.getExceptionPaths().get(2).getConstraints();
+    List<SymbolicConstraint> path3 = summary.exceptionPaths().get(2).getConstraints();
     assertTrue(path3.getFirst().truthValue());
     assertTrue(path3.getFirst().symExpr().toString().contains("arr != null"));
 
@@ -365,14 +365,14 @@ public class ArraySummaryTest {
     assertFalse(path3.get(2).truthValue());
     assertTrue(path3.get(2).symExpr().toString().contains("i < arr.length"));
 
-    assertEquals(3, summary.getFormalParams().size());
-    assertEquals("int[]", summary.getFormalParams().getFirst().getParamType());
-    assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+    assertEquals(3, summary.formalParams().size());
+    assertEquals("int[]", summary.formalParams().getFirst().getParamType());
+    assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.INT, summary.formalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(2).getKind());
 
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("arr[i]", summary.guardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -381,25 +381,27 @@ public class ArraySummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(2, summary.getExceptionPaths().size());
+    assertEquals(2, summary.exceptionPaths().size());
 
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("rows >= 0"));
 
-    List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
+    List<SymbolicConstraint> path1 = summary.exceptionPaths().get(1).getConstraints();
     assertTrue(path1.getFirst().truthValue());
     assertTrue(path1.getFirst().symExpr().toString().contains("rows >= 0"));
 
     assertFalse(path1.get(1).truthValue());
     assertTrue(path1.get(1).symExpr().toString().contains("cols >= 0"));
 
-    assertEquals(3, summary.getFormalParams().size());
-    assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
-    assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
-    assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
+    assertEquals(3, summary.formalParams().size());
+    assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
+    assertEquals(SymKind.INT, summary.formalParams().get(1).getKind());
+    assertEquals(SymKind.OBJECT, summary.formalParams().get(2).getKind());
 
-    assertEquals(1, summary.getGuardedReturn().size());
-    assertEquals("newmultiarray(int[][])[rows][cols]", summary.getGuardedReturn().getFirst().value().toString());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals(
+        "newmultiarray(int[][])[rows][cols]",
+        summary.guardedReturn().getFirst().value().toString());
   }
 }

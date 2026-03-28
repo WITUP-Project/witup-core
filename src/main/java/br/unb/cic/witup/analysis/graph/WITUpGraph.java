@@ -27,8 +27,6 @@ import java.util.Set;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
@@ -52,18 +50,14 @@ import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
-  private static final int MAX_CONSTRAINT_PATHS = 8192;
   private String methodSignature;
   private JavaSootMethod method;
-  // dot for debugging purposes
   private String dot;
   private WITUpNode entryNode;
   private final Map<WITUpNode, List<WITUpPath>> cachedConstraintPaths = new HashMap<>();
   private final Map<WITUpNode, List<WITUpPath>> cachedReturnPaths = new HashMap<>();
   private Map<WITUpNode, List<WITUpEdge>> cfgIncoming;
   private Map<WITUpNode, List<WITUpEdge>> cfgOutgoing;
-
-  private static final Logger log = LoggerFactory.getLogger(WITUpGraph.class);
 
   public String getMethodSignature() {
     return methodSignature;
@@ -81,14 +75,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return dot;
   }
 
-  public static int getMaxConstraintPaths() {
-    return MAX_CONSTRAINT_PATHS;
-  }
-
   /**
    * Creates a WITUpGraph from PropertyGraph from SootUp
    *
    * @param pg the PropertyGraph to convert
+   * @param method JavaSootMethod
    * @return the converted WITUpGraph
    */
   public static WITUpGraph fromPropertyGraph(final PropertyGraph pg, final JavaSootMethod method) {
@@ -101,32 +92,28 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     for (PropertyGraphEdge edge : pg.getEdges()) {
       WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(), WITUpGraph::createNode);
       WITUpNode target = cachedNodes.computeIfAbsent(edge.getDestination(), WITUpGraph::createNode);
-
       graph.addVertex(source);
       graph.addVertex(target);
-
-      if (edge instanceof DdgEdge) {
-        graph.addEdge(source, target, new DataDependencyEdge(source, target));
-      } else if (edge instanceof CdgEdge) {
-        graph.addEdge(source, target, new ControlDependencyEdge(source, target));
-      } else if (edge instanceof IfTrueCfgEdge) {
-        graph.addEdge(source, target, new BooleanCFGEdge(source, target, true));
-      } else if (edge instanceof IfFalseCfgEdge) {
-        graph.addEdge(source, target, new BooleanCFGEdge(source, target, false));
-      } else if (edge instanceof NormalCfgEdge) {
-        graph.addEdge(source, target, new CFGEdge(source, target));
-      } else if (edge instanceof GotoCfgEdge) {
-        graph.addEdge(source, target, new GotoCFGEdge(source, target));
-      } else if (edge instanceof ExceptionalCfgEdge) {
-        graph.addEdge(source, target, new ExceptionalCFGEdge(source, target));
-      } else if (edge instanceof SwitchCfgEdge) {
-        graph.addEdge(source, target, new SwitchCFGEdge(source, target));
-      } else {
-        throw new IllegalArgumentException(
-            "bad edge type: " + edge.getClass().getName() + "method: " + method.getSignature());
+      switch (edge) {
+        case DdgEdge ignored ->
+            graph.addEdge(source, target, new DataDependencyEdge(source, target));
+        case CdgEdge ignored ->
+            graph.addEdge(source, target, new ControlDependencyEdge(source, target));
+        case IfTrueCfgEdge ignored ->
+            graph.addEdge(source, target, new BooleanCFGEdge(source, target, true));
+        case IfFalseCfgEdge ignored ->
+            graph.addEdge(source, target, new BooleanCFGEdge(source, target, false));
+        case NormalCfgEdge ignored -> graph.addEdge(source, target, new CFGEdge(source, target));
+        case GotoCfgEdge ignored -> graph.addEdge(source, target, new GotoCFGEdge(source, target));
+        case ExceptionalCfgEdge ignored ->
+            graph.addEdge(source, target, new ExceptionalCFGEdge(source, target));
+        case SwitchCfgEdge ignored ->
+            graph.addEdge(source, target, new SwitchCFGEdge(source, target));
+        default ->
+            throw new IllegalArgumentException(
+                "bad edge type: " + edge.getClass().getName() + "method: " + method.getSignature());
       }
     }
-
     return graph;
   }
 
@@ -147,13 +134,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<WITUpNode> getThrowNodes() {
-    List<WITUpNode> result = new ArrayList<>();
+    List<WITUpNode> throwNodes = new ArrayList<>();
     for (WITUpNode n : this.vertexSet()) {
       if (n instanceof ThrowStatementNode) {
-        result.add(n);
+        throwNodes.add(n);
       }
     }
-    return result;
+    return throwNodes;
   }
 
   public List<WITUpNode> getThrowConditionNodes(final ThrowStatementNode t) {
@@ -187,30 +174,20 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       final Set<WITUpNode> visited,
       final List<WITUpNode> pathNodes,
       final List<WITUpEdge> pathEdges,
-      final List<WITUpPath> result) {
+      final List<WITUpPath> witUpPaths) {
     if (current.equals(start)) {
-      result.add(new WITUpPath(new ArrayList<>(pathNodes), new ArrayList<>(pathEdges)));
-      if (result.size() >= MAX_CONSTRAINT_PATHS) {
-        log.info(
-            "Path count truncated to {} for {} in {}",
-            MAX_CONSTRAINT_PATHS,
-            current,
-            getMethodSignature());
-      }
+      witUpPaths.add(new WITUpPath(new ArrayList<>(pathNodes), new ArrayList<>(pathEdges)));
       return;
     }
 
-    List<WITUpEdge> incoming = cfgIncomingEdgesOf(current);
+    List<WITUpEdge> incoming = incomingCfgEdges(current);
     for (int i = incoming.size() - 1; i >= 0; i--) {
-      if (result.size() >= MAX_CONSTRAINT_PATHS) {
-        return;
-      }
       WITUpEdge edge = incoming.get(i);
       WITUpNode pred = edge.getSource();
       if (visited.add(pred)) {
         pathNodes.add(pred);
         pathEdges.add(edge);
-        backDFS(start, pred, visited, pathNodes, pathEdges, result);
+        backDFS(start, pred, visited, pathNodes, pathEdges, witUpPaths);
         pathNodes.removeLast();
         pathEdges.removeLast();
         visited.remove(pred);
@@ -218,29 +195,20 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
   }
 
-  private List<WITUpPath> forwardDFS(final WITUpNode start, final WITUpNode end) {
-    List<WITUpPath> result = new ArrayList<>();
+  private List<WITUpPath> computePaths(final WITUpNode start, final WITUpNode end) {
+    List<WITUpPath> witUpPaths = new ArrayList<>();
     Deque<WITUpPath> stack = new ArrayDeque<>();
     stack.push(new WITUpPath(new ArrayList<>(List.of(start)), new ArrayList<>()));
-
     while (!stack.isEmpty()) {
       WITUpPath current = stack.pop();
       WITUpNode tail = current.nodes().getLast();
 
       if (tail.equals(end)) {
-        result.add(current);
-        if (result.size() >= MAX_CONSTRAINT_PATHS) {
-          log.info(
-              "Return paths truncated to {} for {} in {}",
-              MAX_CONSTRAINT_PATHS,
-              end,
-              getMethodSignature());
-          break;
-        }
+        witUpPaths.add(current);
         continue;
       }
 
-      for (WITUpEdge edge : cfgOutgoingEdgesOf(tail)) {
+      for (WITUpEdge edge : outgoingCfgEdges(tail)) {
         WITUpNode succ = edge.getTarget();
         if (!current.nodes().contains(succ)) {
           List<WITUpNode> newNodes = new ArrayList<>(current.nodes());
@@ -251,14 +219,14 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
         }
       }
     }
-    return result;
+    return witUpPaths;
   }
 
-  public List<WITUpPath> getConstraintPaths(final WITUpNode throwNode) {
-    return cachedConstraintPaths.computeIfAbsent(throwNode, this::computeConstraintPaths);
+  public List<WITUpPath> getThrowPaths(final WITUpNode throwNode) {
+    return cachedConstraintPaths.computeIfAbsent(throwNode, this::computeThrowPaths);
   }
 
-  private List<WITUpPath> computeConstraintPaths(final WITUpNode throwNode) {
+  private List<WITUpPath> computeThrowPaths(final WITUpNode throwNode) {
     WITUpNode entry = findEntryNode();
     List<WITUpPath> throwPaths = backwardDFS(entry, throwNode);
     List<WITUpPath> pathsWithConstraints = new ArrayList<>();
@@ -268,9 +236,6 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
           pathsWithConstraints.add(path);
           break;
         }
-      }
-      if (pathsWithConstraints.size() >= MAX_CONSTRAINT_PATHS) {
-        break;
       }
     }
     return pathsWithConstraints;
@@ -290,32 +255,29 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
   }
 
-  private List<WITUpEdge> cfgIncomingEdgesOf(final WITUpNode node) {
+  private List<WITUpEdge> incomingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgIncoming.getOrDefault(node, List.of());
   }
 
-  private List<WITUpEdge> cfgOutgoingEdgesOf(final WITUpNode node) {
+  private List<WITUpEdge> outgoingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgOutgoing.getOrDefault(node, List.of());
   }
 
+  // usually the entry node is a JIdentityStmt, but its
   private WITUpNode findEntryNode() {
     if (entryNode != null) {
       return entryNode;
     }
-
     Set<WITUpNode> hasIncoming = new HashSet<>(this.vertexSet().size());
-
     for (WITUpEdge e : this.edgeSet()) {
       hasIncoming.add(e.getTarget());
     }
-
     for (WITUpNode witNode : this.vertexSet()) {
       if (hasIncoming.contains(witNode)) {
         continue;
       }
-
       PropertyGraphNode pgNode = witNode.getNode();
       if (pgNode instanceof StmtGraphNode stmtNode && stmtNode.getStmt() instanceof JIdentityStmt) {
         entryNode = witNode;
@@ -326,10 +288,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     for (WITUpNode witNode : this.vertexSet()) {
       if (!hasIncoming.contains(witNode)) {
         entryNode = witNode;
-        return witNode;
+        break;
       }
     }
-    throw new IllegalStateException("No entry JIdentityStmt node in graph");
+    return entryNode;
   }
 
   public List<ThrowConstraint> getThrowConstraints(final WITUpPath path) {
@@ -365,11 +327,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<WITUpPath> getAllPathsToReturn(final WITUpNode returnNode) {
-    return cachedReturnPaths.computeIfAbsent(returnNode, this::computeAllPathsToReturn);
+    return cachedReturnPaths.computeIfAbsent(returnNode, this::computePathsToReturn);
   }
 
-  private List<WITUpPath> computeAllPathsToReturn(final WITUpNode returnNode) {
-    return forwardDFS(findEntryNode(), returnNode);
+  private List<WITUpPath> computePathsToReturn(final WITUpNode returnNode) {
+    return computePaths(findEntryNode(), returnNode);
   }
 
   // The Jimple pattern seems very consitent (hopefully an invariant):

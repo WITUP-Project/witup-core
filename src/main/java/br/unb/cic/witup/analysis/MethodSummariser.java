@@ -30,7 +30,7 @@ public final class MethodSummariser implements SummaryResolver {
       new HashMap<>();
 
   /**
-   * Interprocedural MethodSummariser. As of now,
+   * Interprocedural MethodSummariser
    *
    * @param cpg WITUpGraph of the method being analysed
    * @param graphRepository GraphRepository
@@ -50,55 +50,42 @@ public final class MethodSummariser implements SummaryResolver {
   public MethodSummary summarise() {
     String sig = cpg.getMethodSignature();
 
-    // this should never be null so consider ensuring that upstream
-    // code will always set it
-    if (summaryRepository != null) {
-      Optional<MethodSummary> cached = summaryRepository.getSummary(sig);
-      if (cached.isPresent()) {
-        return cached.get();
-      }
-      summaryRepository.markInProgress(sig);
+    Optional<MethodSummary> cached = summaryRepository.getSummary(sig);
+    if (cached.isPresent()) {
+      return cached.get();
     }
+    summaryRepository.markInProgress(sig);
 
     List<ExceptionPath> exceptionPaths = new ArrayList<>();
-    List<List<SymbolicConstraint>> paths = new ArrayList<>();
+    List<List<SymbolicConstraint>> throwConstraintPaths = new ArrayList<>();
     for (WITUpNode throwNode : cpg.getThrowNodes()) {
-      String exceptionQualifiedName =
-          cpg.resolveExceptionType((ThrowStatementNode) throwNode);
-      for (List<SymbolicConstraint> constraints
-              : symbolicConstraintGenerator.buildNodeConstraintPaths(throwNode)) {
+      String exceptionQualifiedName = cpg.resolveExceptionType((ThrowStatementNode) throwNode);
+      for (List<SymbolicConstraint> constraints :
+          symbolicConstraintGenerator.buildThrowConstraintPaths(throwNode)) {
         exceptionPaths.add(new ExceptionPath(constraints, throwNode, exceptionQualifiedName));
-        paths.add(constraints);
+        throwConstraintPaths.add(constraints);
       }
     }
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
-    List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceReturnGuarded();
+    List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceGuardedReturn();
     MethodSummary summary =
         new MethodSummary(
-            cpg.getMethodSignature(), exceptionPaths, formals, guardedReturn, paths);
+            cpg.getMethodSignature(), exceptionPaths, formals, guardedReturn, throwConstraintPaths);
 
-    if (summaryRepository != null) {
-      summaryRepository.putSummary(sig, summary);
-    }
-
+    summaryRepository.putSummary(sig, summary);
     return summary;
   }
 
   @Override
-  public Optional<ResolvedCallee> resolveReturnExpr(
+  public Optional<ResolvedCallee> resolveCallee(
       final String calleeSignature, final List<SymExpr> actuals) {
-
-    if (summaryRepository == null || graphRepository == null) {
-      return Optional.empty();
-    }
 
     log.debug(
         "resolveReturnExpr: cache present={} inProgress={}",
         summaryRepository.getSummary(calleeSignature).isPresent(),
         summaryRepository.isInProgress(calleeSignature));
 
-    // any alternatives to being conservatives here or mathematically impossible?
     if (summaryRepository.isInProgress(calleeSignature)) {
       return Optional.empty();
     }
@@ -121,7 +108,6 @@ public final class MethodSummariser implements SummaryResolver {
 
     log.debug("summarising callee {}", calleeSignature);
     MethodSummary calleeSummary = calleeAnalysis.summarise();
-
     summaryRepository.putSummary(calleeSignature, calleeSummary);
     return instantiate(calleeSummary, actuals);
   }
@@ -132,32 +118,35 @@ public final class MethodSummariser implements SummaryResolver {
       return Optional.empty();
     }
 
-    InstantiationKey key = new InstantiationKey(summary.getMethodSignature(), actuals);
+    InstantiationKey key = new InstantiationKey(summary.methodSignature(), actuals);
     Optional<ResolvedCallee> cachedResolvedCallee = instantiationCache.get(key);
     if (cachedResolvedCallee != null) {
-      log.debug("resolved callee cache hit for {}", summary.getMethodSignature());
+      log.debug("resolved callee cache hit for {}", summary.methodSignature());
       return cachedResolvedCallee;
     }
 
-    List<SymParamRef> formals = summary.getFormalParams();
+    List<SymParamRef> formals = summary.formalParams();
     if (formals == null || formals.size() != actuals.size()) {
-      log.error("Formal/actual mismatch for {}", summary.getMethodSignature());
+      log.error("Formal/actual mismatch for {}", summary.methodSignature());
       return Optional.empty();
     }
 
-    List<GuardedExpr> guardedReturn = new ArrayList<>(summary.getGuardedReturn().size());
-    for (GuardedExpr ge : summary.getGuardedReturn()) {
-      GuardedExpr substituted = ge;
-      for (int i = 0; i < formals.size(); i++) {
-        substituted = substituted.substituteParam(formals.get(i).getIndex(), actuals.get(i));
-      }
-      guardedReturn.add(substituted);
-    }
+    List<GuardedExpr> guardedReturn = substituteGuardedReturn(summary, actuals, formals);
+    List<List<SymbolicConstraint>> throwPaths =
+        substituteThrowConstraints(summary, actuals, formals);
 
+    Optional<ResolvedCallee> resolvedCallee =
+        Optional.of(new ResolvedCallee(guardedReturn, throwPaths));
+    instantiationCache.put(key, resolvedCallee);
+    return resolvedCallee;
+  }
+
+  private static List<List<SymbolicConstraint>> substituteThrowConstraints(
+      final MethodSummary summary, final List<SymExpr> actuals, final List<SymParamRef> formals) {
     List<List<SymbolicConstraint>> throwPaths = null;
-    if (summary.getThrowPathConditions() != null) {
-      throwPaths = new ArrayList<>(summary.getThrowPathConditions().size());
-      for (List<SymbolicConstraint> path : summary.getThrowPathConditions()) {
+    if (summary.throwConstraints() != null) {
+      throwPaths = new ArrayList<>(summary.throwConstraints().size());
+      for (List<SymbolicConstraint> path : summary.throwConstraints()) {
         List<SymbolicConstraint> substituted = new ArrayList<>(path.size());
         for (SymbolicConstraint c : path) {
           SymExpr expr = c.symExpr();
@@ -169,9 +158,19 @@ public final class MethodSummariser implements SummaryResolver {
         throwPaths.add(substituted);
       }
     }
+    return throwPaths;
+  }
 
-    var result = Optional.of(new ResolvedCallee(guardedReturn, throwPaths));
-    instantiationCache.put(key, result);
-    return result;
+  private static List<GuardedExpr> substituteGuardedReturn(
+      final MethodSummary summary, final List<SymExpr> actuals, final List<SymParamRef> formals) {
+    List<GuardedExpr> guardedReturn = new ArrayList<>(summary.guardedReturn().size());
+    for (GuardedExpr ge : summary.guardedReturn()) {
+      GuardedExpr substituted = ge;
+      for (int i = 0; i < formals.size(); i++) {
+        substituted = substituted.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+      }
+      guardedReturn.add(substituted);
+    }
+    return guardedReturn;
   }
 }

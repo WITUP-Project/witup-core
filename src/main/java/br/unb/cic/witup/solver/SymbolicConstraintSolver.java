@@ -54,10 +54,10 @@ public final class SymbolicConstraintSolver {
   public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
     Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
     for (MethodSummary summary : methodSummaries.values()) {
-      String sig = summary.getMethodSignature();
+      String sig = summary.methodSignature();
       try {
         List<SolverResult> results = new ArrayList<>();
-        List<ExceptionPath> paths = summary.getExceptionPaths();
+        List<ExceptionPath> paths = summary.exceptionPaths();
         for (int i = 0; i < paths.size(); i++) {
           log.debug("Solving path {}/{} for {}", i + 1, paths.size(), sig);
           results.add(checkPath(sig + "#" + i, paths.get(i).getConstraints()));
@@ -122,9 +122,7 @@ public final class SymbolicConstraintSolver {
     return modelValueMap;
   }
 
-  private void extractDeclarations(
-      final Model model,
-      final Map<String, ModelValue> modelValueMap) {
+  private void extractDeclarations(final Model model, final Map<String, ModelValue> modelValueMap) {
     Map<String, String> descriptions = translator.getIdDescriptions();
     for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
       String id = entry.getKey();

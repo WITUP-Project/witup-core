@@ -91,8 +91,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   /**
-   * Clears per-path state (declarations, IDs, descriptions) while preserving
-   * cross-path caches (exprCache, sortCache, intConstCache).
+   * Clears per-path state (declarations, IDs, descriptions) while preserving cross-path caches
+   * (exprCache, sortCache, intConstCache).
    */
   public void resetForNewPath() {
     exprMap.clear();
@@ -412,7 +412,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return expr;
   }
 
-
   @Override
   public Expr<?> visitArray(final SymArray arr) {
     String cacheKey = toArrayKey(arr);
@@ -533,7 +532,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         CLASS_PREFIX + c.getValue().replace("/", "_").replace(";", "").replace("[", ""),
         context::mkIntConst);
   }
-
 
   @Override
   public Expr<?> visitITE(final SymITE ite) {

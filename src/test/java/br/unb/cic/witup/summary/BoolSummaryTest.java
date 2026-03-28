@@ -21,15 +21,15 @@ public class BoolSummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(methodSignature, summary.getMethodSignature());
+    assertEquals(methodSignature, summary.methodSignature());
 
-    assertEquals(2, summary.getExceptionPaths().size());
+    assertEquals(2, summary.exceptionPaths().size());
     // first path: value != null && !value.equals(trueValue) && !value.equals(falseValue)
-    List<SymbolicConstraint> path0 = summary.getExceptionPaths().getFirst().getConstraints();
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
 
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().getFirst().getExceptionQualifiedName());
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
 
     assertEquals(3, path0.size());
     assertTrue(path0.get(0).truthValue());
@@ -42,10 +42,10 @@ public class BoolSummaryTest {
     assertTrue(path0.get(2).symExpr().toString().contains("value.equals(falseValue)"));
 
     // second path: arr != null && i < 0.
-    List<SymbolicConstraint> path1 = summary.getExceptionPaths().get(1).getConstraints();
+    List<SymbolicConstraint> path1 = summary.exceptionPaths().get(1).getConstraints();
     assertEquals(
         "java.lang.IllegalArgumentException",
-        summary.getExceptionPaths().get(1).getExceptionQualifiedName());
+        summary.exceptionPaths().get(1).getExceptionQualifiedName());
 
     assertEquals(3, path1.size());
 
