@@ -172,6 +172,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   private record ExprPair(Expr<?> lhs, Expr<?> rhs) {}
 
+  @SuppressWarnings("unchecked")
   private ExprPair coerceForEquality(final Expr<?> lhs, final Expr<?> rhs) {
     Sort leftSort = sortOf(lhs);
     Sort rightSort = sortOf(rhs);
@@ -249,6 +250,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         expr + AS_STR_SUFFIX, k -> context.mkConst(k, context.getStringSort()));
   }
 
+  @SuppressWarnings("unchecked")
   private Expr<?> buildArithExpr(final BinOp op, final Expr<?> lhs, final Expr<?> rhs) {
     return switch (op) {
       case LT -> context.mkLt(toArith(lhs), toArith(rhs));
@@ -410,6 +412,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return expr;
   }
 
+
   @Override
   public Expr<?> visitArray(final SymArray arr) {
     String cacheKey = toArrayKey(arr);
@@ -418,7 +421,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       return cached;
     }
 
-    ArraySort arraySort = (ArraySort) arr.accept(sortInferrer);
+    ArraySort<?, ?> arraySort = (ArraySort<?, ?>) arr.accept(sortInferrer);
     Expr<?> result = context.mkConst(cacheKey, arraySort);
     exprMap.put(cacheKey, result);
     return result;
@@ -428,6 +431,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return arr.getName() + ":" + arr.getObjectType();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Expr<?> visitArrayRef(final SymArrayRef ref) {
     String key = idFor(ref);
@@ -517,6 +521,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         k -> r.getKind() == SymKind.BOOLEAN ? context.mkBoolConst(k) : context.mkIntConst(k));
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Expr<?> visitNeg(final SymNeg n) {
     return context.mkUnaryMinus((ArithExpr<IntSort>) translate(n.getOperand()));
@@ -528,6 +533,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         CLASS_PREFIX + c.getValue().replace("/", "_").replace(";", "").replace("[", ""),
         context::mkIntConst);
   }
+
 
   @Override
   public Expr<?> visitITE(final SymITE ite) {
