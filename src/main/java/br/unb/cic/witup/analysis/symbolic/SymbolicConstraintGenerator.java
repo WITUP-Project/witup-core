@@ -183,7 +183,7 @@ public final class SymbolicConstraintGenerator {
         List<SymExpr> actuals =
             dynInvoke.getArgs().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
 
-        return resolver.resolveReturnExpr(lambdaSig, actuals);
+        return resolver.resolveCallee(lambdaSig, actuals);
       }
       // not a dynamic invoke — skip
     }
@@ -407,7 +407,7 @@ public final class SymbolicConstraintGenerator {
       }
     }
 
-    return resolver.resolveReturnExpr(calleeSig, actuals);
+    return resolver.resolveCallee(calleeSig, actuals);
   }
 
   private boolean nodeNotInPath(final WITUpNode node) {

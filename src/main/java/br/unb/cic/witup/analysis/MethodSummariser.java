@@ -30,7 +30,7 @@ public final class MethodSummariser implements SummaryResolver {
       new HashMap<>();
 
   /**
-   * Interprocedural MethodSummariser. As of now,
+   * Interprocedural MethodSummariser
    *
    * @param cpg WITUpGraph of the method being analysed
    * @param graphRepository GraphRepository
@@ -57,27 +57,28 @@ public final class MethodSummariser implements SummaryResolver {
     summaryRepository.markInProgress(sig);
 
     List<ExceptionPath> exceptionPaths = new ArrayList<>();
-    List<List<SymbolicConstraint>> paths = new ArrayList<>();
+    List<List<SymbolicConstraint>> throwConstraintPaths = new ArrayList<>();
     for (WITUpNode throwNode : cpg.getThrowNodes()) {
       String exceptionQualifiedName = cpg.resolveExceptionType((ThrowStatementNode) throwNode);
       for (List<SymbolicConstraint> constraints :
           symbolicConstraintGenerator.buildThrowConstraintPaths(throwNode)) {
         exceptionPaths.add(new ExceptionPath(constraints, throwNode, exceptionQualifiedName));
-        paths.add(constraints);
+        throwConstraintPaths.add(constraints);
       }
     }
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
     List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceGuardedReturn();
     MethodSummary summary =
-        new MethodSummary(cpg.getMethodSignature(), exceptionPaths, formals, guardedReturn, paths);
+        new MethodSummary(
+            cpg.getMethodSignature(), exceptionPaths, formals, guardedReturn, throwConstraintPaths);
 
     summaryRepository.putSummary(sig, summary);
     return summary;
   }
 
   @Override
-  public Optional<ResolvedCallee> resolveReturnExpr(
+  public Optional<ResolvedCallee> resolveCallee(
       final String calleeSignature, final List<SymExpr> actuals) {
 
     log.debug(
@@ -134,7 +135,8 @@ public final class MethodSummariser implements SummaryResolver {
     List<List<SymbolicConstraint>> throwPaths =
         substituteThrowConstraints(summary, actuals, formals);
 
-    Optional<ResolvedCallee> resolvedCallee = Optional.of(new ResolvedCallee(guardedReturn, throwPaths));
+    Optional<ResolvedCallee> resolvedCallee =
+        Optional.of(new ResolvedCallee(guardedReturn, throwPaths));
     instantiationCache.put(key, resolvedCallee);
     return resolvedCallee;
   }

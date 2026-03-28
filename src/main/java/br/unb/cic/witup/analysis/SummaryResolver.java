@@ -5,5 +5,5 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SummaryResolver {
-  Optional<ResolvedCallee> resolveReturnExpr(String calleeSignature, List<SymExpr> actuals);
+  Optional<ResolvedCallee> resolveCallee(String calleeSignature, List<SymExpr> actuals);
 }
