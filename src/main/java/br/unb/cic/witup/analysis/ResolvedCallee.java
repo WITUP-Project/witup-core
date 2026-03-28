@@ -5,5 +5,4 @@ import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import java.util.List;
 
 public record ResolvedCallee(
-    List<GuardedExpr> guardedReturn,
-    List<List<SymbolicConstraint>> throwPathConditions) {}
+    List<GuardedExpr> guardedReturn, List<List<SymbolicConstraint>> throwPathConditions) {}

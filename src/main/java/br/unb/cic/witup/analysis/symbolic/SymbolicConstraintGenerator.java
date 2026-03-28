@@ -104,8 +104,8 @@ public final class SymbolicConstraintGenerator {
     this.currentPathNodes = new HashSet<>(p.nodes());
   }
 
-  public List<List<SymbolicConstraint>> buildNodeConstraintPaths(final WITUpNode throwNode) {
-    List<WITUpPath> throwConstraintPaths = cpg.getConstraintPaths(throwNode);
+  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
+    List<WITUpPath> throwConstraintPaths = cpg.getThrowPaths(throwNode);
     return generateThrowConstraintPath(throwConstraintPaths);
   }
 
