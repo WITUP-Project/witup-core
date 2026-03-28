@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.Immediate;
@@ -52,14 +53,19 @@ import sootup.core.types.Type;
  */
 public final class SymbolicConstraintGenerator {
   public static final String RET_PREFIX = "_ret_";
+  private static AtomicInteger globalFreshCounter = new AtomicInteger(0);
   private final WITUpGraph cpg;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   private final SummaryResolver resolver;
-  private int freshVarCounter = 0;
 
   public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
     this.cpg = cpg;
     this.resolver = resolver;
+  }
+
+  /** Resets the global fresh variable counter. For testing only. */
+  public static void resetFreshVarCounter() {
+    globalFreshCounter.set(0);
   }
 
   public List<SymbolicConstraint> generateSymbolicConstraints(final WITUpPath p) {
@@ -264,12 +270,13 @@ public final class SymbolicConstraintGenerator {
             if (callee.guardedReturn() != null) {
               SymVar freshVar =
                   SymVar.fresh(
-                      RET_PREFIX + freshVarCounter++,
+                      RET_PREFIX + globalFreshCounter.getAndIncrement(),
                       callee.guardedReturn().isEmpty()
                           ? SymKind.INT
                           : callee.guardedReturn().getFirst().value().getKind());
               addBinding(freeVars, env, definedVar, freshVar);
               for (GuardedExpr ge : callee.guardedReturn()) {
+                extraConstraints.addAll(ge.bindings());
                 SymExpr eq = new SymBinOp(BinOp.EQ, freshVar, ge.value());
                 SymExpr implication = encodeImplication(ge.guard(), eq);
                 extraConstraints.add(new SymbolicConstraint(implication, true));
@@ -373,10 +380,11 @@ public final class SymbolicConstraintGenerator {
     List<GuardedExpr> result = new ArrayList<>(paths.size());
     for (WITUpPath path : paths) {
       setCurrentPath(path);
-      SymExpr value = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
-      value = SymExpr.stripBoxing(value);
+      SubstituteResult sr =
+          substituteWithPreconditions(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+      SymExpr value = SymExpr.stripBoxing(sr.expr());
       List<SymbolicConstraint> guard = generateSymbolicConstraints(path);
-      result.add(new GuardedExpr(guard, value));
+      result.add(new GuardedExpr(guard, value, sr.preconditions()));
     }
     return result;
   }

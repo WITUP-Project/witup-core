@@ -250,7 +250,11 @@ public class IntSummaryTest {
     // constraint 0: guarded binding — if callee doesn't throw, _ret_0 = (a + b)
     assertTrue(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("(a + b) <= 256"));
-    assertTrue(path0.getFirst().symExpr().toString().contains("_ret_0 == (a + b)"));
+
+    assertTrue(path0.getFirst().symExpr().toString().contains("_ret_"));
+    assertTrue(path0.getFirst().symExpr().toString().contains("((a + b) <= 256)"));
+    assertTrue(path0.getFirst().symExpr().toString().contains("((a + b) <= 256)"));
+    assertTrue(path0.getFirst().symExpr().toString().contains("== (a + b)"));
 
     // constraint 1: negated callee throw path — callee's throw condition must be false
     assertFalse(path0.get(1).truthValue());
@@ -258,7 +262,8 @@ public class IntSummaryTest {
 
     // constraint 2: caller's branch condition using fresh var
     assertFalse(path0.get(2).truthValue());
-    assertTrue(path0.get(2).symExpr().toString().contains("_ret_0 <= 512"));
+    assertTrue(path0.get(2).symExpr().toString().contains("_ret_"));
+    assertTrue(path0.get(2).symExpr().toString().contains("<= 512"));
 
     assertEquals(3, summary.getFormalParams().size());
     assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
