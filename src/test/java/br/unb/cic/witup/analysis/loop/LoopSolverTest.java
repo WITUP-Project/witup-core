@@ -1,10 +1,13 @@
 package br.unb.cic.witup.analysis.loop;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.solver.SolverResult;
+import br.unb.cic.witup.solver.model.ArrayValue;
+import br.unb.cic.witup.solver.model.ModelValue;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +19,16 @@ public class LoopSolverTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(sig);
     assertFalse(analysis.solutions().isEmpty(), "expected at least one path");
     SolverResult sol = analysis.solutions().getFirst();
-    assertTrue(sol.isSat(), "sum > 256 should be reachable (sum is unconstrained)");
+    assertTrue(sol.isSat(), "sum > 256 should be reachable");
+
+    // model key should be stripped of _loop_ infix
+    ModelValue sumVal = sol.getModelValueMap().get("sum");
+    assertNotNull(sumVal, "model should contain 'sum' (stripped of _loop_ infix)");
+    assertTrue(sumVal.getInt() > 256, "sum should exceed 256");
+
+    // bounded unrolling should produce arr with concrete values
+    ArrayValue arr = sol.getArray("arr");
+    assertNotNull(arr, "model should contain 'arr' with concrete values");
   }
 
   @Test

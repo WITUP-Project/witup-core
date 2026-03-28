@@ -7,8 +7,11 @@ import br.unb.cic.witup.analysis.graph.edge.WITUpEdge;
 import br.unb.cic.witup.analysis.graph.node.IfStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -28,6 +31,8 @@ import sootup.core.jimple.common.expr.JMulExpr;
 import sootup.core.jimple.common.expr.JSubExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
+import sootup.core.jimple.common.stmt.JIdentityStmt;
+import sootup.core.jimple.common.stmt.JIfStmt;
 
 /**
  * Performs abstract interpretation with the interval domain over a single natural loop to produce a
@@ -37,6 +42,7 @@ public final class LoopAbstractInterpreter {
 
   private static final Logger log = LoggerFactory.getLogger("LoopAbstractInterpreter");
   private static final int MAX_ITERATIONS = 5;
+  public static final int MAX_UNROLLING = 3;
 
   private LoopAbstractInterpreter() {}
 
@@ -68,7 +74,15 @@ public final class LoopAbstractInterpreter {
       }
     }
 
-    return new LoopSummary(loop, state, inductionVars);
+    Map<String, AccumulationInfo> accumulations =
+        recogniseAccumulations(assignments, inductionVars, loop, graph);
+
+    log.debug(
+        "recogniseAccumulations: found {} accumulations: {}",
+        accumulations.size(),
+        accumulations.keySet());
+
+    return new LoopSummary(loop, state, inductionVars, accumulations);
   }
 
   // ── Assignment scanning ──
@@ -114,9 +128,7 @@ public final class LoopAbstractInterpreter {
   // ── Initial state from pre-loop definitions ──
 
   private static Map<String, Interval> initialState(
-      final Map<String, AssignInfo> assignments,
-      final NaturalLoop loop,
-      final WITUpGraph graph) {
+      final Map<String, AssignInfo> assignments, final NaturalLoop loop, final WITUpGraph graph) {
     Map<String, Interval> state = new HashMap<>();
     Set<WITUpNode> body = loop.body();
 
@@ -210,9 +222,7 @@ public final class LoopAbstractInterpreter {
   // ── Induction variable recognition ──
 
   private static Map<String, InductionInfo> recogniseInductionVars(
-      final Map<String, AssignInfo> assignments,
-      final NaturalLoop loop,
-      final WITUpGraph graph) {
+      final Map<String, AssignInfo> assignments, final NaturalLoop loop, final WITUpGraph graph) {
     Map<String, InductionInfo> result = new HashMap<>();
 
     for (Map.Entry<String, AssignInfo> entry : assignments.entrySet()) {
@@ -227,6 +237,8 @@ public final class LoopAbstractInterpreter {
 
       // find the loop exit condition involving this variable
       BoundInfo bound = findLoopBound(varName, loop);
+      log.debug("inductionVar check: var={} step={} bound={} headerType={}",
+              varName, step, bound, loop.header().getClass().getSimpleName());
       if (bound == null) {
         continue;
       }
@@ -237,14 +249,16 @@ public final class LoopAbstractInterpreter {
         continue;
       }
 
+      // resolve bound expression locals (e.g. $stack4 → arr.length)
+      SymExpr resolvedBound = resolvePreLoopLocals(bound.boundExpr, loop.body(), graph);
+
       result.put(
-          varName,
-          new InductionInfo(varName, initExpr, bound.boundExpr, step, bound.comparison));
+          varName, new InductionInfo(varName, initExpr, resolvedBound, step, bound.comparison));
       log.debug(
           "Recognised induction variable: {} init={} bound={} step={}",
           varName,
           initExpr,
-          bound.boundExpr,
+          resolvedBound,
           step);
     }
     return result;
@@ -268,15 +282,11 @@ public final class LoopAbstractInterpreter {
     Value op2 = binop.getOp2();
 
     // var + const
-    if (op1 instanceof Local l
-        && l.toString().equals(varName)
-        && op2 instanceof IntConstant c) {
+    if (op1 instanceof Local l && l.toString().equals(varName) && op2 instanceof IntConstant c) {
       return isAdd ? c.getValue() : -c.getValue();
     }
     // const + var
-    if (op2 instanceof Local l
-        && l.toString().equals(varName)
-        && op1 instanceof IntConstant c) {
+    if (op2 instanceof Local l && l.toString().equals(varName) && op1 instanceof IntConstant c) {
       return isAdd ? c.getValue() : -c.getValue();
     }
     return 0;
@@ -285,52 +295,52 @@ public final class LoopAbstractInterpreter {
   private record BoundInfo(SymExpr boundExpr, BinOp comparison) {}
 
   /**
-   * Find the loop exit condition for the given induction variable. Looks at the loop header's
-   * IfStatementNode and the BooleanCFGEdge that exits the loop.
+   * Find the loop exit condition for the given induction variable. Scans the exit edges for a
+   * BooleanCFGEdge whose source node has a JIfStmt condition referencing the variable.
    */
-  private static BoundInfo findLoopBound(
-      final String varName, final NaturalLoop loop) {
-    if (!(loop.header() instanceof IfStatementNode ifNode)) {
-      return null;
-    }
-    AbstractConditionExpr cond = ifNode.getCondition();
-    Value lhs = cond.getOp1();
-    Value rhs = cond.getOp2();
-
-    // determine which BooleanCFGEdge exits the loop
-    boolean exitOnTrue = false;
+  private static BoundInfo findLoopBound(final String varName, final NaturalLoop loop) {
     for (WITUpEdge edge : loop.exitEdges()) {
-      if (edge instanceof BooleanCFGEdge boolEdge && edge.getSource().equals(loop.header())) {
-        exitOnTrue = boolEdge.getCondition();
-        break;
+      if (!(edge instanceof BooleanCFGEdge boolEdge)) {
+        continue;
       }
-    }
+      WITUpNode condNode = edge.getSource();
 
-    // the condition as written in Jimple is: "if (lhs op rhs) goto exitTarget"
-    // when exitOnTrue, the loop CONTINUES when the condition is false
-    // when exitOnFalse, the loop CONTINUES when the condition is true
-
-    // check if the induction var is on the left: "if (i >= bound) goto exit"
-    if (lhs instanceof Local l && l.toString().equals(varName)) {
-      BinOp jimpleOp = conditionToBinOp(cond);
-      if (jimpleOp == null) {
-        return null;
+      // extract condition from whatever node type wraps the if-statement
+      AbstractConditionExpr cond = null;
+      if (condNode instanceof IfStatementNode ifNode) {
+        cond = ifNode.getCondition();
+      } else if (condNode.getNode() instanceof StmtGraphNode sn
+          && sn.getStmt() instanceof JIfStmt ifStmt) {
+        cond = ifStmt.getCondition();
       }
-      // if exit on true: loop continues while NOT(condition), i.e. the negated comparison
-      // gives the bound. e.g. "if (i >= len) exit" → loop runs while i < len → bound is len, LT
-      BinOp loopOp = exitOnTrue ? negate(jimpleOp) : jimpleOp;
-      return new BoundInfo(SymExpr.fromJimple(rhs), loopOp);
-    }
-
-    // check if the induction var is on the right: "if (bound <= i) goto exit"
-    if (rhs instanceof Local l && l.toString().equals(varName)) {
-      BinOp jimpleOp = conditionToBinOp(cond);
-      if (jimpleOp == null) {
-        return null;
+      if (cond == null) {
+        continue;
       }
-      BinOp flipped = flip(jimpleOp);
-      BinOp loopOp = exitOnTrue ? negate(flipped) : flipped;
-      return new BoundInfo(SymExpr.fromJimple(lhs), loopOp);
+
+      boolean exitOnTrue = boolEdge.getCondition();
+      Value lhs = cond.getOp1();
+      Value rhs = cond.getOp2();
+
+      // check if the induction var is on the left: "if (i >= bound) goto exit"
+      if (lhs instanceof Local l && l.toString().equals(varName)) {
+        BinOp jimpleOp = conditionToBinOp(cond);
+        if (jimpleOp == null) {
+          continue;
+        }
+        BinOp loopOp = exitOnTrue ? negate(jimpleOp) : jimpleOp;
+        return new BoundInfo(SymExpr.fromJimple(rhs), loopOp);
+      }
+
+      // check if the induction var is on the right: "if (bound <= i) goto exit"
+      if (rhs instanceof Local l && l.toString().equals(varName)) {
+        BinOp jimpleOp = conditionToBinOp(cond);
+        if (jimpleOp == null) {
+          continue;
+        }
+        BinOp flipped = flip(jimpleOp);
+        BinOp loopOp = exitOnTrue ? negate(flipped) : flipped;
+        return new BoundInfo(SymExpr.fromJimple(lhs), loopOp);
+      }
     }
     return null;
   }
@@ -356,6 +366,183 @@ public final class LoopAbstractInterpreter {
       }
     }
     return null;
+  }
+
+  // ── Accumulation recognition ──
+
+  private static Map<String, AccumulationInfo> recogniseAccumulations(
+      final Map<String, AssignInfo> assignments,
+      final Map<String, InductionInfo> inductionVars,
+      final NaturalLoop loop,
+      final WITUpGraph graph) {
+    Map<String, AccumulationInfo> result = new HashMap<>();
+
+    for (Map.Entry<String, AssignInfo> entry : assignments.entrySet()) {
+      String varName = entry.getKey();
+      if (inductionVars.containsKey(varName)) {
+        continue;
+      }
+      Value rhs = entry.getValue().rhs();
+      if (!(rhs instanceof AbstractBinopExpr binop)) {
+        continue;
+      }
+      BinOp op = SymExpr.fromJimpleBinop(binop);
+      if (op != BinOp.ADD && op != BinOp.SUB && op != BinOp.MUL) {
+        continue;
+      }
+
+      // extract the non-self operand
+      Value nonSelf = extractNonSelfOperand(binop, varName);
+      if (nonSelf == null) {
+        continue;
+      }
+
+      // resolve stack variables within the loop body, then resolve locals to pre-loop defs
+      // (skip induction var names so they remain as SymVar for pattern matching later)
+      Value resolved = resolveInLoopBody(nonSelf, loop, MAX_UNROLLING);
+      SymExpr stepExpr = SymExpr.fromJimple(resolved);
+      stepExpr = resolvePreLoopLocals(stepExpr, loop.body(), graph, inductionVars.keySet());
+
+      // check if the step expression references any induction variable
+      Set<String> stepVars = new HashSet<>();
+      stepExpr.collectVarNames(stepVars);
+      String indVar = null;
+      for (String ivName : inductionVars.keySet()) {
+        if (stepVars.contains(ivName)) {
+          indVar = ivName;
+          break;
+        }
+      }
+
+      SymExpr initExpr = findPreLoopSymExpr(varName, loop.body(), graph);
+      if (initExpr == null) {
+        continue;
+      }
+
+      result.put(varName, new AccumulationInfo(varName, op, stepExpr, initExpr, indVar));
+      log.debug(
+          "Recognised accumulation: {} = {} {} {} (inductionVar={})",
+          varName,
+          varName,
+          op,
+          stepExpr,
+          indVar);
+    }
+    return result;
+  }
+
+  private static Value extractNonSelfOperand(final AbstractBinopExpr binop, final String varName) {
+    Value op1 = binop.getOp1();
+    Value op2 = binop.getOp2();
+    if (isLocal(op1, varName)) {
+      return op2;
+    }
+    if (isLocal(op2, varName)) {
+      return op1;
+    }
+    return null;
+  }
+
+  /** Resolve stack variables within the loop body (mini backward-substitute). */
+  private static Value resolveInLoopBody(
+      final Value value, final NaturalLoop loop, final int maxDepth) {
+    if (maxDepth <= 0) {
+      return value;
+    }
+    if (!(value instanceof Local l)) {
+      return value;
+    }
+    if (!l.toString().contains("$stack")) {
+      return value;
+    }
+    String name = l.toString();
+    for (WITUpNode node : loop.body()) {
+      if (!(node.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
+        continue;
+      }
+      if (!assign.getLeftOp().toString().equals(name)) {
+        continue;
+      }
+      return resolveInLoopBody(assign.getRightOp(), loop, maxDepth - 1);
+    }
+    return value;
+  }
+
+  /**
+   * Resolve free locals in a SymExpr to their pre-loop definitions (including identity stmts for
+   * parameters). This ensures that e.g. SymVar("arr") becomes SymParamRef(0, int[]).
+   */
+  private static SymExpr resolvePreLoopLocals(
+      final SymExpr expr, final Set<WITUpNode> body, final WITUpGraph graph) {
+    return resolvePreLoopLocals(expr, body, graph, Set.of());
+  }
+
+  private static SymExpr resolvePreLoopLocals(
+      final SymExpr expr,
+      final Set<WITUpNode> body,
+      final WITUpGraph graph,
+      final Set<String> skip) {
+    Set<String> vars = new HashSet<>();
+    expr.collectVarNames(vars);
+    vars.removeAll(skip);
+    if (vars.isEmpty()) {
+      return expr;
+    }
+
+    SymExpr result = expr;
+    for (String varName : vars) {
+      SymExpr resolved = findPreLoopDefinition(varName, body, graph);
+      if (resolved != null && !(resolved instanceof SymParamRef)) {
+        // keep SymVar for param-backed locals (e.g. arr) — Z3 resolves them via DDG
+        result = substituteInExpr(result, varName, resolved);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Find a pre-loop definition for a variable, including JIdentityStmt (parameters) and
+   * JAssignStmt.
+   */
+  private static SymExpr findPreLoopDefinition(
+      final String varName, final Set<WITUpNode> body, final WITUpGraph graph) {
+    for (WITUpNode bodyNode : body) {
+      for (DataDependencyEdge ddg : graph.getIncomingDDGEdges(bodyNode)) {
+        WITUpNode source = graph.getEdgeSource(ddg);
+        if (body.contains(source)) {
+          continue;
+        }
+        if (!(source.getNode() instanceof StmtGraphNode stmtNode)) {
+          continue;
+        }
+        if (stmtNode.getStmt() instanceof JAssignStmt assign
+            && assign.getLeftOp().toString().equals(varName)) {
+          return SymExpr.fromJimple(assign.getRightOp());
+        }
+        if (stmtNode.getStmt() instanceof JIdentityStmt identity
+            && identity.getLeftOp().toString().equals(varName)) {
+          return SymExpr.fromJimple(identity.getRightOp());
+        }
+      }
+    }
+    return null;
+  }
+
+  /** Substitute a variable in a SymExpr, handling SymArrayRef which doesn't recurse. */
+  private static SymExpr substituteInExpr(
+      final SymExpr expr, final String varName, final SymExpr replacement) {
+    if (expr instanceof SymArrayRef ref) {
+      SymExpr newArray = substituteInExpr(ref.getArray(), varName, replacement);
+      SymExpr newIndex = substituteInExpr(ref.getIndex(), varName, replacement);
+      if (newArray != ref.getArray() || newIndex != ref.getIndex()) {
+        return new SymArrayRef(newArray, newIndex);
+      }
+      return expr;
+    }
+    return expr.substitute(varName, replacement);
   }
 
   private static BinOp conditionToBinOp(final AbstractConditionExpr cond) {

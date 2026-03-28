@@ -14,7 +14,4 @@ import java.util.Set;
  * @param exitEdges CFG edges that leave the loop body
  */
 public record NaturalLoop(
-    WITUpNode header,
-    Set<WITUpNode> body,
-    WITUpEdge backEdge,
-    List<WITUpEdge> exitEdges) {}
+    WITUpNode header, Set<WITUpNode> body, WITUpEdge backEdge, List<WITUpEdge> exitEdges) {}

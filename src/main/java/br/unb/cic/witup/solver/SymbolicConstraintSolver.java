@@ -128,6 +128,11 @@ public final class SymbolicConstraintSolver {
       String id = entry.getKey();
       Expr<?> expr = entry.getValue();
       String modelKey = stripLoopInfix(descriptions.getOrDefault(id, id));
+      if (modelKey.startsWith("_u_")
+          || modelKey.startsWith("SymArrayRef@")
+          || modelKey.startsWith("$stack")) {
+        continue; // internal variables — not user-facing
+      }
       try {
         if (expr.getSort().getSortKind() == Z3_ARRAY_SORT) {
           modelValueMap.put(

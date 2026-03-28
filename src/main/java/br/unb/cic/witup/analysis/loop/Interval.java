@@ -4,11 +4,12 @@ package br.unb.cic.witup.analysis.loop;
  * Abstract value in the interval lattice for loop analysis.
  *
  * <p>The lattice has three levels:
+ *
  * <ul>
- *   <li>{@code Bottom} — the empty set (unreachable code / no possible values)</li>
- *   <li>{@code Range(lo, hi)} — a closed interval of integers. {@code Long.MIN_VALUE} and
- *       {@code Long.MAX_VALUE} represent negative and positive infinity.</li>
- *   <li>{@code Top} — the full set of integers (any value is possible)</li>
+ *   <li>{@code Bottom} — the empty set (unreachable code / no possible values)
+ *   <li>{@code Range(lo, hi)} — a closed interval of integers. {@code Long.MIN_VALUE} and {@code
+ *       Long.MAX_VALUE} represent negative and positive infinity.
+ *   <li>{@code Top} — the full set of integers (any value is possible)
  * </ul>
  *
  * <p>Bottom is below every element (join identity), Top is above every element (the "don't know"
@@ -173,8 +174,7 @@ public sealed interface Interval {
     long p3 = ra.hi() * rb.lo();
     long p4 = ra.hi() * rb.hi();
     return new Range(
-        Math.min(Math.min(p1, p2), Math.min(p3, p4)),
-        Math.max(Math.max(p1, p2), Math.max(p3, p4)));
+        Math.min(Math.min(p1, p2), Math.min(p3, p4)), Math.max(Math.max(p1, p2), Math.max(p3, p4)));
   }
 
   // ── Helpers ──

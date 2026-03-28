@@ -10,10 +10,13 @@ import br.unb.cic.witup.analysis.graph.node.CaughtExceptionNode;
 import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.loop.AccumulationInfo;
 import br.unb.cic.witup.analysis.loop.InductionInfo;
 import br.unb.cic.witup.analysis.loop.Interval;
+import br.unb.cic.witup.analysis.loop.LoopAbstractInterpreter;
 import br.unb.cic.witup.analysis.loop.LoopSummary;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymArrayRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
@@ -32,6 +35,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.LValue;
@@ -55,6 +60,7 @@ import sootup.core.types.Type;
  * to be tested by Z3.
  */
 public final class SymbolicConstraintGenerator {
+  private static final Logger log = LoggerFactory.getLogger(SymbolicConstraintGenerator.class);
   public static final String RET_PREFIX = "_ret_";
   public static final String LOOP_INFIX = "_loop_";
   private static AtomicInteger globalFreshCounter = new AtomicInteger(0);
@@ -344,6 +350,17 @@ public final class SymbolicConstraintGenerator {
       return false;
     }
 
+    // try bounded unrolling for accumulation patterns with array dependencies
+    AccumulationInfo accum = summary.accumulations().get(varName);
+    log.debug("bindFromLoopSummary: var={} accum={}", varName, accum);
+    if (accum != null && accum.inductionVar() != null) {
+      InductionInfo indVar = summary.inductionVars().get(accum.inductionVar());
+      if (indVar != null) {
+        return bindWithUnrolling(varName, accum, indVar, freeVars, env, preconditions);
+      }
+    }
+
+    // fallback: single fresh variable with interval/induction bounds
     Interval interval = summary.variableIntervals().get(varName);
     InductionInfo induction = summary.inductionVars().get(varName);
 
@@ -353,8 +370,7 @@ public final class SymbolicConstraintGenerator {
 
     if (induction != null) {
       preconditions.add(
-          new SymbolicConstraint(
-              new SymBinOp(BinOp.GE, freshVar, induction.initExpr()), true));
+          new SymbolicConstraint(new SymBinOp(BinOp.GE, freshVar, induction.initExpr()), true));
       preconditions.add(
           new SymbolicConstraint(
               new SymBinOp(induction.comparison(), freshVar, induction.boundExpr()), true));
@@ -370,8 +386,69 @@ public final class SymbolicConstraintGenerator {
                 new SymBinOp(BinOp.LE, freshVar, SymIntConst.of((int) range.hi())), true));
       }
     }
-    // Top or Range(-inf, inf): freshVar is unconstrained, no preconditions needed
     return true;
+  }
+
+  private boolean bindWithUnrolling(
+      final String varName,
+      final AccumulationInfo accum,
+      final InductionInfo indVar,
+      final Set<String> freeVars,
+      final Map<String, SymExpr> env,
+      final List<SymbolicConstraint> preconditions) {
+    int depth = LoopAbstractInterpreter.MAX_UNROLLING;
+
+    // precondition: loop bound >= depth (enough iterations)
+    preconditions.add(
+        new SymbolicConstraint(
+            new SymBinOp(BinOp.GE, indVar.boundExpr(), SymIntConst.of(depth)), true));
+
+    // build the recurrence chain
+    SymExpr prev = accum.initExpr();
+    SymVar lastVar = null;
+    for (int k = 0; k < depth; k++) {
+      SymExpr stepAtK = stepAtIteration(accum, indVar, k);
+      SymExpr iterValue = new SymBinOp(accum.operation(), prev, stepAtK);
+
+      SymVar iterVar =
+          SymVar.fresh("_u_" + varName + "_" + globalFreshCounter.getAndIncrement(), SymKind.INT);
+      preconditions.add(new SymbolicConstraint(new SymBinOp(BinOp.EQ, iterVar, iterValue), true));
+      prev = iterVar;
+      lastVar = iterVar;
+    }
+
+    // bind the original variable to the final unrolled value
+    SymVar finalVar =
+        SymVar.fresh(varName + LOOP_INFIX + globalFreshCounter.getAndIncrement(), SymKind.INT);
+    preconditions.add(new SymbolicConstraint(new SymBinOp(BinOp.EQ, finalVar, lastVar), true));
+    addBinding(freeVars, env, varName, finalVar);
+    return true;
+  }
+
+  private static SymExpr stepAtIteration(
+      final AccumulationInfo accum, final InductionInfo indVar, final int k) {
+    SymExpr indexAtK = indexAtIteration(indVar, k);
+    SymExpr step = accum.stepExpr();
+
+    // pattern-match: if stepExpr is arr[inductionVar], replace the index
+    if (step instanceof SymArrayRef ref
+        && ref.getIndex() instanceof SymVar v
+        && v.getName().equals(accum.inductionVar())) {
+      return new SymArrayRef(ref.getArray(), indexAtK);
+    }
+    // for non-array steps (e.g., constant), use as-is
+    return step;
+  }
+
+  private static SymExpr indexAtIteration(final InductionInfo indVar, final int k) {
+    long offset = k * indVar.step();
+    if (indVar.initExpr() instanceof SymIntConst initConst) {
+      return SymIntConst.of((int) (initConst.getValue() + offset));
+    }
+    if (offset == 0) {
+      return indVar.initExpr();
+    }
+    return new SymBinOp(BinOp.ADD, indVar.initExpr(), SymIntConst.of((int) offset));
   }
 
   private static SymExpr encodeImplication(

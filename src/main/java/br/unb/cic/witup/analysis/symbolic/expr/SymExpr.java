@@ -171,7 +171,7 @@ public abstract class SymExpr {
     };
   }
 
-  static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
+  public static BinOp fromJimpleBinop(final AbstractBinopExpr expr) {
     return switch (expr) {
       case JEqExpr e -> BinOp.EQ;
       case JNeExpr e -> BinOp.NE;

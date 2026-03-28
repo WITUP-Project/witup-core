@@ -363,8 +363,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   /**
    * Compute the dominator sets for every node reachable from the entry via CFG edges. dom(entry) =
-   * {entry}; dom(n) = {n} union intersection(dom(p) for p in cfgPreds(n)). Iterates until
-   * fixpoint.
+   * {entry}; dom(n) = {n} union intersection(dom(p) for p in cfgPreds(n)). Iterates until fixpoint.
    */
   public Map<WITUpNode, Set<WITUpNode>> computeDominators() {
     WITUpNode entry = findEntryNode();

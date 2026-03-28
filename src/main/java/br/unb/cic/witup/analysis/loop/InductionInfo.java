@@ -13,8 +13,4 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
  * @param comparison the relational operator from the loop exit condition (e.g. LT for {@code <})
  */
 public record InductionInfo(
-    String varName,
-    SymExpr initExpr,
-    SymExpr boundExpr,
-    long step,
-    BinOp comparison) {}
+    String varName, SymExpr initExpr, SymExpr boundExpr, long step, BinOp comparison) {}
