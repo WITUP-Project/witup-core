@@ -55,6 +55,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public final class Z3Translator implements SymExprVisitor<Expr<?>> {
+  private final Log log = LogFactory.getLog("Z3Translator");
   public static final String JAVA_LANG_OBJECT = "java.lang.Object";
   public static final String AS_STR_SUFFIX = "_as_str";
   public static final String INSTANCEOF = "_instanceof_";
@@ -72,8 +73,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
   public static final int MAX_DESCRIPTION_CHARS = 256;
-  private final Log log = LogFactory.getLog("Z3Translator");
-
+  private final Map<SymExpr, Expr<?>> exprCache = new IdentityHashMap<>();
+  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>();
   private final Map<SymExpr, String> exprIds = new IdentityHashMap<>();
   private final Map<String, String> idToTruncatedDescription = new HashMap<>();
   private int exprCounter = 0;
@@ -83,14 +84,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     this.sortInferrer = new Z3SortDetector(context);
   }
 
-  public Map<String, Expr<?>> getDeclarations() {
-    return Collections.unmodifiableMap(exprMap);
-  }
-
   // entry point — translates a full constraint including truth value
   public BoolExpr translateConstraint(final SymbolicConstraint constraint) {
     try {
-      Expr<?> expr = constraint.symExpr().accept(this);
+      Expr<?> expr = translate(constraint.symExpr());
       BoolExpr boolExpr = coerceToBool(expr);
       return constraint.truthValue() ? boolExpr : context.mkNot(boolExpr);
     } catch (Exception e) {
@@ -103,6 +100,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     }
   }
 
+  public Expr<?> translate(final SymExpr expr) {
+    return exprCache.computeIfAbsent(expr, e -> e.accept(this));
+  }
+
+  public Map<String, Expr<?>> getDeclarations() {
+    return Collections.unmodifiableMap(exprMap);
+  }
+
   private BoolExpr coerceToBool(final Expr<?> expr) {
     if (expr instanceof BoolExpr b) {
       return b;
@@ -110,10 +115,14 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return context.mkNot(context.mkEq(expr, context.mkInt(0)));
   }
 
+  private Sort sortOf(final Expr<?> e) {
+    return sortCache.computeIfAbsent(e, Expr::getSort);
+  }
+
   @Override
   public Expr<?> visitBinOp(final SymBinOp b) {
-    Expr<?> left = b.getLhs().accept(this);
-    Expr<?> right = b.getRhs().accept(this);
+    Expr<?> left = translate(b.getLhs());
+    Expr<?> right = translate(b.getRhs());
 
     if (b.getOp() == BinOp.EQ || b.getOp() == BinOp.NE) {
       return buildEqualityExpr(b.getOp(), left, right);
@@ -146,8 +155,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private record ExprPair(Expr<?> lhs, Expr<?> rhs) {}
 
   private ExprPair coerceForEquality(final Expr<?> lhs, final Expr<?> rhs) {
-    Sort leftSort = lhs.getSort();
-    Sort rightSort = rhs.getSort();
+    Sort leftSort = sortOf(lhs);
+    Sort rightSort = sortOf(rhs);
     if (leftSort.equals(rightSort)) {
       return new ExprPair(lhs, rhs);
     }
@@ -250,7 +259,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     if (expr instanceof BoolExpr b) {
       return (ArithExpr<IntSort>) context.mkITE(b, context.mkInt(1), context.mkInt(0));
     }
-    Sort sort = expr.getSort();
+    Sort sort = sortOf(expr);
     if (sort.equals(context.getIntSort()) || sort.equals(context.getRealSort())) {
       return (ArithExpr<IntSort>) expr;
     }
@@ -300,7 +309,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitFieldAccess(final SymFieldAccess f) {
-    Expr<?> base = f.getBase().accept(this);
+    Expr<?> base = translate(f.getBase());
     String key = toFieldKEy(f, base);
     Expr<?> cached = exprMap.get(key);
     if (cached != null) {
@@ -397,8 +406,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       return cached;
     }
 
-    Expr<?> arrayExpr = ref.getArray().accept(this);
-    Expr<?> indexExpr = ref.getIndex().accept(this);
+    Expr<?> arrayExpr = translate(ref.getArray());
+    Expr<?> indexExpr = translate(ref.getIndex());
     Expr<?> result = context.mkSelect((ArrayExpr<IntSort, Sort>) arrayExpr, (IntExpr) indexExpr);
     exprMap.put(key, result);
     return result;
@@ -435,7 +444,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
             fieldName,
             f ->
                 context.mkFuncDecl(
-                    FIELD_DECL_PREFIX + f, new Sort[] {base.getSort()}, context.getIntSort()));
+                    FIELD_DECL_PREFIX + f, new Sort[] {sortOf(base)}, context.getIntSort()));
 
     return context.mkApp(fieldDecl, base);
   }
@@ -480,7 +489,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitNeg(final SymNeg n) {
-    return context.mkUnaryMinus((ArithExpr<IntSort>) n.getOperand().accept(this));
+    return context.mkUnaryMinus((ArithExpr<IntSort>) translate(n.getOperand()));
   }
 
   @Override
@@ -492,9 +501,9 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitITE(final SymITE ite) {
-    Expr<?> condExprRaw = ite.getCondition().accept(this);
-    Expr<?> thenExpr = ite.getThenExpr().accept(this);
-    Expr<?> elseExpr = ite.getElseExpr().accept(this);
+    Expr<?> condExprRaw = translate(ite.getCondition());
+    Expr<?> thenExpr = translate(ite.getThenExpr());
+    Expr<?> elseExpr = translate(ite.getElseExpr());
 
     // coerce condition to BoolExpr if it is an IntExpr
     BoolExpr condExpr;
@@ -507,7 +516,9 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       throw new IllegalStateException("Unexpected ITE condition type: " + condExprRaw.getClass());
     }
 
-    if (!thenExpr.getSort().equals(elseExpr.getSort())) {
+    Sort thenSort = sortOf(thenExpr);
+    Sort elseSort = sortOf(elseExpr);
+    if (!thenSort.equals(elseSort)) {
       thenExpr = toArith(thenExpr);
       elseExpr = toArith(elseExpr);
     }

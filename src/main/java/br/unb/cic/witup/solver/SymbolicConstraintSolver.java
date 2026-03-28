@@ -139,6 +139,7 @@ public final class SymbolicConstraintSolver {
           modelValueMap.put(modelKey, ModelValue.fromExpr(evaluated, model, ctx));
         }
       } catch (IllegalStateException ignored) {
+        log.info("extractDeclarations failed for {} in expr {}", id, expr);
       }
     }
   }
