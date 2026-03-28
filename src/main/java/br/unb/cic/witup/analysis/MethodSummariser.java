@@ -8,6 +8,7 @@ import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,7 +173,37 @@ public final class MethodSummariser implements SummaryResolver {
         precondition = precondition.substituteParam(idx, actual);
       }
     }
-    var result = Optional.of(new ResolvedCallee(returnExpr, precondition));
+
+    List<GuardedExpr> guardedReturn = null;
+    if (summary.getGuardedReturn() != null) {
+      guardedReturn = new ArrayList<>(summary.getGuardedReturn().size());
+      for (GuardedExpr ge : summary.getGuardedReturn()) {
+        GuardedExpr substituted = ge;
+        for (int i = 0; i < formals.size(); i++) {
+          substituted = substituted.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+        }
+        guardedReturn.add(substituted);
+      }
+    }
+
+    List<List<SymbolicConstraint>> throwPaths = null;
+    if (summary.getThrowPathConditions() != null) {
+      throwPaths = new ArrayList<>(summary.getThrowPathConditions().size());
+      for (List<SymbolicConstraint> path : summary.getThrowPathConditions()) {
+        List<SymbolicConstraint> substituted = new ArrayList<>(path.size());
+        for (SymbolicConstraint c : path) {
+          SymExpr expr = c.symExpr();
+          for (int i = 0; i < formals.size(); i++) {
+            expr = expr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+          }
+          substituted.add(new SymbolicConstraint(expr, c.truthValue()));
+        }
+        throwPaths.add(substituted);
+      }
+    }
+
+    var result =
+        Optional.of(new ResolvedCallee(returnExpr, precondition, guardedReturn, throwPaths));
     instantiationCache.put(key, result);
     return result;
   }
