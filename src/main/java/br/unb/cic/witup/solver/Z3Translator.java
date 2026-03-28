@@ -72,11 +72,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
   public static final int MAX_DESCRIPTION_CHARS = 256;
-  private final Map<SymExpr, Expr<?>> exprCache = new IdentityHashMap<>();
-  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>();
-  private final Map<SymExpr, String> exprIds = new IdentityHashMap<>();
-  private final Map<String, String> idToTruncatedDescription = new HashMap<>();
-  private final Map<Integer, IntNum> intConstCache = new HashMap<>();
+  private final Map<SymExpr, Expr<?>> exprCache = new IdentityHashMap<>(2048);
+  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(2048);
+  private final Map<SymExpr, String> exprIds = new IdentityHashMap<>(2048);
+  private final Map<String, String> idToTruncatedDescription = new HashMap<>(2048);
+  private final Map<Integer, IntNum> intConstCache = new HashMap<>(2048);
   private int exprCounter = 0;
   private final IntNum zero;
   private final IntNum one;
