@@ -51,6 +51,7 @@ import sootup.core.types.Type;
  * to be tested by Z3.
  */
 public final class SymbolicConstraintGenerator {
+  public static final String RET_PREFIX = "_ret_";
   private final WITUpGraph cpg;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   private final SummaryResolver resolver;
@@ -263,7 +264,7 @@ public final class SymbolicConstraintGenerator {
             if (callee.guardedReturn() != null) {
               SymVar freshVar =
                   SymVar.fresh(
-                      "_ret_" + freshVarCounter++,
+                      RET_PREFIX + freshVarCounter++,
                       callee.guardedReturn().isEmpty()
                           ? SymKind.INT
                           : callee.guardedReturn().getFirst().value().getKind());
