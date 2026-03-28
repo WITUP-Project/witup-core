@@ -297,6 +297,16 @@ public abstract class SymExpr {
     return name.contains("valueOf");
   }
 
+  // e.g. valueOf(e) -> e //
+  public static SymExpr stripBoxing(final SymExpr expr) {
+    if (expr instanceof SymStaticInvoke si
+        && isBoxingCall(si.getInvokeName())
+        && si.getArgs().length == 1) {
+      return si.getArgs()[0];
+    }
+    return expr;
+  }
+
   private static boolean isZeroConst(final SymExpr expr) {
     return switch (expr) {
       case SymConst c ->

@@ -17,6 +17,7 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,6 +55,7 @@ public final class SymbolicConstraintGenerator {
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
+  private int freshVarCounter = 0;
   public static final int MAX_THROW_FREE_PATHS = 1;
 
   public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
@@ -335,9 +337,31 @@ public final class SymbolicConstraintGenerator {
         if (resolved.isPresent()) {
           String definedVar = getVariableName(assign.getLeftOp());
           if (freeVars.contains(definedVar)) {
-            addBinding(freeVars, env, definedVar, resolved.get().returnExpr());
-            if (resolved.get().precondition() != null) {
-              extraConstraints.add(new SymbolicConstraint(resolved.get().precondition(), true));
+            ResolvedCallee callee = resolved.get();
+            if (callee.guardedReturn() != null) {
+              SymVar freshVar =
+                  SymVar.fresh(
+                      "_ret_" + freshVarCounter++,
+                      callee.guardedReturn().isEmpty()
+                          ? SymKind.INT
+                          : callee.guardedReturn().getFirst().value().getKind());
+              addBinding(freeVars, env, definedVar, freshVar);
+              for (GuardedExpr ge : callee.guardedReturn()) {
+                SymExpr eq = new SymBinOp(BinOp.EQ, freshVar, ge.value());
+                SymExpr implication = encodeImplication(ge.guard(), eq);
+                extraConstraints.add(new SymbolicConstraint(implication, true));
+              }
+              if (callee.throwPathConditions() != null) {
+                for (List<SymbolicConstraint> throwPath : callee.throwPathConditions()) {
+                  SymExpr throwGuard = encodeConjunction(throwPath);
+                  extraConstraints.add(new SymbolicConstraint(throwGuard, false));
+                }
+              }
+            } else {
+              addBinding(freeVars, env, definedVar, callee.returnExpr());
+              if (callee.precondition() != null) {
+                extraConstraints.add(new SymbolicConstraint(callee.precondition(), true));
+              }
             }
             collectBindings(freeVars, env, sourceNode, visited, followIdentity, extraConstraints);
           }
@@ -382,6 +406,32 @@ public final class SymbolicConstraintGenerator {
     expr.collectVarNames(freeVars);
   }
 
+  private static SymExpr encodeImplication(
+      final List<SymbolicConstraint> guard, final SymExpr consequent) {
+    if (guard.isEmpty()) {
+      return consequent;
+    }
+    SymExpr result = consequent;
+    for (int i = guard.size() - 1; i >= 0; i--) {
+      SymbolicConstraint c = guard.get(i);
+      SymExpr cond =
+          c.truthValue() ? c.symExpr() : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
+      result = new SymITE(cond, result, SymIntConst.one());
+    }
+    return result;
+  }
+
+  private static SymExpr encodeConjunction(final List<SymbolicConstraint> constraints) {
+    SymExpr result = SymIntConst.one();
+    for (int i = constraints.size() - 1; i >= 0; i--) {
+      SymbolicConstraint c = constraints.get(i);
+      SymExpr cond =
+          c.truthValue() ? c.symExpr() : new SymBinOp(BinOp.EQ, c.symExpr(), SymIntConst.zero());
+      result = new SymITE(cond, result, SymIntConst.zero());
+    }
+    return result;
+  }
+
   public SymExpr buildPathCondition(final ReturnStatementNode returnNode) {
     List<WITUpPath> paths = cpg.getAllPathsToReturn(returnNode);
     if (paths.isEmpty()) {
@@ -423,7 +473,7 @@ public final class SymbolicConstraintGenerator {
   private List<GuardedExpr> generateReturnGuarded(final ReturnStatementNode returnNode) {
     List<WITUpPath> paths = cpg.getAllPathsToReturn(returnNode);
     if (paths.isEmpty()) {
-      SymExpr value = SymExpr.fromJimple(returnNode.getOp());
+      SymExpr value = SymExpr.stripBoxing(SymExpr.fromJimple(returnNode.getOp()));
       return List.of(new GuardedExpr(List.of(), value));
     }
 
@@ -431,6 +481,7 @@ public final class SymbolicConstraintGenerator {
     for (WITUpPath path : paths) {
       setCurrentPath(path);
       SymExpr value = substitute(SymExpr.fromJimple(returnNode.getOp()), returnNode);
+      value = SymExpr.stripBoxing(value);
       List<SymbolicConstraint> guard = generateSymbolicConstraints(path);
       result.add(new GuardedExpr(guard, value));
     }
