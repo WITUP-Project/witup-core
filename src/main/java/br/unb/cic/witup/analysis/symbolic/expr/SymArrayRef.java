@@ -2,6 +2,7 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Set;
 import sootup.core.jimple.common.ref.JArrayRef;
 
 public final class SymArrayRef extends SymExpr {
@@ -60,6 +61,12 @@ public final class SymArrayRef extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return array.toString().contains(varName);
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    array.collectVarNames(vars);
+    index.collectVarNames(vars);
   }
 
   public SymKind kind() {

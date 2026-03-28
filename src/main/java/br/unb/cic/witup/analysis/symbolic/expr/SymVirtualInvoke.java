@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Map;
+import java.util.Set;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
 import sootup.core.types.PrimitiveType;
 
@@ -124,6 +126,32 @@ public final class SymVirtualInvoke extends SymExpr {
       }
     }
     return false;
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    base.collectVarNames(vars);
+    for (SymExpr arg : args) {
+      arg.collectVarNames(vars);
+    }
+  }
+
+  @Override
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    SymExpr newBase = base.resolveWith(env);
+    SymExpr[] newArgs = null;
+    for (int i = 0; i < args.length; i++) {
+      SymExpr newArg = args[i].resolveWith(env);
+      if (newArg != args[i]) {
+        if (newArgs == null) {
+          newArgs = args.clone();
+        }
+        newArgs[i] = newArg;
+      }
+    }
+    return (newBase != base || newArgs != null)
+        ? new SymVirtualInvoke(newBase, signature, returnsBoolean, newArgs != null ? newArgs : args)
+        : this;
   }
 
   @Override

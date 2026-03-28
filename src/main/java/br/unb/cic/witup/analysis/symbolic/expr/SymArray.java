@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Map;
+import java.util.Set;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 
 /** Represents an allocated array */
@@ -82,5 +84,21 @@ public final class SymArray extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return size != null && size.contains(varName);
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    if (size != null) {
+      size.collectVarNames(vars);
+    }
+  }
+
+  @Override
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    if (size == null) {
+      return this;
+    }
+    SymExpr newSize = size.resolveWith(env);
+    return (newSize != size) ? new SymArray("newarray", objectType, newSize, getKind()) : this;
   }
 }

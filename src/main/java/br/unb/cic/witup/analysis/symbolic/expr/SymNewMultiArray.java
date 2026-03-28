@@ -4,6 +4,8 @@ import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import sootup.core.jimple.common.expr.JNewMultiArrayExpr;
 
@@ -85,6 +87,28 @@ public final class SymNewMultiArray extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return sizes.stream().anyMatch(s -> s.contains(varName));
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    for (SymExpr size : sizes) {
+      size.collectVarNames(vars);
+    }
+  }
+
+  @Override
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    List<SymExpr> newSizes = null;
+    for (int i = 0; i < sizes.size(); i++) {
+      SymExpr newSize = sizes.get(i).resolveWith(env);
+      if (newSize != sizes.get(i)) {
+        if (newSizes == null) {
+          newSizes = new ArrayList<>(sizes);
+        }
+        newSizes.set(i, newSize);
+      }
+    }
+    return newSizes != null ? new SymNewMultiArray(objectType, newSizes) : this;
   }
 
   @Override

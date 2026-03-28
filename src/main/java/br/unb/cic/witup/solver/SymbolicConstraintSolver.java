@@ -35,7 +35,7 @@ public final class SymbolicConstraintSolver {
   public static final String FIELD_FUNC_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
   public static final int TWENTY_SECONDS = 20000;
-  static final int MAX_CONSTRAINT_DEPTH = 50;
+  static final int MAX_CONSTRAINT_DEPTH = 100;
   private final Map<String, MethodSummary> methodSummaries;
   private final Context ctx = new Context();
   private final Solver solver = ctx.mkSolver();
@@ -139,6 +139,7 @@ public final class SymbolicConstraintSolver {
           modelValueMap.put(modelKey, ModelValue.fromExpr(evaluated, model, ctx));
         }
       } catch (IllegalStateException ignored) {
+        log.info("extractDeclarations failed for {} in expr {}", id, expr);
       }
     }
   }

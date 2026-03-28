@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Map;
+import java.util.Set;
 import sootup.core.jimple.common.expr.AbstractBinopExpr;
 
 public final class SymBinOp extends SymExpr {
@@ -96,6 +98,19 @@ public final class SymBinOp extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return lhs.contains(varName) || rhs.contains(varName);
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    lhs.collectVarNames(vars);
+    rhs.collectVarNames(vars);
+  }
+
+  @Override
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    SymExpr newLhs = lhs.resolveWith(env);
+    SymExpr newRhs = rhs.resolveWith(env);
+    return (newLhs != lhs || newRhs != rhs) ? new SymBinOp(op, newLhs, newRhs) : this;
   }
 
   @Override

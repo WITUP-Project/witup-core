@@ -1,6 +1,9 @@
 package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
+import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Map;
+import java.util.Set;
 import sootup.core.jimple.basic.Local;
 
 public final class SymVar extends SymExpr {
@@ -11,6 +14,16 @@ public final class SymVar extends SymExpr {
     super(fromJimpleType(l.getType()));
     this.name = l.getName();
     this.typeName = l.getType().toString();
+  }
+
+  private SymVar(final String name, final SymKind kind) {
+    super(kind);
+    this.name = name;
+    this.typeName = kind.toString();
+  }
+
+  public static SymVar fresh(final String name, final SymKind kind) {
+    return new SymVar(name, kind);
   }
 
   @Override
@@ -37,6 +50,22 @@ public final class SymVar extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return this.name.equals(varName);
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    vars.add(name);
+  }
+
+  @Override
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    SymExpr replacement = env.remove(name);
+    if (replacement == null) {
+      return this;
+    }
+    SymExpr result = replacement.resolveWith(env);
+    env.put(name, replacement);
+    return result;
   }
 
   @Override

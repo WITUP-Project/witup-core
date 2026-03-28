@@ -2,6 +2,7 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Set;
 import sootup.core.jimple.common.expr.JInstanceOfExpr;
 
 public final class SymInstanceOf extends SymExpr {
@@ -44,5 +45,10 @@ public final class SymInstanceOf extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return op.contains(varName);
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    op.collectVarNames(vars);
   }
 }

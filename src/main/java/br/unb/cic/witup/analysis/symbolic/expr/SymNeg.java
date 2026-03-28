@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Map;
+import java.util.Set;
 import sootup.core.jimple.common.expr.JNegExpr;
 
 public final class SymNeg extends SymExpr {
@@ -49,6 +51,17 @@ public final class SymNeg extends SymExpr {
   @Override
   public boolean contains(final String varName) {
     return operand.contains(varName);
+  }
+
+  @Override
+  public void collectVarNames(final Set<String> vars) {
+    operand.collectVarNames(vars);
+  }
+
+  @Override
+  public SymExpr resolveWith(final Map<String, SymExpr> env) {
+    SymExpr newOperand = operand.resolveWith(env);
+    return (newOperand != operand) ? new SymNeg(newOperand, getKind()) : this;
   }
 
   @Override

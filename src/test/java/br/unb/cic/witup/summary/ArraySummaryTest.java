@@ -41,7 +41,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
     // return expr
-    assertEquals("arr[i]", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -67,7 +68,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     // return expr
-    assertEquals("arr.length", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("arr.length", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -97,7 +99,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
     // return expr
-    assertEquals("newarray(int[])[n]", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("newarray(int[])[n]", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -123,7 +126,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-    assertEquals("arr[i]", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -149,7 +153,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-    assertEquals("arr[i]", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -179,7 +184,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-    assertEquals("arr[i]", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -322,7 +328,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(1).getKind());
 
-    assertEquals("arr", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("arr", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -364,7 +371,8 @@ public class ArraySummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-    assertEquals("arr[i]", summary.getReturnExpr().toString());
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("arr[i]", summary.getGuardedReturn().getFirst().value().toString());
   }
 
   @Test
@@ -391,6 +399,7 @@ public class ArraySummaryTest {
     assertEquals(SymKind.INT, summary.getFormalParams().get(1).getKind());
     assertEquals(SymKind.OBJECT, summary.getFormalParams().get(2).getKind());
 
-    assertTrue(summary.getReturnExpr().toString().contains("newmultiarray(int[][])[rows][cols]"));
+    assertEquals(1, summary.getGuardedReturn().size());
+    assertEquals("newmultiarray(int[][])[rows][cols]", summary.getGuardedReturn().getFirst().value().toString());
   }
 }

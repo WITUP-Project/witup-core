@@ -170,62 +170,52 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return throwConditionNodes;
   }
 
-  private record DFSEntry(WITUpNode node, WITUpEdge edge, DFSEntry parent) {
-    boolean contains(final WITUpNode n) {
-      for (DFSEntry e = this; e != null; e = e.parent) {
-        if (e.node.equals(n)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    WITUpPath toPath() {
-      int len = 0;
-      for (DFSEntry e = this; e != null; e = e.parent) {
-        len++;
-      }
-      List<WITUpNode> nodes = new ArrayList<>(len);
-      List<WITUpEdge> edges = new ArrayList<>(len - 1);
-      for (DFSEntry e = this; e != null; e = e.parent) {
-        nodes.add(e.node);
-        if (e.edge != null) {
-          edges.add(e.edge);
-        }
-      }
-      return new WITUpPath(nodes, edges);
-    }
-  }
-
   private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
     List<WITUpPath> result = new ArrayList<>();
-    Deque<DFSEntry> stack = new ArrayDeque<>();
-    stack.push(new DFSEntry(end, null, null));
+    Set<WITUpNode> visited = new HashSet<>();
+    List<WITUpNode> pathNodes = new ArrayList<>();
+    List<WITUpEdge> pathEdges = new ArrayList<>();
+    visited.add(end);
+    pathNodes.add(end);
+    backDFS(start, end, visited, pathNodes, pathEdges, result);
+    return result;
+  }
 
-    while (!stack.isEmpty()) {
-      DFSEntry current = stack.pop();
-
-      if (current.node.equals(start)) {
-        result.add(current.toPath());
-        if (result.size() >= MAX_CONSTRAINT_PATHS) {
-          log.info(
-              "Path count truncated to {} for {} in {}",
-              MAX_CONSTRAINT_PATHS,
-              end,
-              getMethodSignature());
-          break;
-        }
-        continue;
+  private void backDFS(
+      final WITUpNode start,
+      final WITUpNode current,
+      final Set<WITUpNode> visited,
+      final List<WITUpNode> pathNodes,
+      final List<WITUpEdge> pathEdges,
+      final List<WITUpPath> result) {
+    if (current.equals(start)) {
+      result.add(new WITUpPath(new ArrayList<>(pathNodes), new ArrayList<>(pathEdges)));
+      if (result.size() >= MAX_CONSTRAINT_PATHS) {
+        log.info(
+            "Path count truncated to {} for {} in {}",
+            MAX_CONSTRAINT_PATHS,
+            current,
+            getMethodSignature());
       }
+      return;
+    }
 
-      for (WITUpEdge edge : cfgIncomingEdgesOf(current.node)) {
-        WITUpNode pred = edge.getSource();
-        if (!current.contains(pred)) {
-          stack.push(new DFSEntry(pred, edge, current));
-        }
+    List<WITUpEdge> incoming = cfgIncomingEdgesOf(current);
+    for (int i = incoming.size() - 1; i >= 0; i--) {
+      if (result.size() >= MAX_CONSTRAINT_PATHS) {
+        return;
+      }
+      WITUpEdge edge = incoming.get(i);
+      WITUpNode pred = edge.getSource();
+      if (visited.add(pred)) {
+        pathNodes.add(pred);
+        pathEdges.add(edge);
+        backDFS(start, pred, visited, pathNodes, pathEdges, result);
+        pathNodes.removeLast();
+        pathEdges.removeLast();
+        visited.remove(pred);
       }
     }
-    return result;
   }
 
   private List<WITUpPath> forwardDFS(final WITUpNode start, final WITUpNode end) {
@@ -286,7 +276,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return pathsWithConstraints;
   }
 
-  private void buildCfgMaps() {
+  private void buildCFGAdjacencies() {
     if (cfgIncoming != null) {
       return;
     }
@@ -301,12 +291,12 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   private List<WITUpEdge> cfgIncomingEdgesOf(final WITUpNode node) {
-    buildCfgMaps();
+    buildCFGAdjacencies();
     return cfgIncoming.getOrDefault(node, List.of());
   }
 
   private List<WITUpEdge> cfgOutgoingEdgesOf(final WITUpNode node) {
-    buildCfgMaps();
+    buildCFGAdjacencies();
     return cfgOutgoing.getOrDefault(node, List.of());
   }
 
@@ -344,7 +334,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   public List<ThrowConstraint> getThrowConstraints(final WITUpPath path) {
     List<ThrowConstraint> throwConstraints = new ArrayList<>();
-    for (WITUpEdge e : path.edges()) {
+    for (WITUpEdge e : path.edges().reversed()) {
       if (e instanceof BooleanCFGEdge boolEdge) {
         throwConstraints.add(new ThrowConstraint(e.getSource(), boolEdge.getCondition()));
       } else if (e instanceof ExceptionalCFGEdge) {
