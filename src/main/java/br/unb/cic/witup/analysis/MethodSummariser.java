@@ -3,6 +3,7 @@ package br.unb.cic.witup.analysis;
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
+import br.unb.cic.witup.analysis.symbolic.GuardedExpr;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
@@ -82,9 +83,16 @@ public final class MethodSummariser implements SummaryResolver {
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
     SymExpr returnExpr = symbolicConstraintGenerator.traceReturnExpr();
     SymExpr throwFreePrecondition = symbolicConstraintGenerator.buildThrowFreePrecondition(paths);
+    List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceReturnGuarded();
     MethodSummary summary =
         new MethodSummary(
-            cpg.getMethodSignature(), exceptionPaths, formals, returnExpr, throwFreePrecondition);
+            cpg.getMethodSignature(),
+            exceptionPaths,
+            formals,
+            returnExpr,
+            throwFreePrecondition,
+            guardedReturn,
+            paths);
 
     if (summaryRepository != null) {
       summaryRepository.putSummary(sig, summary);
