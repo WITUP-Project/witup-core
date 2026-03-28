@@ -127,7 +127,7 @@ public final class SymbolicConstraintSolver {
     for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
       String id = entry.getKey();
       Expr<?> expr = entry.getValue();
-      String modelKey = descriptions.getOrDefault(id, id);
+      String modelKey = stripLoopInfix(descriptions.getOrDefault(id, id));
       try {
         if (expr.getSort().getSortKind() == Z3_ARRAY_SORT) {
           modelValueMap.put(
@@ -173,5 +173,9 @@ public final class SymbolicConstraintSolver {
 
   private String toModelKey(final String name) {
     return name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
+  }
+
+  private static String stripLoopInfix(final String key) {
+    return key.replaceAll("_loop_\\d+", "");
   }
 }
