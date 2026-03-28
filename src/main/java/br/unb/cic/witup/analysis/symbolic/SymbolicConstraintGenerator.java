@@ -64,21 +64,19 @@ public final class SymbolicConstraintGenerator {
   }
 
   public List<SymbolicConstraint> generateSymbolicConstraints(final WITUpPath p) {
-
-    this.setCurrentPath(p);
+    setCurrentPath(p);
     List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
     for (ThrowConstraint throwConstraint : cpg.getThrowConstraints(p)) {
       StmtGraphNode n = (StmtGraphNode) throwConstraint.node().getNode();
+      List<SymbolicConstraint> preconditions = new ArrayList<>();
 
-      List<SymbolicConstraint> extraConstraints = new ArrayList<>();
       SymExpr symExpr;
-
       if (n.getStmt() instanceof JIfStmt ifStmt) {
         SubstituteResult result =
             substituteWithPreconditions(
                 SymExpr.fromJimple(ifStmt.getCondition()), throwConstraint.node());
         symExpr = result.expr();
-        extraConstraints.addAll(result.preconditions());
+        preconditions.addAll(result.preconditions());
       } else if (throwConstraint.node() instanceof CaughtExceptionNode caught) {
         symExpr = new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
       } else {
@@ -91,7 +89,7 @@ public final class SymbolicConstraintGenerator {
       if (symExpr.getKind() == SymKind.BOOLEAN_METHOD) {
         truthValue = !truthValue;
       }
-      symbolicConstraints.addAll(extraConstraints);
+      symbolicConstraints.addAll(preconditions);
       symbolicConstraints.add(new SymbolicConstraint(symExpr, truthValue));
     }
     return symbolicConstraints;
