@@ -53,10 +53,8 @@ import sootup.core.types.Type;
 public final class SymbolicConstraintGenerator {
   private final WITUpGraph cpg;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
-  // for now, resolver being null means intraprocedural. fix me when poc is done
   private final SummaryResolver resolver;
   private int freshVarCounter = 0;
-  public static final int MAX_THROW_FREE_PATHS = 1;
 
   public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
     this.cpg = cpg;
@@ -122,7 +120,7 @@ public final class SymbolicConstraintGenerator {
   private SubstituteResult substituteWithPreconditions(
       final SymExpr initial, final WITUpNode startNode) {
     List<SymbolicConstraint> preconditions = new ArrayList<>();
-    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false, preconditions);
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), preconditions);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
     symExpr = SymExpr.stripBooleanEncoding(symExpr);
@@ -132,7 +130,7 @@ public final class SymbolicConstraintGenerator {
   private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
     // when substituting inside, no need to consider constraints from other methods
     List<SymbolicConstraint> ignored = new ArrayList<>();
-    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), false, ignored);
+    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), ignored);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
     return SymExpr.stripBooleanEncoding(symExpr);
@@ -153,12 +151,8 @@ public final class SymbolicConstraintGenerator {
 
   private Optional<ResolvedCallee> tryResolveLambda(
       final JInterfaceInvokeExpr invoke, final WITUpNode node) {
-    if (resolver == null) {
-      return Optional.empty();
-    }
 
     String receiverName = invoke.getBase().toString();
-
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(node)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
       if (nodeNotInPath(sourceNode)) {
@@ -208,7 +202,6 @@ public final class SymbolicConstraintGenerator {
       final SymExpr symExpr,
       final WITUpNode currentNode,
       final Set<WITUpNode> visited,
-      final boolean followIdentity,
       final List<SymbolicConstraint> extraConstraints) {
 
     Set<String> freeVars = new HashSet<>();
@@ -217,7 +210,7 @@ public final class SymbolicConstraintGenerator {
       return symExpr;
     }
     Map<String, SymExpr> env = new HashMap<>();
-    collectBindings(freeVars, env, currentNode, visited, followIdentity, extraConstraints);
+    collectBindings(freeVars, env, currentNode, visited, false, extraConstraints);
     return env.isEmpty() ? symExpr : symExpr.resolveWith(env);
   }
 
@@ -388,10 +381,6 @@ public final class SymbolicConstraintGenerator {
   }
 
   private Optional<ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
-    if (resolver == null) {
-      return Optional.empty();
-    }
-
     String calleeSig;
     List<SymExpr> actuals;
 
