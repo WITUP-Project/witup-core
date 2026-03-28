@@ -39,6 +39,7 @@ public final class SymbolicConstraintSolver {
   private final Map<String, MethodSummary> methodSummaries;
   private final Context ctx = new Context();
   private final Solver solver = ctx.mkSolver();
+  private final Z3Translator translator = new Z3Translator(ctx);
 
   // the method that receives method summaries needs to, for each set
   // of symbolic constraints, translate them to z3, solve
@@ -72,7 +73,7 @@ public final class SymbolicConstraintSolver {
 
   public SolverResult checkPath(final String pathId, final List<SymbolicConstraint> constraints) {
     solver.push();
-    Z3Translator translator = new Z3Translator(ctx);
+    translator.resetForNewPath();
 
     int skipped = 0;
     for (int i = 0; i < constraints.size(); i++) {
@@ -101,7 +102,7 @@ public final class SymbolicConstraintSolver {
     boolean isSat = status == Status.SATISFIABLE;
 
     Model model = isSat ? solver.getModel() : null;
-    Map<String, ModelValue> modelValueMap = isSat ? extractModel(model, translator) : Map.of();
+    Map<String, ModelValue> modelValueMap = isSat ? extractModel(model) : Map.of();
 
     solver.pop();
 
@@ -109,12 +110,12 @@ public final class SymbolicConstraintSolver {
     return new SolverResult(pathId, solverStatus, modelValueMap);
   }
 
-  private Map<String, ModelValue> extractModel(final Model model, final Z3Translator translator) {
+  private Map<String, ModelValue> extractModel(final Model model) {
     Map<String, ModelValue> modelValueMap = new HashMap<>();
 
     // should cover variables, virtual invokes, lengths, casts, field accesses
     // when they are all implemented
-    extractDeclarations(model, translator, modelValueMap);
+    extractDeclarations(model, modelValueMap);
     // Also extract field functions (arity-1 decls named "field_*")
     extractFieldFunctions(model, ctx, modelValueMap);
 
@@ -123,7 +124,6 @@ public final class SymbolicConstraintSolver {
 
   private void extractDeclarations(
       final Model model,
-      final Z3Translator translator,
       final Map<String, ModelValue> modelValueMap) {
     Map<String, String> descriptions = translator.getIdDescriptions();
     for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
