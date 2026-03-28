@@ -60,7 +60,6 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String AS_STR_SUFFIX = "_as_str";
   public static final String INSTANCEOF = "_instanceof_";
   public static final String FIELD_DECL_PREFIX = "field_";
-  public static final String ARRAY_SELECT = "select:";
   public static final String IS_NULL = "_is_null";
   public static final String NULL_STR = "__null__";
   public static final String THIS_STR = "__this__";
@@ -73,15 +72,34 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
   public static final int MAX_DESCRIPTION_CHARS = 256;
-  private final Map<SymExpr, Expr<?>> exprCache = new IdentityHashMap<>();
-  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>();
-  private final Map<SymExpr, String> exprIds = new IdentityHashMap<>();
-  private final Map<String, String> idToTruncatedDescription = new HashMap<>();
+  private final Map<SymExpr, Expr<?>> exprCache = new IdentityHashMap<>(2048);
+  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(2048);
+  private final Map<SymExpr, String> exprIds = new IdentityHashMap<>(2048);
+  private final Map<String, String> idToTruncatedDescription = new HashMap<>(2048);
+  private final Map<Integer, IntNum> intConstCache = new HashMap<>(2048);
   private int exprCounter = 0;
+  private final IntNum zero;
+  private final IntNum one;
 
   public Z3Translator(final Context context) {
     this.context = context;
     this.sortInferrer = new Z3SortDetector(context);
+    this.zero = context.mkInt(0);
+    this.one = context.mkInt(1);
+    intConstCache.put(0, zero);
+    intConstCache.put(1, one);
+  }
+
+  /**
+   * Clears per-path state (declarations, IDs, descriptions) while preserving
+   * cross-path caches (exprCache, sortCache, intConstCache).
+   */
+  public void resetForNewPath() {
+    exprMap.clear();
+    fieldFunctions.clear();
+    exprIds.clear();
+    idToTruncatedDescription.clear();
+    exprCounter = 0;
   }
 
   // entry point — translates a full constraint including truth value
@@ -112,7 +130,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     if (expr instanceof BoolExpr b) {
       return b;
     }
-    return context.mkNot(context.mkEq(expr, context.mkInt(0)));
+    return context.mkNot(context.mkEq(expr, zero));
   }
 
   private Sort sortOf(final Expr<?> e) {
@@ -154,6 +172,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   private record ExprPair(Expr<?> lhs, Expr<?> rhs) {}
 
+  @SuppressWarnings("unchecked")
   private ExprPair coerceForEquality(final Expr<?> lhs, final Expr<?> rhs) {
     Sort leftSort = sortOf(lhs);
     Sort rightSort = sortOf(rhs);
@@ -164,6 +183,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Sort nullSort = context.mkUninterpretedSort("Null");
     Sort intSort = context.getIntSort();
     Sort strSort = context.getStringSort();
+    Sort realSort = context.getRealSort();
 
     if (lhs instanceof BoolExpr boolLhs && rightSort.equals(context.getIntSort())) {
       return new ExprPair(toArith(boolLhs), rhs);
@@ -185,11 +205,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
     // String vs Int — coerce string to opaque int
     if (leftSort.equals(strSort) && rightSort.equals(intSort)) {
-      Expr<?> coerced = exprMap.computeIfAbsent(lhs + "_as_int", k -> context.mkIntConst(k));
+      Expr<?> coerced = exprMap.computeIfAbsent(lhs + "_as_int", context::mkIntConst);
       return new ExprPair(coerced, rhs);
     }
     if (rightSort.equals(strSort) && leftSort.equals(intSort)) {
-      Expr<?> coerced = exprMap.computeIfAbsent(rhs + "_as_int", k -> context.mkIntConst(k));
+      Expr<?> coerced = exprMap.computeIfAbsent(rhs + "_as_int", context::mkIntConst);
       return new ExprPair(lhs, coerced);
     }
 
@@ -198,18 +218,29 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     if (leftSort instanceof ArraySort<?, ?> ls
         && ls.getRange().equals(objSort)
         && rightSort.equals(strSort)) {
-      return new ExprPair(context.mkSelect((ArrayExpr<IntSort, Sort>) lhs, context.mkInt(0)), rhs);
+      return new ExprPair(context.mkSelect((ArrayExpr<IntSort, Sort>) lhs, zero), rhs);
     }
     if (rightSort instanceof ArraySort<?, ?> rs
         && rs.getRange().equals(objSort)
         && leftSort.equals(strSort)) {
-      return new ExprPair(lhs, context.mkSelect((ArrayExpr<IntSort, Sort>) rhs, context.mkInt(0)));
+      return new ExprPair(lhs, context.mkSelect((ArrayExpr<IntSort, Sort>) rhs, zero));
     }
     if (leftSort.equals(objSort) && rightSort.equals(strSort)) {
       return new ExprPair(coerceToString(lhs), rhs);
     }
     if (rightSort.equals(objSort) && leftSort.equals(strSort)) {
       return new ExprPair(lhs, coerceToString(rhs));
+    }
+    // lhs Int, rhs Real
+    if (leftSort.equals(intSort) && rightSort.equals(realSort)) {
+      Expr<?> lhsAsReal = context.mkInt2Real((IntExpr) lhs);
+      return new ExprPair(lhsAsReal, rhs);
+    }
+
+    // lhs Real, rhs Int
+    if (leftSort.equals(realSort) && rightSort.equals(intSort)) {
+      Expr<?> rhsAsReal = context.mkInt2Real((IntExpr) rhs);
+      return new ExprPair(lhs, rhsAsReal);
     }
     throw new IllegalStateException("Cannot compare sorts: " + leftSort + " vs " + rightSort);
   }
@@ -219,6 +250,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         expr + AS_STR_SUFFIX, k -> context.mkConst(k, context.getStringSort()));
   }
 
+  @SuppressWarnings("unchecked")
   private Expr<?> buildArithExpr(final BinOp op, final Expr<?> lhs, final Expr<?> rhs) {
     return switch (op) {
       case LT -> context.mkLt(toArith(lhs), toArith(rhs));
@@ -257,7 +289,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @SuppressWarnings("unchecked")
   private ArithExpr<IntSort> toArith(final Expr<?> expr) {
     if (expr instanceof BoolExpr b) {
-      return (ArithExpr<IntSort>) context.mkITE(b, context.mkInt(1), context.mkInt(0));
+      return (ArithExpr<IntSort>) context.mkITE(b, one, zero);
     }
     Sort sort = sortOf(expr);
     if (sort.equals(context.getIntSort()) || sort.equals(context.getRealSort())) {
@@ -276,7 +308,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public Expr<?> visitConst(final SymConst c) {
     if (c.getValue() == null) {
       // null as opaque integer 0 — for null comparisons. Revisit if necessary
-      return context.mkInt(0);
+      return zero;
     }
     return switch (c.getValue()) {
       case Integer i -> context.mkInt(i);
@@ -289,7 +321,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   @Override
   public Expr<?> visitIntConst(final SymIntConst i) {
-    return context.mkInt(Integer.toString(i.getValue()));
+    return intConstCache.computeIfAbsent(i.getValue(), v -> context.mkInt(Integer.toString(v)));
   }
 
   @Override
@@ -380,6 +412,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return expr;
   }
 
+
   @Override
   public Expr<?> visitArray(final SymArray arr) {
     String cacheKey = toArrayKey(arr);
@@ -388,7 +421,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       return cached;
     }
 
-    ArraySort arraySort = (ArraySort) arr.accept(sortInferrer);
+    ArraySort<?, ?> arraySort = (ArraySort<?, ?>) arr.accept(sortInferrer);
     Expr<?> result = context.mkConst(cacheKey, arraySort);
     exprMap.put(cacheKey, result);
     return result;
@@ -398,6 +431,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return arr.getName() + ":" + arr.getObjectType();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Expr<?> visitArrayRef(final SymArrayRef ref) {
     String key = idFor(ref);
@@ -487,6 +521,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         k -> r.getKind() == SymKind.BOOLEAN ? context.mkBoolConst(k) : context.mkIntConst(k));
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Expr<?> visitNeg(final SymNeg n) {
     return context.mkUnaryMinus((ArithExpr<IntSort>) translate(n.getOperand()));
@@ -498,6 +533,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         CLASS_PREFIX + c.getValue().replace("/", "_").replace(";", "").replace("[", ""),
         context::mkIntConst);
   }
+
 
   @Override
   public Expr<?> visitITE(final SymITE ite) {
@@ -511,7 +547,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       condExpr = b;
     } else if (condExprRaw instanceof ArithExpr<?> a) {
       // condition is integer: nonzero -> true
-      condExpr = context.mkNot(context.mkEq(a, context.mkInt(0)));
+      condExpr = context.mkNot(context.mkEq(a, zero));
     } else {
       throw new IllegalStateException("Unexpected ITE condition type: " + condExprRaw.getClass());
     }
