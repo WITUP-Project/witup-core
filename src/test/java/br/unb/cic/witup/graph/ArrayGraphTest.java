@@ -131,6 +131,7 @@ public class ArrayGraphTest {
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     WITUpGraph cpg = analysis.graph();
+    System.out.println(cpg);
     assertNotNull(cpg);
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
