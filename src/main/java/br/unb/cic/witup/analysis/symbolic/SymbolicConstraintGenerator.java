@@ -63,11 +63,6 @@ public final class SymbolicConstraintGenerator {
     this.resolver = resolver;
   }
 
-  /** Resets the global fresh variable counter. For testing only. */
-  public static void resetFreshVarCounter() {
-    globalFreshCounter.set(0);
-  }
-
   public List<SymbolicConstraint> generateSymbolicConstraints(final WITUpPath p) {
     setCurrentPath(p);
     List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
@@ -104,7 +99,7 @@ public final class SymbolicConstraintGenerator {
     this.currentPathNodes = new HashSet<>(p.nodes());
   }
 
-  public List<List<SymbolicConstraint>> buildSymbolicConstraintPaths(final WITUpNode throwNode) {
+  public List<List<SymbolicConstraint>> buildThrowConstraintPaths(final WITUpNode throwNode) {
     List<WITUpPath> throwConstraintPaths = cpg.getThrowPaths(throwNode);
     return generateThrowConstraintPath(throwConstraintPaths);
   }
@@ -132,15 +127,6 @@ public final class SymbolicConstraintGenerator {
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
     symExpr = SymExpr.stripBooleanEncoding(symExpr);
     return new SubstituteResult(symExpr, preconditions);
-  }
-
-  private SymExpr substitute(final SymExpr initial, final WITUpNode startNode) {
-    // when substituting inside, no need to consider constraints from other methods
-    List<SymbolicConstraint> ignored = new ArrayList<>();
-    SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), ignored);
-    symExpr = SymExpr.simplifyCmpPatterns(symExpr);
-    symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
-    return SymExpr.stripBooleanEncoding(symExpr);
   }
 
   public List<SymParamRef> buildFormals() {
@@ -209,7 +195,7 @@ public final class SymbolicConstraintGenerator {
       final SymExpr symExpr,
       final WITUpNode currentNode,
       final Set<WITUpNode> visited,
-      final List<SymbolicConstraint> extraConstraints) {
+      final List<SymbolicConstraint> preconditions) {
 
     Set<String> freeVars = new HashSet<>();
     symExpr.collectVarNames(freeVars);
@@ -217,7 +203,7 @@ public final class SymbolicConstraintGenerator {
       return symExpr;
     }
     Map<String, SymExpr> env = new HashMap<>();
-    collectBindings(freeVars, env, currentNode, visited, false, extraConstraints);
+    collectBindings(freeVars, env, currentNode, visited, false, preconditions);
     return env.isEmpty() ? symExpr : symExpr.resolveWith(env);
   }
 
@@ -227,7 +213,7 @@ public final class SymbolicConstraintGenerator {
       final WITUpNode currentNode,
       final Set<WITUpNode> visited,
       final boolean followIdentity,
-      final List<SymbolicConstraint> extraConstraints) {
+      final List<SymbolicConstraint> preconditions) {
 
     if (visited.contains(currentNode)) {
       return;
@@ -257,16 +243,16 @@ public final class SymbolicConstraintGenerator {
         rhsOp = assign.getRightOp();
         lhsOp = assign.getLeftOp();
 
-        Optional<ResolvedCallee> resolved = tryResolveInterprocedural(rhsOp);
+        Optional<ResolvedCallee> resolvedCallee = resolveCallee(rhsOp);
 
-        if (resolved.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
-          resolved = tryResolveLambda(ifaceInvoke, sourceNode);
+        if (resolvedCallee.isEmpty() && rhsOp instanceof JInterfaceInvokeExpr ifaceInvoke) {
+          resolvedCallee = tryResolveLambda(ifaceInvoke, sourceNode);
         }
 
-        if (resolved.isPresent()) {
+        if (resolvedCallee.isPresent()) {
           String definedVar = getVariableName(assign.getLeftOp());
           if (freeVars.contains(definedVar)) {
-            ResolvedCallee callee = resolved.get();
+            ResolvedCallee callee = resolvedCallee.get();
             if (callee.guardedReturn() != null) {
               SymVar freshVar =
                   SymVar.fresh(
@@ -276,19 +262,19 @@ public final class SymbolicConstraintGenerator {
                           : callee.guardedReturn().getFirst().value().getKind());
               addBinding(freeVars, env, definedVar, freshVar);
               for (GuardedExpr ge : callee.guardedReturn()) {
-                extraConstraints.addAll(ge.bindings());
+                preconditions.addAll(ge.bindings());
                 SymExpr eq = new SymBinOp(BinOp.EQ, freshVar, ge.value());
                 SymExpr implication = encodeImplication(ge.guard(), eq);
-                extraConstraints.add(new SymbolicConstraint(implication, true));
+                preconditions.add(new SymbolicConstraint(implication, true));
               }
               if (callee.throwPathConditions() != null) {
                 for (List<SymbolicConstraint> throwPath : callee.throwPathConditions()) {
                   SymExpr throwGuard = encodeConjunction(throwPath);
-                  extraConstraints.add(new SymbolicConstraint(throwGuard, false));
+                  preconditions.add(new SymbolicConstraint(throwGuard, false));
                 }
               }
             }
-            collectBindings(freeVars, env, sourceNode, visited, followIdentity, extraConstraints);
+            collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
           }
           continue;
         }
@@ -311,7 +297,7 @@ public final class SymbolicConstraintGenerator {
       SymExpr rhsSymExpr = SymExpr.fromJimple(rhsOp);
 
       addBinding(freeVars, env, definedVar, rhsSymExpr);
-      collectBindings(freeVars, env, sourceNode, visited, followIdentity, extraConstraints);
+      collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
     }
   }
 
@@ -357,7 +343,7 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
-  public List<GuardedExpr> traceReturnGuarded() {
+  public List<GuardedExpr> traceGuardedReturn() {
     List<ReturnStatementNode> returnNodes = cpg.getReturnNodes();
     if (returnNodes.isEmpty()) {
       return List.of();
@@ -389,7 +375,7 @@ public final class SymbolicConstraintGenerator {
     return result;
   }
 
-  private Optional<ResolvedCallee> tryResolveInterprocedural(final Value rhsOp) {
+  private Optional<ResolvedCallee> resolveCallee(final Value rhsOp) {
     String calleeSig;
     List<SymExpr> actuals;
 

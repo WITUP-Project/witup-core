@@ -61,14 +61,14 @@ public final class MethodSummariser implements SummaryResolver {
     for (WITUpNode throwNode : cpg.getThrowNodes()) {
       String exceptionQualifiedName = cpg.resolveExceptionType((ThrowStatementNode) throwNode);
       for (List<SymbolicConstraint> constraints :
-          symbolicConstraintGenerator.buildSymbolicConstraintPaths(throwNode)) {
+          symbolicConstraintGenerator.buildThrowConstraintPaths(throwNode)) {
         exceptionPaths.add(new ExceptionPath(constraints, throwNode, exceptionQualifiedName));
         paths.add(constraints);
       }
     }
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
-    List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceReturnGuarded();
+    List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceGuardedReturn();
     MethodSummary summary =
         new MethodSummary(cpg.getMethodSignature(), exceptionPaths, formals, guardedReturn, paths);
 
