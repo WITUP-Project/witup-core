@@ -1,10 +1,18 @@
 package br.unb.cic.witup.analysis.loop;
 
 /**
- * Abstract value for interval analysis. Represents a set of integers as a closed range
- * [lo, hi],
- * with {@link Long#MIN_VALUE} and {@link Long#MAX_VALUE} representing negative
- * and positive infinity respectively.
+ * Abstract value in the interval lattice for loop analysis.
+ *
+ * <p>The lattice has three levels:
+ * <ul>
+ *   <li>{@code Bottom} — the empty set (unreachable code / no possible values)</li>
+ *   <li>{@code Range(lo, hi)} — a closed interval of integers. {@code Long.MIN_VALUE} and
+ *       {@code Long.MAX_VALUE} represent negative and positive infinity.</li>
+ *   <li>{@code Top} — the full set of integers (any value is possible)</li>
+ * </ul>
+ *
+ * <p>Bottom is below every element (join identity), Top is above every element (the "don't know"
+ * answer). Widening accelerates fixpoint convergence by pushing unstable bounds to infinity.
  */
 public sealed interface Interval {
 
@@ -14,7 +22,7 @@ public sealed interface Interval {
   record Bottom() implements Interval {
     @Override
     public String toString() {
-      return "⊥";
+      return "bottom";
     }
   }
 
@@ -31,8 +39,8 @@ public sealed interface Interval {
 
     @Override
     public String toString() {
-      String l = lo == Long.MIN_VALUE ? "-∞" : Long.toString(lo);
-      String h = hi == Long.MAX_VALUE ? "+∞" : Long.toString(hi);
+      String l = lo == Long.MIN_VALUE ? "-inf" : Long.toString(lo);
+      String h = hi == Long.MAX_VALUE ? "inf" : Long.toString(hi);
       return "[" + l + ", " + h + "]";
     }
   }
@@ -40,7 +48,7 @@ public sealed interface Interval {
   record Top() implements Interval {
     @Override
     public String toString() {
-      return "⊤";
+      return "top";
     }
   }
 

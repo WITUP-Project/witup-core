@@ -255,18 +255,17 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
   }
 
-  private List<WITUpEdge> incomingCfgEdges(final WITUpNode node) {
+  public List<WITUpEdge> incomingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgIncoming.getOrDefault(node, List.of());
   }
 
-  private List<WITUpEdge> outgoingCfgEdges(final WITUpNode node) {
+  public List<WITUpEdge> outgoingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgOutgoing.getOrDefault(node, List.of());
   }
 
-  // usually the entry node is a JIdentityStmt, but its
-  private WITUpNode findEntryNode() {
+  public WITUpNode findEntryNode() {
     if (entryNode != null) {
       return entryNode;
     }
@@ -358,6 +357,114 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return null;
+  }
+
+  // ── Loop detection support ──
+
+  /**
+   * Compute the dominator sets for every node reachable from the entry via CFG edges. dom(entry) =
+   * {entry}; dom(n) = {n} union intersection(dom(p) for p in cfgPreds(n)). Iterates until
+   * fixpoint.
+   */
+  public Map<WITUpNode, Set<WITUpNode>> computeDominators() {
+    WITUpNode entry = findEntryNode();
+    Set<WITUpNode> allNodes = vertexSet();
+    Map<WITUpNode, Set<WITUpNode>> dom = new HashMap<>();
+
+    dom.put(entry, new HashSet<>(Set.of(entry)));
+    for (WITUpNode node : allNodes) {
+      if (!node.equals(entry)) {
+        dom.put(node, new HashSet<>(allNodes));
+      }
+    }
+
+    boolean changed = true;
+    while (changed) {
+      changed = false;
+      for (WITUpNode node : allNodes) {
+        if (node.equals(entry)) {
+          continue;
+        }
+        Set<WITUpNode> newDom = null;
+        for (WITUpEdge edge : incomingCfgEdges(node)) {
+          WITUpNode pred = edge.getSource();
+          Set<WITUpNode> predDom = dom.get(pred);
+          if (predDom == null) {
+            continue;
+          }
+          if (newDom == null) {
+            newDom = new HashSet<>(predDom);
+          } else {
+            newDom.retainAll(predDom);
+          }
+        }
+        if (newDom == null) {
+          newDom = new HashSet<>();
+        }
+        newDom.add(node);
+        if (!newDom.equals(dom.get(node))) {
+          dom.put(node, newDom);
+          changed = true;
+        }
+      }
+    }
+    return dom;
+  }
+
+  /**
+   * Find CFG back-edges: an edge (source, target) where target dominates source. Back-edges
+   * indicate loops in the control flow.
+   */
+  public List<WITUpEdge> findBackEdges(final Map<WITUpNode, Set<WITUpNode>> dominators) {
+    List<WITUpEdge> backEdges = new ArrayList<>();
+    for (WITUpEdge edge : edgeSet()) {
+      if (!(edge instanceof CFGEdge)) {
+        continue;
+      }
+      Set<WITUpNode> sourceDom = dominators.get(edge.getSource());
+      if (sourceDom != null && sourceDom.contains(edge.getTarget())) {
+        backEdges.add(edge);
+      }
+    }
+    return backEdges;
+  }
+
+  /**
+   * Compute the natural loop body for a back-edge: all nodes that can reach the latch without
+   * passing through the header, plus the header itself.
+   */
+  public Set<WITUpNode> computeLoopBody(final WITUpNode header, final WITUpNode latch) {
+    Set<WITUpNode> body = new HashSet<>();
+    body.add(header);
+    if (header.equals(latch)) {
+      return body;
+    }
+    body.add(latch);
+    Deque<WITUpNode> worklist = new ArrayDeque<>();
+    worklist.push(latch);
+    while (!worklist.isEmpty()) {
+      WITUpNode node = worklist.pop();
+      for (WITUpEdge edge : incomingCfgEdges(node)) {
+        WITUpNode pred = edge.getSource();
+        if (body.add(pred)) {
+          worklist.push(pred);
+        }
+      }
+    }
+    return body;
+  }
+
+  /** Find CFG edges that leave the loop body (source in body, target not). */
+  public List<WITUpEdge> computeExitEdges(final Set<WITUpNode> body) {
+    List<WITUpEdge> exits = new ArrayList<>();
+    for (WITUpNode node : body) {
+      for (WITUpEdge edge : outgoingCfgEdges(node)) {
+        if (!body.contains(edge.getTarget())) {
+          exits.add(edge);
+        }
+      }
+    }
+    return exits;
   }
 
   public void dump() {
