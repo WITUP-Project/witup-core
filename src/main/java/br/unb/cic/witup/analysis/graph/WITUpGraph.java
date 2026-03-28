@@ -177,11 +177,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     List<WITUpEdge> pathEdges = new ArrayList<>();
     visited.add(end);
     pathNodes.add(end);
-    backwardDFSRec(start, end, visited, pathNodes, pathEdges, result);
+    backDFS(start, end, visited, pathNodes, pathEdges, result);
     return result;
   }
 
-  private void backwardDFSRec(
+  private void backDFS(
       final WITUpNode start,
       final WITUpNode current,
       final Set<WITUpNode> visited,
@@ -210,7 +210,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       if (visited.add(pred)) {
         pathNodes.add(pred);
         pathEdges.add(edge);
-        backwardDFSRec(start, pred, visited, pathNodes, pathEdges, result);
+        backDFS(start, pred, visited, pathNodes, pathEdges, result);
         pathNodes.removeLast();
         pathEdges.removeLast();
         visited.remove(pred);
