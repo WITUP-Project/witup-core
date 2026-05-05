@@ -46,6 +46,7 @@ import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
 import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
+import sootup.core.jimple.common.stmt.Stmt;
 import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
@@ -89,6 +90,20 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     graph.method = method;
     graph.dot = pg.toDotGraph();
 
+    // SootUp's CPG creators emit an empty PropertyGraph for trivial single-statement
+    // methods (e.g. `return CONST;`). Recover the statements directly from the body so
+    // the summariser can still see the return node.
+    if (pg.getNodes().isEmpty()) {
+      for (Stmt stmt : method.getBody().getStmts()) {
+        StmtGraphNode synthetic = new StmtGraphNode(stmt);
+        WITUpNode n = cachedNodes.computeIfAbsent(synthetic, WITUpGraph::createNode);
+        graph.addVertex(n);
+      }
+    }
+    for (PropertyGraphNode node : pg.getNodes()) {
+      WITUpNode n = cachedNodes.computeIfAbsent(node, WITUpGraph::createNode);
+      graph.addVertex(n);
+    }
     for (PropertyGraphEdge edge : pg.getEdges()) {
       WITUpNode source = cachedNodes.computeIfAbsent(edge.getSource(), WITUpGraph::createNode);
       WITUpNode target = cachedNodes.computeIfAbsent(edge.getDestination(), WITUpGraph::createNode);

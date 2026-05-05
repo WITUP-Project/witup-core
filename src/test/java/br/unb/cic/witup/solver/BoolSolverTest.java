@@ -27,4 +27,22 @@ public class BoolSolverTest {
     assertFalse(sol1.getBool("trueValue_is_null"));
     assertFalse(sol1.getBool("falseValue_is_null"));
   }
+
+  @Test
+  public void requireTrueIsUnsat() {
+    String methodSignature = "<br.unb.cic.witup.samples.Bool: void requireTrue()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
+
+    assertTrue(sol0.isUnsat());
+  }
+
+  @Test
+  public void throwIfFalseCalleeIsUnsat() {
+    String methodSignature = "<br.unb.cic.witup.samples.Bool: void throwIfFalseCallee()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    SolverResult sol0 = analysis.solutions().getFirst();
+
+    assertTrue(sol0.isUnsat());
+  }
 }

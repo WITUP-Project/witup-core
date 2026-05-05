@@ -35,11 +35,14 @@ public class BoolSummaryTest {
     assertTrue(path0.get(0).truthValue());
     assertTrue(path0.get(0).symExpr().toString().contains("value != null"));
 
-    assertFalse(path0.get(1).truthValue());
+    // bool-method-equals-zero: "equals(...) returned false" — encoded as (_ret == 0, true)
+    assertTrue(path0.get(1).truthValue());
     assertTrue(path0.get(1).symExpr().toString().contains("value.equals(trueValue)"));
+    assertTrue(path0.get(1).symExpr().toString().contains("== 0"));
 
-    assertFalse(path0.get(2).truthValue());
+    assertTrue(path0.get(2).truthValue());
     assertTrue(path0.get(2).symExpr().toString().contains("value.equals(falseValue)"));
+    assertTrue(path0.get(2).symExpr().toString().contains("== 0"));
 
     // second path: arr != null && i < 0.
     List<SymbolicConstraint> path1 = summary.exceptionPaths().get(1).getConstraints();
@@ -57,5 +60,60 @@ public class BoolSummaryTest {
 
     assertTrue(path1.get(2).truthValue());
     assertTrue(path1.get(2).symExpr().toString().contains("falseValue != null"));
+  }
+
+  @Test
+  public void alwaysTrueSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Bool: boolean alwaysTrue()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    assertEquals(0, summary.exceptionPaths().size());
+    assertTrue(summary.hasReturnExpr());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("1", summary.guardedReturn().getFirst().value().toString());
+  }
+
+  @Test
+  public void alwaysFalseSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Bool: boolean alwaysFalse()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    assertEquals(0, summary.exceptionPaths().size());
+    assertTrue(summary.hasReturnExpr());
+    assertEquals(1, summary.guardedReturn().size());
+    assertEquals("0", summary.guardedReturn().getFirst().value().toString());
+  }
+
+  @Test
+  public void requireTrueSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Bool: void requireTrue()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    assertEquals(1, summary.exceptionPaths().size());
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
+    assertEquals(
+        "java.lang.IllegalStateException",
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
+    // throw fires when alwaysTrue() returns false. The constraint set should pin
+    // a fresh _ret_X to alwaysTrue()'s guarded return (== 1) AND assert _ret_X is false.
+    assertTrue(
+        path0.size() >= 2,
+        "expected at least a guarded-return precondition + the path constraint, got " + path0);
+  }
+
+  @Test
+  public void throwIfFalseCalleeSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Bool: void throwIfFalseCallee()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    assertEquals(1, summary.exceptionPaths().size());
+    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
+    assertTrue(
+        path0.size() >= 2,
+        "expected at least a guarded-return precondition + the path constraint, got " + path0);
   }
 }
