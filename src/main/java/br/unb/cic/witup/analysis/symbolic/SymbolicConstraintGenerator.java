@@ -16,6 +16,7 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNull;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -88,7 +89,9 @@ public final class SymbolicConstraintGenerator {
         symExpr = result.expr();
         preconditions.addAll(result.preconditions());
       } else if (throwConstraint.node() instanceof CaughtExceptionNode caught) {
-        symExpr = new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
+        SymCaughtExceptionRef catchRef = new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
+        preconditions.add(caughtExceptionRefLock(catchRef));
+        symExpr = catchRef;
       } else {
         throw new IllegalStateException(
             "Unexpected constraint node type: " + throwConstraint.node().getClass());
@@ -311,9 +314,22 @@ public final class SymbolicConstraintGenerator {
         continue;
       }
       SymExpr boundValue = tightenCaughtExceptionRef(SymExpr.fromJimple(rhsOp), sourceNode);
+      if (boundValue instanceof SymCaughtExceptionRef catchRef) {
+        preconditions.add(caughtExceptionRefLock(catchRef));
+      }
       addBinding(freeVars, env, definedVar, boundValue);
       collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
     }
+  }
+
+  // Encodes the semantic invariant `caught_<type> <=> caught_<type>_is_null = false` as a
+  // SymExpr-level constraint. The path's exceptional edge already pins the catch flag, and
+  // the throw guard substitution pins the null check; without this lock, those two Z3 bool
+  // consts are independent and a future change that touches one could leave the other free.
+  // Translates as Z3 mkEq on two BoolExprs, which is iff.
+  private static SymbolicConstraint caughtExceptionRefLock(final SymCaughtExceptionRef ref) {
+    SymExpr nonNull = new SymBinOp(BinOp.NE, ref, SymNull.INSTANCE);
+    return new SymbolicConstraint(new SymBinOp(BinOp.EQ, ref, nonNull), true);
   }
 
   // SootUp materializes `catch (T t) { x = t; }` as a JIdentityStmt-into-stack-temp followed
