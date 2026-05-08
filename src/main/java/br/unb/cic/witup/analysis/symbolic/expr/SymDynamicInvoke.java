@@ -11,6 +11,7 @@ public final class SymDynamicInvoke extends SymExpr {
   private final String signature;
   private final SymExpr[] args;
   private String cachedToString;
+  private int cachedHashCode;
 
   public SymDynamicInvoke(final JDynamicInvokeExpr e) {
     this(
@@ -142,8 +143,13 @@ public final class SymDynamicInvoke extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * signature.hashCode() + Arrays.hashCode(args);
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h = prime * signature.hashCode() + Arrays.hashCode(args);
+      cachedHashCode = h;
+    }
+    return h;
   }
 
   public SymExpr[] getArgs() {

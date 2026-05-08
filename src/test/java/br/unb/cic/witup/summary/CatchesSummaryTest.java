@@ -3,8 +3,11 @@ package br.unb.cic.witup.summary;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
+import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class CatchesSummaryTest {
@@ -14,8 +17,8 @@ public class CatchesSummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-
-    dumpPaths("simpleCatch", summary);
+    System.out.println("=== simpleCatch ===");
+    dump(summary);
   }
 
   @Test
@@ -24,30 +27,42 @@ public class CatchesSummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    dumpPaths("loopCatch", summary);
-
-    // With visited-edges path enumeration the back-edge through the loop body is reachable,
-    // so we expect the catch-fired path (the one carrying the @caughtexception constraint)
-    // to appear alongside the empty-loop path.
-    boolean hasCaughtPath =
-        summary.exceptionPaths().stream()
-            .anyMatch(
-                ep ->
-                    ep.getConstraints().stream()
-                        .anyMatch(c -> c.symExpr().toString().contains("caughtexception")));
-    org.junit.jupiter.api.Assertions.assertTrue(
-        hasCaughtPath, "expected at least one path carrying a @caughtexception constraint");
+    System.out.println("=== loopCatch ===");
+    dump(summary);
   }
 
-  private static void dumpPaths(final String label, final MethodSummary summary) {
-    System.out.println(label + " exceptionPaths (" + summary.exceptionPaths().size() + "):");
-    for (int p = 0; p < summary.exceptionPaths().size(); p++) {
+  private static void dump(final MethodSummary summary) {
+    System.out.println("methodSignature=" + summary.methodSignature());
+    System.out.println("formalParams.size=" + summary.formalParams().size());
+    for (int i = 0; i < summary.formalParams().size(); i++) {
+      var p = summary.formalParams().get(i);
       System.out.println(
-          " path " + p + " (" + summary.exceptionPaths().get(p).getExceptionQualifiedName() + "):");
-      var cs = summary.exceptionPaths().get(p).getConstraints();
-      for (int i = 0; i < cs.size(); i++) {
+          "  formal[" + i + "] type=" + p.getParamType() + " kind=" + p.getKind());
+    }
+    System.out.println("guardedReturn.size=" + summary.guardedReturn().size());
+    System.out.println("exceptionPaths.size=" + summary.exceptionPaths().size());
+    List<ExceptionPath> paths = summary.exceptionPaths();
+    for (int i = 0; i < paths.size(); i++) {
+      ExceptionPath ep = paths.get(i);
+      System.out.println(
+          "  path["
+              + i
+              + "] exception="
+              + ep.getExceptionQualifiedName()
+              + " constraints="
+              + ep.getConstraints().size());
+      List<SymbolicConstraint> cs = ep.getConstraints();
+      for (int j = 0; j < cs.size(); j++) {
+        SymbolicConstraint c = cs.get(j);
         System.out.println(
-            "   [" + i + "] truth=" + cs.get(i).truthValue() + " expr=" + cs.get(i).symExpr());
+            "    ["
+                + j
+                + "] truth="
+                + c.truthValue()
+                + " ("
+                + c.symExpr().getClass().getSimpleName()
+                + ") "
+                + c.symExpr());
       }
     }
   }

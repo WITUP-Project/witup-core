@@ -9,6 +9,7 @@ public final class SymArrayRef extends SymExpr {
   private final SymExpr array;
   private final SymExpr index;
   private String cachedToString;
+  private int cachedHashCode;
 
   public static SymExpr fromArrayRef(final JArrayRef r) {
     SymExpr base = fromJimple(r.getBase());
@@ -89,7 +90,12 @@ public final class SymArrayRef extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * array.hashCode() + index.hashCode();
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h = prime * array.hashCode() + index.hashCode();
+      cachedHashCode = h;
+    }
+    return h;
   }
 }

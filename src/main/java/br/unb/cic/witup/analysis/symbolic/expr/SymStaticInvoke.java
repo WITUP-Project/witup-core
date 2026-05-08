@@ -13,6 +13,7 @@ public final class SymStaticInvoke extends SymExpr {
   private final boolean returnsBoolean;
   private final SymExpr[] args;
   private String cachedToString;
+  private int cachedHashCode;
 
   public SymStaticInvoke(final JStaticInvokeExpr e) {
     this(
@@ -165,8 +166,14 @@ public final class SymStaticInvoke extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * (prime * invokeName.hashCode() + Arrays.hashCode(args))
-        + Boolean.hashCode(returnsBoolean);
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h =
+          prime * (prime * invokeName.hashCode() + Arrays.hashCode(args))
+              + Boolean.hashCode(returnsBoolean);
+      cachedHashCode = h;
+    }
+    return h;
   }
 }

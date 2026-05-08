@@ -69,14 +69,26 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String CLASS_PREFIX = "class_";
   private final Context context;
   private final Z3SortDetector sortInferrer;
-  private final Map<String, Expr<?>> exprMap = new HashMap<>();
-  private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
+  // Per-path caches are reallocated each path rather than cleared in place, because
+  // HashMap.clear is O(table.length) and never shrinks the table — so a single deep
+  // path that grows the table to thousands of buckets makes every subsequent path's
+  // reset walk that whole array even when the path itself is tiny. Replacing with a
+  // fresh small map is O(1) and the orphaned map is short-lived in young-gen GC.
+  private static final int PER_PATH_CACHE_CAPACITY = 256;
+  private static final int CROSS_PATH_CACHE_CAPACITY = 2048;
   public static final int MAX_DESCRIPTION_CHARS = 256;
-  private final Map<SymExpr, Expr<?>> exprCache = new HashMap<>(2048);
-  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(2048);
-  private final Map<SymExpr, String> exprIds = new HashMap<>(2048);
-  private final Map<String, String> idToTruncatedDescription = new HashMap<>(2048);
-  private final Map<Integer, IntNum> intConstCache = new HashMap<>(2048);
+
+  private Map<String, Expr<?>> exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<SymExpr, Expr<?>> exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<SymExpr, String> exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<String, String> idToTruncatedDescription = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  // sortCache keys on per-path Z3 Expr instances, so cross-path lookups never hit — it
+  // would only ever grow, pinning every Expr from every path for the translator's lifetime.
+  // Reset per-path along with the other caches so worker memory stays bounded.
+  private Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(PER_PATH_CACHE_CAPACITY);
+  // intConstCache keys on boxed Integer values — bounded across paths, safe to keep alive.
+  private final Map<Integer, IntNum> intConstCache = new HashMap<>(CROSS_PATH_CACHE_CAPACITY);
   private int exprCounter = 0;
   private final IntNum zero;
   private final IntNum one;
@@ -91,17 +103,19 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   /**
-   * Clears per-path state (declarations, IDs, descriptions, and the SymExpr→Z3 cache) while
-   * preserving the cross-path caches that key on Z3 expressions (sortCache, intConstCache).
-   * exprCache is per-path now that it's content-keyed: holding it across paths would re-serve Z3
-   * consts created against a previous path's exprMap, so model extraction would miss them.
+   * Replaces per-path state with fresh maps on entry to a new path. Replace-not-clear because
+   * {@link HashMap#clear} is O(table.length) and never shrinks — a single deep path that
+   * grows the table to thousands of buckets would make every subsequent reset walk that whole
+   * array. Allocating a new small map is O(1) and the orphaned map dies in young-gen.
+   * intConstCache stays cross-path since its keys (boxed Integer literals) are bounded.
    */
   public void resetForNewPath() {
-    exprMap.clear();
-    fieldFunctions.clear();
-    exprIds.clear();
-    exprCache.clear();
-    idToTruncatedDescription.clear();
+    exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    fieldFunctions = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    idToTruncatedDescription = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    sortCache = new IdentityHashMap<>(PER_PATH_CACHE_CAPACITY);
     exprCounter = 0;
   }
 

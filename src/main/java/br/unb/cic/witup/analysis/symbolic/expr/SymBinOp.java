@@ -13,6 +13,7 @@ public final class SymBinOp extends SymExpr {
   private final boolean hasUnboxing;
   private final int cachedDepth;
   private String cachedToString;
+  private int cachedHashCode;
 
   public static SymExpr fromBinopExpr(final AbstractBinopExpr e) {
 
@@ -134,7 +135,12 @@ public final class SymBinOp extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * (prime * op.hashCode() + lhs.hashCode()) + rhs.hashCode();
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h = prime * (prime * op.hashCode() + lhs.hashCode()) + rhs.hashCode();
+      cachedHashCode = h;
+    }
+    return h;
   }
 }
