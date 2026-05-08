@@ -72,9 +72,9 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private final Map<String, Expr<?>> exprMap = new HashMap<>();
   private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
   public static final int MAX_DESCRIPTION_CHARS = 256;
-  private final Map<SymExpr, Expr<?>> exprCache = new IdentityHashMap<>(2048);
+  private final Map<SymExpr, Expr<?>> exprCache = new HashMap<>(2048);
   private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(2048);
-  private final Map<SymExpr, String> exprIds = new IdentityHashMap<>(2048);
+  private final Map<SymExpr, String> exprIds = new HashMap<>(2048);
   private final Map<String, String> idToTruncatedDescription = new HashMap<>(2048);
   private final Map<Integer, IntNum> intConstCache = new HashMap<>(2048);
   private int exprCounter = 0;
@@ -91,13 +91,16 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   /**
-   * Clears per-path state (declarations, IDs, descriptions) while preserving cross-path caches
-   * (exprCache, sortCache, intConstCache).
+   * Clears per-path state (declarations, IDs, descriptions, and the SymExpr→Z3 cache) while
+   * preserving the cross-path caches that key on Z3 expressions (sortCache, intConstCache).
+   * exprCache is per-path now that it's content-keyed: holding it across paths would re-serve
+   * Z3 consts created against a previous path's exprMap, so model extraction would miss them.
    */
   public void resetForNewPath() {
     exprMap.clear();
     fieldFunctions.clear();
     exprIds.clear();
+    exprCache.clear();
     idToTruncatedDescription.clear();
     exprCounter = 0;
   }
@@ -119,7 +122,15 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   public Expr<?> translate(final SymExpr expr) {
-    return exprCache.computeIfAbsent(expr, e -> e.accept(this));
+    // Manual get-then-put: visitors recurse back through translate(), and
+    // HashMap.computeIfAbsent forbids structural modification mid-call.
+    Expr<?> cached = exprCache.get(expr);
+    if (cached != null) {
+      return cached;
+    }
+    Expr<?> result = expr.accept(this);
+    exprCache.put(expr, result);
+    return result;
   }
 
   public Map<String, Expr<?>> getDeclarations() {
@@ -143,7 +154,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     Expr<?> right = translate(b.getRhs());
 
     if (b.getOp() == BinOp.EQ || b.getOp() == BinOp.NE) {
-      return buildEqualityExpr(b.getOp(), left, right);
+      return buildEqualityExpr(b.getOp(), left, right, b.getLhs(), b.getRhs());
     }
     return buildArithExpr(b.getOp(), left, right);
   }
@@ -152,18 +163,39 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return expr.toString().equals(NULL_STR);
   }
 
-  private BoolExpr buildEqualityExpr(final BinOp op, final Expr<?> left, final Expr<?> right) {
-    if (isNullSentinel(right) || isNullSentinel(left)) {
-      Expr<?> ref = isNullSentinel(right) ? left : right;
-      // arr comes as |array_name:int[]|. we make it become array_name_is_null
+  private BoolExpr buildEqualityExpr(
+      final BinOp op,
+      final Expr<?> left,
+      final Expr<?> right,
+      final SymExpr leftSym,
+      final SymExpr rightSym) {
+    boolean leftNull = isNullSentinel(left);
+    boolean rightNull = isNullSentinel(right);
+    if (leftNull && rightNull) {
+      // null == null is a tautology; avoid creating a __null___is_null bool const.
+      return op == BinOp.EQ ? context.mkTrue() : context.mkFalse();
+    }
+    if (leftNull || rightNull) {
+      Expr<?> ref = leftNull ? right : left;
+      SymExpr refSym = leftNull ? rightSym : leftSym;
       BoolExpr isNull =
-          (BoolExpr) exprMap.computeIfAbsent(buildNullArrayName(ref), context::mkBoolConst);
+          (BoolExpr) exprMap.computeIfAbsent(nullCheckName(ref, refSym), context::mkBoolConst);
       return op == BinOp.EQ ? isNull : context.mkNot(isNull);
     }
 
     var coerced = coerceForEquality(left, right);
     BoolExpr eq = context.mkEq(coerced.lhs(), coerced.rhs);
     return op == BinOp.EQ ? eq : context.mkNot(eq);
+  }
+
+  private String nullCheckName(final Expr<?> ref, final SymExpr refSym) {
+    String desc = describeExpr(refSym);
+    // describeExpr falls back to "Class@hash" for unhandled SymExpr kinds — useless as a
+    // const name. Fall through to the Z3-expr-based name in that case.
+    if (desc != null && !desc.isBlank() && !desc.equals(NULL_STR) && !desc.contains("@")) {
+      return desc + IS_NULL;
+    }
+    return buildNullArrayName(ref);
   }
 
   private String buildNullArrayName(final Expr<?> expr) {
