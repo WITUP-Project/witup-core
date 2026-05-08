@@ -21,6 +21,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,19 +44,19 @@ public final class SymbolicConstraintSolver {
   public static final String IS_NULL = "_is_null";
   public static final int TWENTY_SECONDS = 20000;
   static final int MAX_CONSTRAINT_DEPTH = 100;
+  // Methods with more paths than this threshold get a per-thread Z3 workspace pool;
+  // smaller methods stay on the calling thread to avoid the pool's setup overhead.
+  static final int PARALLEL_PATH_THRESHOLD = 1000;
+  public static final int ONE_THOUSAND_TASKS = 1000;
   private final Map<String, MethodSummary> methodSummaries;
-  private final Context ctx = new Context();
-  private final Solver solver = ctx.mkSolver();
-  private final Z3Translator translator = new Z3Translator(ctx);
+  private final Workspace mainWorkspace;
 
   // the method that receives method summaries needs to, for each set
   // of symbolic constraints, translate them to z3, solve
   // we produce MethodSolutions, that map method name to solutions
   public SymbolicConstraintSolver(final Map<String, MethodSummary> methodSummaries) {
     this.methodSummaries = methodSummaries;
-    Params params = ctx.mkParams();
-    params.add("timeout", TWENTY_SECONDS);
-    solver.setParameters(params);
+    this.mainWorkspace = Workspace.make();
   }
 
   public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
@@ -56,12 +64,11 @@ public final class SymbolicConstraintSolver {
     for (MethodSummary summary : methodSummaries.values()) {
       String sig = summary.methodSignature();
       try {
-        List<SolverResult> results = new ArrayList<>();
         List<ExceptionPath> paths = summary.exceptionPaths();
-        for (int i = 0; i < paths.size(); i++) {
-          log.debug("Solving path {}/{} for {}", i + 1, paths.size(), sig);
-          results.add(checkPath(sig + "#" + i, paths.get(i).getConstraints()));
-        }
+        List<SolverResult> results =
+            paths.size() > PARALLEL_PATH_THRESHOLD
+                ? solveInParallel(sig, paths)
+                : solveSequentially(sig, paths);
         methodSolutions.put(sig, results);
       } catch (Exception e) {
         log.warn("Failed to solve {}: {}", sig, e.getMessage(), e);
@@ -71,7 +78,102 @@ public final class SymbolicConstraintSolver {
     return methodSolutions;
   }
 
+  private List<SolverResult> solveSequentially(final String sig, final List<ExceptionPath> paths) {
+    List<SolverResult> results = new ArrayList<>(paths.size());
+    for (int i = 0; i < paths.size(); i++) {
+      log.debug("Solving path {}/{} for {}", i + 1, paths.size(), sig);
+      results.add(checkPathOn(mainWorkspace, sig + "#" + i, paths.get(i).getConstraints()));
+    }
+    return results;
+  }
+
+  // Each worker thread holds its own Z3 Context+Solver+Translator (Z3 contexts are not
+  // thread-safe, and a fresh-context-per-method approach measured 2.5x slower in earlier
+  // experiments). The pool runs at 2x available cores; per-task exceptions degrade to a
+  // MAYBE result rather than aborting the rest of the method.
+  private List<SolverResult> solveInParallel(final String sig, final List<ExceptionPath> paths) {
+    int parallelism = Runtime.getRuntime().availableProcessors() * 2;
+    log.info("Solving {} paths for {} in parallel ({} workers)", paths.size(), sig, parallelism);
+
+    AtomicInteger threadId = new AtomicInteger();
+    ThreadFactory factory =
+        r -> {
+          Thread t = new Thread(r, "z3-worker-" + threadId.getAndIncrement());
+          t.setDaemon(true);
+          return t;
+        };
+    ExecutorService pool = Executors.newFixedThreadPool(parallelism, factory);
+    List<Workspace> workspaces = new CopyOnWriteArrayList<>();
+    ThreadLocal<Workspace> tlWorkspace =
+        ThreadLocal.withInitial(
+            () -> {
+              Workspace w = Workspace.make();
+              workspaces.add(w);
+              return w;
+            });
+
+    AtomicInteger done = new AtomicInteger();
+    int total = paths.size();
+    List<Callable<SolverResult>> tasks = new ArrayList<>(total);
+    for (int i = 0; i < total; i++) {
+      final int idx = i;
+      final String pathId = sig + "#" + idx;
+      tasks.add(
+          () -> {
+            try {
+              SolverResult r =
+                  checkPathOn(tlWorkspace.get(), pathId, paths.get(idx).getConstraints());
+              int d = done.incrementAndGet();
+              if (d % ONE_THOUSAND_TASKS == 0 || d == total) {
+                log.info("Solved {}/{} paths for {}", d, total, sig);
+              }
+              return r;
+            } catch (RuntimeException e) {
+              log.warn("Path {} failed: {}", pathId, e.getMessage());
+              return new SolverResult(pathId, SolverStatus.MAYBE, Map.of());
+            }
+          });
+    }
+
+    try {
+      List<Future<SolverResult>> futures = pool.invokeAll(tasks);
+      List<SolverResult> results = new ArrayList<>(futures.size());
+      for (int i = 0; i < futures.size(); i++) {
+        try {
+          results.add(futures.get(i).get());
+        } catch (ExecutionException e) {
+          // Callable already catches RuntimeExceptions; this is the defensive fallback for
+          // anything that slipped through (e.g. an Error). Surface as MAYBE so the per-method
+          // result list stays index-aligned with paths.
+          String pathId = sig + "#" + i;
+          log.warn("Task {} failed: {}", pathId, e.getCause().getMessage());
+          results.add(new SolverResult(pathId, SolverStatus.MAYBE, Map.of()));
+        }
+      }
+      return results;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Parallel solving interrupted for " + sig, e);
+    } finally {
+      pool.shutdown();
+      for (Workspace w : workspaces) {
+        try {
+          w.close();
+        } catch (RuntimeException closeEx) {
+          log.warn("Failed to close worker Z3 context: {}", closeEx.getMessage());
+        }
+      }
+    }
+  }
+
   public SolverResult checkPath(final String pathId, final List<SymbolicConstraint> constraints) {
+    return checkPathOn(mainWorkspace, pathId, constraints);
+  }
+
+  private SolverResult checkPathOn(
+      final Workspace ws, final String pathId, final List<SymbolicConstraint> constraints) {
+    Solver solver = ws.solver();
+    Z3Translator translator = ws.translator();
     solver.push();
     translator.resetForNewPath();
 
@@ -102,7 +204,7 @@ public final class SymbolicConstraintSolver {
     boolean isSat = status == Status.SATISFIABLE;
 
     Model model = isSat ? solver.getModel() : null;
-    Map<String, ModelValue> modelValueMap = isSat ? extractModel(model) : Map.of();
+    Map<String, ModelValue> modelValueMap = isSat ? extractModel(ws, model) : Map.of();
 
     solver.pop();
 
@@ -110,31 +212,32 @@ public final class SymbolicConstraintSolver {
     return new SolverResult(pathId, solverStatus, modelValueMap);
   }
 
-  private Map<String, ModelValue> extractModel(final Model model) {
+  private Map<String, ModelValue> extractModel(final Workspace ws, final Model model) {
     Map<String, ModelValue> modelValueMap = new HashMap<>();
 
     // should cover variables, virtual invokes, lengths, casts, field accesses
     // when they are all implemented
-    extractDeclarations(model, modelValueMap);
+    extractDeclarations(ws, model, modelValueMap);
     // Also extract field functions (arity-1 decls named "field_*")
-    extractFieldFunctions(model, ctx, modelValueMap);
+    extractFieldFunctions(model, ws.ctx(), modelValueMap);
 
     return modelValueMap;
   }
 
-  private void extractDeclarations(final Model model, final Map<String, ModelValue> modelValueMap) {
-    Map<String, String> descriptions = translator.getIdDescriptions();
-    for (Map.Entry<String, Expr<?>> entry : translator.getDeclarations().entrySet()) {
+  private void extractDeclarations(
+      final Workspace ws, final Model model, final Map<String, ModelValue> modelValueMap) {
+    Map<String, String> descriptions = ws.translator().getIdDescriptions();
+    for (Map.Entry<String, Expr<?>> entry : ws.translator().getDeclarations().entrySet()) {
       String id = entry.getKey();
       Expr<?> expr = entry.getValue();
       String modelKey = descriptions.getOrDefault(id, id);
       try {
         if (expr.getSort().getSortKind() == Z3_ARRAY_SORT) {
           modelValueMap.put(
-              toModelKey(modelKey), new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ctx));
+              toModelKey(modelKey), new ArrayValue((ArrayExpr<IntSort, ?>) expr, model, ws.ctx()));
         } else {
           Expr<?> evaluated = model.eval(expr, true);
-          modelValueMap.put(modelKey, ModelValue.fromExpr(evaluated, model, ctx));
+          modelValueMap.put(modelKey, ModelValue.fromExpr(evaluated, model, ws.ctx()));
         }
       } catch (IllegalStateException ignored) {
         log.info("extractDeclarations failed for {} in expr {}", id, expr);
@@ -173,5 +276,22 @@ public final class SymbolicConstraintSolver {
 
   private String toModelKey(final String name) {
     return name.contains(":") ? name.substring(0, name.indexOf(':')) : name;
+  }
+
+  // Bundles the per-thread Z3 stack so the parallel path can hand each worker its own
+  // Context/Solver/Translator without leaking those types into the outer control flow.
+  private record Workspace(Context ctx, Solver solver, Z3Translator translator) {
+    static Workspace make() {
+      Context c = new Context();
+      Solver s = c.mkSolver();
+      Params p = c.mkParams();
+      p.add("timeout", TWENTY_SECONDS);
+      s.setParameters(p);
+      return new Workspace(c, s, new Z3Translator(c));
+    }
+
+    void close() {
+      ctx.close();
+    }
   }
 }
