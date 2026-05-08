@@ -2,6 +2,7 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
@@ -155,5 +156,35 @@ public final class SymSpecialInvoke extends SymExpr {
     sb.append(")");
     cachedToString = sb.toString();
     return cachedToString;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymSpecialInvoke symSpecialInvoke)) {
+      return false;
+    }
+    return returnsBoolean == symSpecialInvoke.returnsBoolean
+        && signature.equals(symSpecialInvoke.signature)
+        && base.equals(symSpecialInvoke.base)
+        && Arrays.equals(args, symSpecialInvoke.args);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime
+            * (prime * (prime * signature.hashCode() + base.hashCode()) + Arrays.hashCode(args))
+        + Boolean.hashCode(returnsBoolean);
+  }
+
+  public String getSignature() {
+    return signature;
+  }
+
+  public SymExpr[] getArgs() {
+    return args;
   }
 }

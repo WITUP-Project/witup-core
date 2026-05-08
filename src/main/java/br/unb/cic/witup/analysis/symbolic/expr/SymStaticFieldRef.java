@@ -34,4 +34,20 @@ public final class SymStaticFieldRef extends SymExpr {
   public boolean contains(final String varName) {
     return false;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymStaticFieldRef symStaticFieldRef)) {
+      return false;
+    }
+    return fieldSignature.equals(symStaticFieldRef.fieldSignature);
+  }
+
+  @Override
+  public int hashCode() {
+    return fieldSignature.hashCode();
+  }
 }

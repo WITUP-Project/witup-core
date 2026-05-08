@@ -32,4 +32,22 @@ public final class SymNew extends SymExpr {
   public boolean contains(final String varName) {
     return false;
   }
+
+  // Equality keys on cachedToString because it carries the only piece of state distinguishing
+  // two SymNew instances (the formatted class type, e.g. "new java.lang.IllegalArgumentException").
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymNew symNew)) {
+      return false;
+    }
+    return cachedToString.equals(symNew.cachedToString);
+  }
+
+  @Override
+  public int hashCode() {
+    return cachedToString.hashCode();
+  }
 }

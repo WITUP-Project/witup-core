@@ -41,4 +41,21 @@ public final class SymClassConst extends SymExpr {
   public boolean contains(final String varName) {
     return false;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymClassConst symClassConst)) {
+      return false;
+    }
+    return value.equals(symClassConst.value) && type.equals(symClassConst.type);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime * value.hashCode() + type.hashCode();
+  }
 }

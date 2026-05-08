@@ -1,6 +1,5 @@
 package br.unb.cic.witup.summary;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
@@ -44,11 +43,7 @@ public class CatchesSummaryTest {
     System.out.println(label + " exceptionPaths (" + summary.exceptionPaths().size() + "):");
     for (int p = 0; p < summary.exceptionPaths().size(); p++) {
       System.out.println(
-          " path "
-              + p
-              + " ("
-              + summary.exceptionPaths().get(p).getExceptionQualifiedName()
-              + "):");
+          " path " + p + " (" + summary.exceptionPaths().get(p).getExceptionQualifiedName() + "):");
       var cs = summary.exceptionPaths().get(p).getConstraints();
       for (int i = 0; i < cs.size(); i++) {
         System.out.println(

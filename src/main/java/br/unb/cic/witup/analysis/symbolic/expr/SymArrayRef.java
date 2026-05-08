@@ -60,7 +60,7 @@ public final class SymArrayRef extends SymExpr {
 
   @Override
   public boolean contains(final String varName) {
-    return array.toString().contains(varName);
+    return array.contains(varName) || index.contains(varName);
   }
 
   @Override
@@ -74,5 +74,22 @@ public final class SymArrayRef extends SymExpr {
       return arr.getKind();
     }
     return SymKind.OTHER;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymArrayRef symArrayRef)) {
+      return false;
+    }
+    return array.equals(symArrayRef.array) && index.equals(symArrayRef.index);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime * array.hashCode() + index.hashCode();
   }
 }

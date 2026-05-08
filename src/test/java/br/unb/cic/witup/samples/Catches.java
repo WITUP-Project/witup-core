@@ -10,7 +10,8 @@ public class Catches {
   }
 
   // Two CFG paths reach the throw at the bottom:
-  //   (a) mayThrow returned → exception stays null → if-check false → fall through (NOT a throw path).
+  //   (a) mayThrow returned → exception stays null → if-check false → fall through (NOT a throw
+  // path).
   //   (b) mayThrow threw → caught → exception = t → if-check true → throw.
   //       For the analyzer to find this path, the catch's def of `exception` must be enumerated.
   public static void simpleCatch(int x) {

@@ -77,4 +77,21 @@ public final class SymCast extends SymExpr {
     SymExpr newOp = op.resolveWith(env);
     return (newOp != op) ? new SymCast(newOp, type) : this;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymCast symCast)) {
+      return false;
+    }
+    return op.equals(symCast.op) && type.equals(symCast.type);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime * op.hashCode() + type.hashCode();
+  }
 }

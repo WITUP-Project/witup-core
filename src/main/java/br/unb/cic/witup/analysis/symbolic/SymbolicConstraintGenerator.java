@@ -54,7 +54,7 @@ import sootup.core.types.Type;
  */
 public final class SymbolicConstraintGenerator {
   public static final String RET_PREFIX = "_ret_";
-  private static AtomicInteger globalFreshCounter = new AtomicInteger(0);
+  private static final AtomicInteger GLOBAL_FRESH_COUNTER = new AtomicInteger(0);
   private final WITUpGraph cpg;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
   private final SummaryResolver resolver;
@@ -66,16 +66,24 @@ public final class SymbolicConstraintGenerator {
 
   public List<SymbolicConstraint> generateSymbolicConstraints(final WITUpPath p) {
     setCurrentPath(p);
-    List<SymbolicConstraint> symbolicConstraints = new ArrayList<>();
+    IterationContext iterCtx = IterationContext.compute(p);
+    List<SymbolicConstraint> symbolicConstraints = new ArrayList<>(iterCtx.linkPreconditions());
+
     for (ThrowConstraint throwConstraint : cpg.getThrowConstraints(p)) {
       StmtGraphNode n = (StmtGraphNode) throwConstraint.node().getNode();
       List<SymbolicConstraint> preconditions = new ArrayList<>();
 
       SymExpr symExpr;
       if (n.getStmt() instanceof JIfStmt ifStmt) {
-        SubstituteResult result =
-            substituteWithPreconditions(
-                SymExpr.fromJimple(ifStmt.getCondition()), throwConstraint.node());
+        SymExpr ifCond = SymExpr.fromJimple(ifStmt.getCondition());
+        // Rewrite self-update var uses (loop counters / accumulators) to iter-indexed
+        // SymVars before substitution. Without this, the same variable name on either
+        // side of a back-edge would resolve to its initial def in both places, producing
+        // contradictory same-SymExpr constraints (e.g. `0 >= xs.length` asserted both
+        // true and false on the same path).
+        ifCond = iterCtx.rewriteAt(ifCond, throwConstraint.forwardEdgeIndex());
+
+        SubstituteResult result = substituteWithPreconditions(ifCond, throwConstraint.node());
         symExpr = result.expr();
         preconditions.addAll(result.preconditions());
       } else if (throwConstraint.node() instanceof CaughtExceptionNode caught) {
@@ -255,7 +263,7 @@ public final class SymbolicConstraintGenerator {
             if (callee.guardedReturn() != null) {
               SymVar freshVar =
                   SymVar.fresh(
-                      RET_PREFIX + globalFreshCounter.getAndIncrement(),
+                      RET_PREFIX + GLOBAL_FRESH_COUNTER.getAndIncrement(),
                       callee.guardedReturn().isEmpty()
                           ? SymKind.INT
                           : callee.guardedReturn().getFirst().value().getKind());

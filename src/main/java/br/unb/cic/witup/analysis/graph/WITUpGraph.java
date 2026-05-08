@@ -339,12 +339,14 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<ThrowConstraint> getThrowConstraints(final WITUpPath path) {
-    List<ThrowConstraint> throwConstraints = new ArrayList<>();
-    for (WITUpEdge e : path.edges().reversed()) {
+    List<WITUpEdge> forwardEdges = path.forwardEdges();
+    List<ThrowConstraint> throwConstraints = new ArrayList<>(forwardEdges.size());
+    for (int i = 0; i < forwardEdges.size(); i++) {
+      WITUpEdge e = forwardEdges.get(i);
       if (e instanceof BooleanCFGEdge boolEdge) {
-        throwConstraints.add(new ThrowConstraint(e.getSource(), boolEdge.getCondition()));
+        throwConstraints.add(new ThrowConstraint(e.getSource(), boolEdge.getCondition(), i));
       } else if (e instanceof ExceptionalCFGEdge) {
-        throwConstraints.add(new ThrowConstraint(e.getTarget(), true));
+        throwConstraints.add(new ThrowConstraint(e.getTarget(), true, i));
       }
     }
     return throwConstraints;

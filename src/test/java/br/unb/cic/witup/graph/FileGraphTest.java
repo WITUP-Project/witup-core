@@ -24,8 +24,7 @@ public class FileGraphTest {
 
   @Test
   public void cleanDirectoryGraph() {
-    String methodSignature =
-        "<br.unb.cic.witup.samples.File: void cleanDirectory(java.io.File)>";
+    String methodSignature = "<br.unb.cic.witup.samples.File: void cleanDirectory(java.io.File)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     WITUpGraph cpg = analysis.graph();

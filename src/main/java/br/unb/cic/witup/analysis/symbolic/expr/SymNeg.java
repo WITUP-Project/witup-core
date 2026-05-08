@@ -68,4 +68,20 @@ public final class SymNeg extends SymExpr {
   public String toString() {
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymNeg symNeg)) {
+      return false;
+    }
+    return operand.equals(symNeg.operand);
+  }
+
+  @Override
+  public int hashCode() {
+    return operand.hashCode();
+  }
 }

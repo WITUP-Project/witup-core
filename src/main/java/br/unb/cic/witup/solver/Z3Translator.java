@@ -93,8 +93,8 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   /**
    * Clears per-path state (declarations, IDs, descriptions, and the SymExpr→Z3 cache) while
    * preserving the cross-path caches that key on Z3 expressions (sortCache, intConstCache).
-   * exprCache is per-path now that it's content-keyed: holding it across paths would re-serve
-   * Z3 consts created against a previous path's exprMap, so model extraction would miss them.
+   * exprCache is per-path now that it's content-keyed: holding it across paths would re-serve Z3
+   * consts created against a previous path's exprMap, so model extraction would miss them.
    */
   public void resetForNewPath() {
     exprMap.clear();
@@ -607,6 +607,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         });
   }
 
+  // Produces the human-readable label that surfaces as the Z3 const description in the
+  // model. Compound expressions get explicit arms so sub-expressions go through
+  // safeDescribe — this keeps the description layer in our control rather than coupled
+  // to whatever each class's toString happens to produce. Leaf SymExprs (consts, refs)
+  // fall through to toString because their toStrings are already canonical literals
+  // (`"42"`, `"'foo'"`, `null`, `@this:Type`) and adding arms would just duplicate them.
   private static String describeExpr(final SymExpr expr) {
     return switch (expr) {
       case SymVar v -> v.getName();
@@ -615,28 +621,53 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       case SymCast c -> "(" + c.getType() + ")" + safeDescribe(c.getOp());
       case SymInstanceOf i ->
           safeDescribe(i.getOp()) + "_instanceof_" + i.getType().replace(".", "_");
-      case SymVirtualInvoke i -> {
-        StringBuilder sb = new StringBuilder(safeDescribe(i.getBase()));
-        sb.append(".").append(i.getSignature()).append("(");
-        SymExpr[] args = i.getArgs();
-        if (args.length > 0) {
-          sb.append(safeDescribe(args[0]));
-          for (int k = 1; k < args.length; k++) {
-            sb.append(",").append(safeDescribe(args[k]));
-          }
-        }
-        sb.append(")");
-        yield sb.toString();
-      }
-      default -> expr.getClass().getSimpleName() + "@" + System.identityHashCode(expr);
+      case SymNeg n -> "-" + safeDescribe(n.getOperand());
+      case SymBinOp b ->
+          "(" + safeDescribe(b.getLhs()) + " " + b.getOp() + " " + safeDescribe(b.getRhs()) + ")";
+      case SymITE ite ->
+          "("
+              + safeDescribe(ite.getCondition())
+              + " ? "
+              + safeDescribe(ite.getThenExpr())
+              + " : "
+              + safeDescribe(ite.getElseExpr())
+              + ")";
+      case SymFieldAccess f -> safeDescribe(f.getBase()) + "." + f.getFieldName();
+      case SymArrayRef a -> safeDescribe(a.getArray()) + "[" + safeDescribe(a.getIndex()) + "]";
+      case SymVirtualInvoke i ->
+          describeInvoke(safeDescribe(i.getBase()), i.getSignature(), i.getArgs());
+      case SymInterfaceInvoke i ->
+          describeInvoke(safeDescribe(i.getBase()), i.getSignature(), i.getArgs());
+      case SymSpecialInvoke i ->
+          describeInvoke(safeDescribe(i.getBase()), "<" + i.getSignature() + ">", i.getArgs());
+      case SymStaticInvoke i -> describeInvoke(null, i.getInvokeName(), i.getArgs());
+      case SymDynamicInvoke i -> describeInvoke(null, "dynamic_" + i.getSignature(), i.getArgs());
+      default -> expr.toString();
     };
+  }
+
+  private static String describeInvoke(
+      final String base, final String signature, final SymExpr[] args) {
+    StringBuilder sb = new StringBuilder();
+    if (base != null) {
+      sb.append(base).append(".");
+    }
+    sb.append(signature).append("(");
+    if (args.length > 0) {
+      sb.append(safeDescribe(args[0]));
+      for (int k = 1; k < args.length; k++) {
+        sb.append(",").append(safeDescribe(args[k]));
+      }
+    }
+    sb.append(")");
+    return sb.toString();
   }
 
   private static String safeDescribe(final SymExpr expr) {
     return switch (expr) {
       case SymVar v -> v.getName();
       case SymParamRef p -> p.toString();
-      default -> expr.getClass().getSimpleName() + "@" + System.identityHashCode(expr);
+      default -> expr.toString();
     };
   }
 

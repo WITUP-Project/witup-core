@@ -123,4 +123,21 @@ public final class SymNewMultiArray extends SymExpr {
     }
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymNewMultiArray symNewMultiArray)) {
+      return false;
+    }
+    return objectType.equals(symNewMultiArray.objectType) && sizes.equals(symNewMultiArray.sizes);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime * objectType.hashCode() + sizes.hashCode();
+  }
 }
