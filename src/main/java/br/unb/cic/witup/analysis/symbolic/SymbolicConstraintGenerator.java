@@ -57,6 +57,7 @@ public final class SymbolicConstraintGenerator {
   private static final AtomicInteger GLOBAL_FRESH_COUNTER = new AtomicInteger(0);
   private final WITUpGraph cpg;
   private Set<WITUpNode> currentPathNodes = Collections.emptySet();
+  private Map<WITUpNode, Integer> currentPathLastIndex = Collections.emptyMap();
   private final SummaryResolver resolver;
 
   public SymbolicConstraintGenerator(final WITUpGraph cpg, final SummaryResolver resolver) {
@@ -102,6 +103,14 @@ public final class SymbolicConstraintGenerator {
 
   private void setCurrentPath(final WITUpPath p) {
     this.currentPathNodes = new HashSet<>(p.nodes());
+    List<WITUpNode> forward = p.forwardNodes();
+    Map<WITUpNode, Integer> lastIndex = new HashMap<>(forward.size() * 2);
+    // overwrites: a node revisited under loop unrolling ends up mapped to its
+    // latest occurrence — the right anchor for "latest reaching def on path".
+    for (int i = 0; i < forward.size(); i++) {
+      lastIndex.put(forward.get(i), i);
+    }
+    this.currentPathLastIndex = lastIndex;
   }
 
   public List<List<SymbolicConstraint>> buildThrowConstraintPaths(final WITUpNode throwNode) {
@@ -225,7 +234,7 @@ public final class SymbolicConstraintGenerator {
     }
     visited.add(currentNode);
 
-    Set<String> ambiguous = multipleDefinitions(currentNode);
+    Map<String, WITUpNode> latestByVar = pickLatestPathDefs(currentNode, followIdentity);
 
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
@@ -258,7 +267,8 @@ public final class SymbolicConstraintGenerator {
 
         if (resolvedCallee.isPresent()) {
           String definedVar = getVariableName(assign.getLeftOp());
-          if (freeVars.contains(definedVar) && !ambiguous.contains(definedVar)) {
+          if (freeVars.contains(definedVar)
+              && !isShadowedByLaterDef(sourceNode, definedVar, latestByVar)) {
             ResolvedCallee callee = resolvedCallee.get();
             if (callee.guardedReturn() != null) {
               SymVar freshVar =
@@ -296,50 +306,133 @@ public final class SymbolicConstraintGenerator {
       }
 
       String definedVar = getVariableName(lhsOp);
-      if (!freeVars.contains(definedVar) || ambiguous.contains(definedVar)) {
-        // Phi-style join: the variable has multiple distinct reaching defs in the CFG, so
-        // we don't know which value applies on a given path. Leave the SymVar unsubstituted
-        // — Z3 will treat it as a free symbolic value rather than committing to one branch.
+      if (!freeVars.contains(definedVar)
+          || isShadowedByLaterDef(sourceNode, definedVar, latestByVar)) {
         continue;
       }
-      addBinding(freeVars, env, definedVar, SymExpr.fromJimple(rhsOp));
+      SymExpr boundValue = tightenCaughtExceptionRef(SymExpr.fromJimple(rhsOp), sourceNode);
+      addBinding(freeVars, env, definedVar, boundValue);
       collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
     }
   }
 
-  // Detects variables with multiple reaching definitions at currentNode — the points where
-  // SSA would insert a φ. We restrict the check to the case actually missed by the current
-  // path enumerator: a def reachable from a CaughtExceptionNode (i.e., assigned inside a
-  // catch handler). For if/else conditionals the enumerator already produces a separate
-  // throw path per branch, so per-path substitution is correct and we don't want to
-  // override it with a free SymVar.
-  //
-  // Self-updating defs (`i = i + 1`, `sum = sum + x`) are excluded — those are loop
-  // back-edge updates, not alternate-branch defs.
-  private Set<String> multipleDefinitions(final WITUpNode currentNode) {
-    Map<String, Set<WITUpNode>> sourceNodes = new HashMap<>();
-    Set<String> hasCatchDef = new HashSet<>();
-    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
+  // SootUp materializes `catch (T t) { x = t; }` as a JIdentityStmt-into-stack-temp followed
+  // by a JAssignStmt copying that temp into the user local. With followIdentity=false, the
+  // backward walk stops at the stack temp, so a substitution of `x` lands on `stack_N` —
+  // useful but not semantic. When the bound RHS is a Local whose only path-included DDG
+  // source is a JIdentityStmt with JCaughtExceptionRef on the right, collapse the chain to
+  // SymCaughtExceptionRef so the resulting Z3 const reads `caught_<type>_is_null` rather
+  // than `stack_N_is_null`.
+  private SymExpr tightenCaughtExceptionRef(final SymExpr fallback, final WITUpNode bindSource) {
+    if (!(fallback instanceof SymVar)) {
+      return fallback;
+    }
+    JCaughtExceptionRef caughtRef = null;
+    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(bindSource)) {
       WITUpNode src = cpg.getEdgeSource(edge);
       if (nodeNotInPath(src)) {
+        continue;
+      }
+      JCaughtExceptionRef ref = caughtRefFromSource(src);
+      if (ref == null) {
+        continue;
+      }
+      if (caughtRef != null && !caughtRef.getType().equals(ref.getType())) {
+        return fallback;
+      }
+      caughtRef = ref;
+    }
+    return caughtRef != null ? new SymCaughtExceptionRef(caughtRef) : fallback;
+  }
+
+  private static JCaughtExceptionRef caughtRefFromSource(final WITUpNode src) {
+    if (src instanceof CaughtExceptionNode catchNode) {
+      return catchNode.getCaughtExceptionRef();
+    }
+    if (!(src instanceof SimpleNode sn)) {
+      return null;
+    }
+    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+      return null;
+    }
+    if (stmtNode.getStmt() instanceof JIdentityStmt identity
+        && identity.getRightOp() instanceof JCaughtExceptionRef ref) {
+      return ref;
+    }
+    return null;
+  }
+
+  private static boolean isShadowedByLaterDef(
+      final WITUpNode src, final String var, final Map<String, WITUpNode> latestByVar) {
+    WITUpNode latest = latestByVar.get(var);
+    return latest != null && !src.equals(latest);
+  }
+
+  // For each variable defined by 2+ path-included DDG sources at currentNode, returns the
+  // source whose forward-path position is latest — i.e. the reaching def that wins under
+  // standard backward def-use chasing on this single path. Variables with a single source
+  // are omitted (the existing collectBindings flow handles them without shadow filtering).
+  // Sources are also excluded if collectBindings would itself skip them (cast-on-non-stack
+  // assigns, identity statements when followIdentity is false, self-updates handled by
+  // IterationContext) — picking such a source as "latest" would shadow an earlier eligible
+  // def and silently drop the substitution.
+  private Map<String, WITUpNode> pickLatestPathDefs(
+      final WITUpNode currentNode, final boolean followIdentity) {
+    Map<String, List<WITUpNode>> byVar = new HashMap<>();
+    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
+      WITUpNode src = cpg.getEdgeSource(edge);
+      if (nodeNotInPath(src) || !isEligibleDefSource(src, followIdentity)) {
         continue;
       }
       String var = definedVarOf(src);
       if (var == null || isSelfUpdate(src, var)) {
         continue;
       }
-      sourceNodes.computeIfAbsent(var, k -> new HashSet<>()).add(src);
-      if (isCatchHandlerDef(src)) {
-        hasCatchDef.add(var);
+      byVar.computeIfAbsent(var, k -> new ArrayList<>()).add(src);
+    }
+    Map<String, WITUpNode> latest = new HashMap<>();
+    for (Map.Entry<String, List<WITUpNode>> entry : byVar.entrySet()) {
+      List<WITUpNode> srcs = entry.getValue();
+      if (srcs.size() < 2) {
+        continue;
+      }
+      WITUpNode latestSrc = null;
+      int latestIdx = -1;
+      for (WITUpNode src : srcs) {
+        Integer idx = currentPathLastIndex.get(src);
+        if (idx != null && idx > latestIdx) {
+          latestIdx = idx;
+          latestSrc = src;
+        }
+      }
+      if (latestSrc != null) {
+        latest.put(entry.getKey(), latestSrc);
       }
     }
-    Set<String> multipleDefs = new HashSet<>();
-    for (Map.Entry<String, Set<WITUpNode>> entry : sourceNodes.entrySet()) {
-      if (entry.getValue().size() > 1 && hasCatchDef.contains(entry.getKey())) {
-        multipleDefs.add(entry.getKey());
-      }
+    return latest;
+  }
+
+  private static boolean isEligibleDefSource(final WITUpNode src, final boolean followIdentity) {
+    if (!(src instanceof SimpleNode sn)) {
+      return false;
     }
-    return multipleDefs;
+    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+      return false;
+    }
+    Stmt stmt = stmtNode.getStmt();
+    if (stmt instanceof JAssignStmt assign) {
+      // Mirror the cast-on-non-stack skip in collectBindings.
+      return isStackVariableValue(assign.getLeftOp())
+          || !(assign.getRightOp() instanceof JCastExpr);
+    }
+    if (stmt instanceof JIdentityStmt) {
+      return followIdentity;
+    }
+    return false;
+  }
+
+  private static boolean isStackVariableValue(final Value value) {
+    return value.toString().contains("$stack");
   }
 
   private static String definedVarOf(final WITUpNode src) {
@@ -370,36 +463,6 @@ public final class SymbolicConstraintGenerator {
       return false;
     }
     return SymExpr.fromJimple(assign.getRightOp()).contains(lhsName);
-  }
-
-  // True if the def's value originates from a caught-exception identity statement —
-  // either directly (`exception = (T) @caughtexception`) or one DDG hop away through a
-  // stack temporary (`$stack0 := @caughtexception; exception = $stack0`).
-  // may need to jump more than one DDG hop?
-  private boolean isCatchHandlerDef(final WITUpNode src) {
-    if (src instanceof CaughtExceptionNode) {
-      return true;
-    }
-    if (!(src instanceof SimpleNode sn)) {
-      return false;
-    }
-    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
-      return false;
-    }
-    Stmt stmt = stmtNode.getStmt();
-    if (stmt instanceof JAssignStmt assign && assign.getRightOp() instanceof JCaughtExceptionRef) {
-      return true;
-    }
-    if (stmt instanceof JIdentityStmt identity
-        && identity.getRightOp() instanceof JCaughtExceptionRef) {
-      return true;
-    }
-    for (DataDependencyEdge ddg : cpg.getIncomingDDGEdges(src)) {
-      if (cpg.getEdgeSource(ddg) instanceof CaughtExceptionNode) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private static void addBinding(

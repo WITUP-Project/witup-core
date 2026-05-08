@@ -14,10 +14,18 @@ public class CatchesSolverTest {
     String methodSignature = "<br.unb.cic.witup.samples.Catches: void simpleCatch(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
 
-    // path 0: catch fired, post-catch throw fires when exception is non-null
+    // path 0: catch fired, post-catch throw fires. The substitution chain resolves
+    // `exception` to the catch-handler's local (a SootUp stack temp like `stack_N`),
+    // so we anchor on the path-level catch flag rather than a slot-number-dependent
+    // `*_is_null` key.
     SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
-    assertFalse(sol0.getBool("exception_is_null"), "catch-fired path requires exception non-null");
+    assertTrue(
+        sol0.getBool("caught_java_lang_Throwable"),
+        "catch-fired path must assert the throwable was caught");
+    assertFalse(
+        sol0.getBool("caught_java_lang_Throwable_is_null"),
+        "catch-fired path requires the caught throwable to be non-null");
 
     // unsat if path-aware joining works
     SolverResult sol1 = analysis.solutions().get(1);
@@ -34,7 +42,12 @@ public class CatchesSolverTest {
     // (i#1 >= xs.length) consistent, so this path is SAT (previously UNSAT-bogus).
     SolverResult sol0 = analysis.solutions().getFirst();
     assertTrue(sol0.isSat());
-    assertFalse(sol0.getBool("exception_is_null"), "catch-fired path requires exception non-null");
+    assertTrue(
+        sol0.getBool("caught_java_lang_Throwable"),
+        "catch-fired path must assert the throwable was caught");
+    assertFalse(
+        sol0.getBool("caught_java_lang_Throwable_is_null"),
+        "catch-fired path requires the caught throwable to be non-null");
 
     // unsat if path-aware joining works
     SolverResult sol1 = analysis.solutions().get(1);
