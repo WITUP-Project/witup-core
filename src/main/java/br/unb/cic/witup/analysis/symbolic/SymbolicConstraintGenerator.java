@@ -85,12 +85,8 @@ public final class SymbolicConstraintGenerator {
       }
       symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
 
-      boolean truthValue = throwConstraint.truthValue();
-      if (symExpr.getKind() == SymKind.BOOLEAN_METHOD) {
-        truthValue = !truthValue;
-      }
       symbolicConstraints.addAll(preconditions);
-      symbolicConstraints.add(new SymbolicConstraint(symExpr, truthValue));
+      symbolicConstraints.add(new SymbolicConstraint(symExpr, throwConstraint.truthValue()));
     }
     return symbolicConstraints;
   }
