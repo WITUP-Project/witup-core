@@ -11,13 +11,15 @@ import sootup.core.jimple.basic.Value;
 public final class SymVar extends SymExpr {
   private static final Pattern DEFAULT_LOCAL = Pattern.compile("l\\d+");
   private static final Pattern STACK_LOCAL = Pattern.compile("\\$stack(\\d+)");
+  public static final String VAR_PREFIX = "var_";
+  public static final String STACK_PREFIX = "stack_";
 
   private final String name;
   private final String typeName;
 
   public SymVar(final Local l) {
     super(fromJimpleType(l.getType()));
-    this.name = normalize(l.getName());
+    this.name = normalise(l.getName());
     this.typeName = l.getType().toString();
   }
 
@@ -27,7 +29,7 @@ public final class SymVar extends SymExpr {
   // Jimple Values (refs, immediates) do not participate in the local-rename scheme.
   public static String nameOf(final Value v) {
     if (v instanceof Local l) {
-      return normalize(l.getName());
+      return normalise(l.getName());
     }
     return v.toString();
   }
@@ -35,13 +37,13 @@ public final class SymVar extends SymExpr {
   // SootUp default-named locals (l0, l1, ...) and stack temps ($stack3) are not
   // user-meaningful — surface them as var_N / stack_N so model output and constraint
   // dumps don't expose internal Jimple naming. User-named locals pass through.
-  private static String normalize(final String name) {
+  private static String normalise(final String name) {
     if (DEFAULT_LOCAL.matcher(name).matches()) {
-      return "var_" + name.substring(1);
+      return VAR_PREFIX + name.substring(1);
     }
     var stackMatch = STACK_LOCAL.matcher(name);
     if (stackMatch.matches()) {
-      return "stack_" + stackMatch.group(1);
+      return STACK_PREFIX + stackMatch.group(1);
     }
     return name;
   }

@@ -53,29 +53,11 @@ import sootup.java.core.JavaSootMethod;
 public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> {
   private String methodSignature;
   private JavaSootMethod method;
-  private String dot;
   private WITUpNode entryNode;
   private final Map<WITUpNode, List<WITUpPath>> cachedConstraintPaths = new HashMap<>();
   private final Map<WITUpNode, List<WITUpPath>> cachedReturnPaths = new HashMap<>();
   private Map<WITUpNode, List<WITUpEdge>> cfgIncoming;
   private Map<WITUpNode, List<WITUpEdge>> cfgOutgoing;
-  // Bounds back-edge revisits during path enumeration. With max=1 every CFG edge can be
-  // traversed at most once on a single path, which lets a loop header be entered via the
-  // entry-edge AND once more via a back-edge — i.e. the body is symbolically unrolled
-  // exactly once. Increase to widen the unrolling at the cost of (max+1)^loop-depth more
-  // paths per method.
-  private int maxEdgeTraversals = 1;
-
-  public void setMaxEdgeTraversals(final int n) {
-    if (n < 1) {
-      throw new IllegalArgumentException("maxEdgeTraversals must be >= 1");
-    }
-    this.maxEdgeTraversals = n;
-  }
-
-  public int getMaxEdgeTraversals() {
-    return maxEdgeTraversals;
-  }
 
   public String getMethodSignature() {
     return methodSignature;
@@ -87,10 +69,6 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private WITUpGraph() {
     super(WITUpEdge.class);
-  }
-
-  public String getDot() {
-    return dot;
   }
 
   /**
@@ -105,7 +83,6 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     Map<PropertyGraphNode, WITUpNode> cachedNodes = new HashMap<>();
     graph.methodSignature = method.getSignature().toString();
     graph.method = method;
-    graph.dot = pg.toDotGraph();
 
     // SootUp's CPG creators emit an empty PropertyGraph for trivial single-statement
     // methods (e.g. `return CONST;`). Recover the statements directly from the body so
@@ -191,11 +168,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
     List<WITUpPath> result = new ArrayList<>();
-    Map<WITUpEdge, Integer> edgeCounts = new HashMap<>();
+    Map<WITUpEdge, Integer> edgeVisits = new HashMap<>();
     List<WITUpNode> pathNodes = new ArrayList<>();
     List<WITUpEdge> pathEdges = new ArrayList<>();
     pathNodes.add(end);
-    backDFS(start, end, edgeCounts, pathNodes, pathEdges, result);
+    backDFS(start, end, edgeVisits, pathNodes, pathEdges, result);
     return result;
   }
 
@@ -221,6 +198,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     for (int i = incoming.size() - 1; i >= 0; i--) {
       WITUpEdge edge = incoming.get(i);
       int count = edgeCounts.getOrDefault(edge, 0);
+      // Bounds back-edge revisits during path enumeration. With max=1 every CFG edge can be
+      // traversed at most once on a single path, which lets a loop header be entered via the
+      // entry-edge AND once more via a back-edge — i.e. the body is symbolically unrolled
+      // exactly once. Increase to widen the unrolling at the cost of (max+1)^loop-depth more
+      // paths per method.
+      // Needs experimental tweaking to see if 1 is enough for our purposes
+      int maxEdgeTraversals = 1;
       if (count >= maxEdgeTraversals) {
         continue;
       }
@@ -404,18 +388,5 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return null;
-  }
-
-  public void dump() {
-    for (WITUpNode n : vertexSet()) {
-      System.out.println("  NODE: " + n.getClass().getSimpleName() + " -- " + n.getNode());
-    }
-    for (WITUpEdge e : edgeSet()) {
-      System.out.println(
-          "  EDGE: + "
-              + e.getSource().getClass().getSimpleName()
-              + "-->"
-              + e.getTarget().getClass().getSimpleName());
-    }
   }
 }

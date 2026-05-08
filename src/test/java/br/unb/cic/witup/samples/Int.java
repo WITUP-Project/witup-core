@@ -47,7 +47,6 @@ public class Int {
   }
 
   public int lessThanConstantRhsViaBoolean(int a) {
-    // if a == 0, invalid is false.
     boolean invalid = a < 0;
     if (invalid) {
       throw new IllegalArgumentException("a cannot be negative");

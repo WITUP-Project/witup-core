@@ -90,7 +90,7 @@ public final class SymbolicConstraintGenerator {
         preconditions.addAll(result.preconditions());
       } else if (throwConstraint.node() instanceof CaughtExceptionNode caught) {
         SymCaughtExceptionRef catchRef = new SymCaughtExceptionRef(caught.getCaughtExceptionRef());
-        preconditions.add(caughtExceptionRefLock(catchRef));
+        preconditions.add(sealCaughtExceptionRef(catchRef));
         symExpr = catchRef;
       } else {
         throw new IllegalStateException(
@@ -101,7 +101,10 @@ public final class SymbolicConstraintGenerator {
       symbolicConstraints.addAll(preconditions);
       symbolicConstraints.add(new SymbolicConstraint(symExpr, throwConstraint.truthValue()));
     }
-    return symbolicConstraints;
+    // The catch-ref seal can be emitted from both the CaughtExceptionNode throw-constraint
+    // path and the tightened-substitution path on the same path; keep first occurrence so
+    // ordering still reads bottom-up but drop the structural duplicate.
+    return new ArrayList<>(new java.util.LinkedHashSet<>(symbolicConstraints));
   }
 
   private void setCurrentPath(final WITUpPath p) {
@@ -313,9 +316,9 @@ public final class SymbolicConstraintGenerator {
           || isShadowedByLaterDef(sourceNode, definedVar, latestByVar)) {
         continue;
       }
-      SymExpr boundValue = tightenCaughtExceptionRef(SymExpr.fromJimple(rhsOp), sourceNode);
+      SymExpr boundValue = resolveCaughtExceptionRef(SymExpr.fromJimple(rhsOp), sourceNode);
       if (boundValue instanceof SymCaughtExceptionRef catchRef) {
-        preconditions.add(caughtExceptionRefLock(catchRef));
+        preconditions.add(sealCaughtExceptionRef(catchRef));
       }
       addBinding(freeVars, env, definedVar, boundValue);
       collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
@@ -327,7 +330,7 @@ public final class SymbolicConstraintGenerator {
   // the throw guard substitution pins the null check; without this lock, those two Z3 bool
   // consts are independent and a future change that touches one could leave the other free.
   // Translates as Z3 mkEq on two BoolExprs, which is iff.
-  private static SymbolicConstraint caughtExceptionRefLock(final SymCaughtExceptionRef ref) {
+  private static SymbolicConstraint sealCaughtExceptionRef(final SymCaughtExceptionRef ref) {
     SymExpr nonNull = new SymBinOp(BinOp.NE, ref, SymNull.INSTANCE);
     return new SymbolicConstraint(new SymBinOp(BinOp.EQ, ref, nonNull), true);
   }
@@ -339,7 +342,7 @@ public final class SymbolicConstraintGenerator {
   // source is a JIdentityStmt with JCaughtExceptionRef on the right, collapse the chain to
   // SymCaughtExceptionRef so the resulting Z3 const reads `caught_<type>_is_null` rather
   // than `stack_N_is_null`.
-  private SymExpr tightenCaughtExceptionRef(final SymExpr fallback, final WITUpNode bindSource) {
+  private SymExpr resolveCaughtExceptionRef(final SymExpr fallback, final WITUpNode bindSource) {
     if (!(fallback instanceof SymVar)) {
       return fallback;
     }
@@ -349,7 +352,7 @@ public final class SymbolicConstraintGenerator {
       if (nodeNotInPath(src)) {
         continue;
       }
-      JCaughtExceptionRef ref = caughtRefFromSource(src);
+      JCaughtExceptionRef ref = resolveCaughtRef(src);
       if (ref == null) {
         continue;
       }
@@ -361,7 +364,7 @@ public final class SymbolicConstraintGenerator {
     return caughtRef != null ? new SymCaughtExceptionRef(caughtRef) : fallback;
   }
 
-  private static JCaughtExceptionRef caughtRefFromSource(final WITUpNode src) {
+  private static JCaughtExceptionRef resolveCaughtRef(final WITUpNode src) {
     if (src instanceof CaughtExceptionNode catchNode) {
       return catchNode.getCaughtExceptionRef();
     }
@@ -438,8 +441,7 @@ public final class SymbolicConstraintGenerator {
     Stmt stmt = stmtNode.getStmt();
     if (stmt instanceof JAssignStmt assign) {
       // Mirror the cast-on-non-stack skip in collectBindings.
-      return isStackVariableValue(assign.getLeftOp())
-          || !(assign.getRightOp() instanceof JCastExpr);
+      return isStackVariable(assign.getLeftOp()) || !(assign.getRightOp() instanceof JCastExpr);
     }
     if (stmt instanceof JIdentityStmt) {
       return followIdentity;
@@ -447,9 +449,9 @@ public final class SymbolicConstraintGenerator {
     return false;
   }
 
-  private static boolean isStackVariableValue(final Value value) {
-    return value.toString().contains("$stack");
-  }
+  //  private static boolean isStackVariableValue(final Value value) {
+  //    return value.toString().contains("$stack");
+  //  }
 
   private static String definedVarOf(final WITUpNode src) {
     if (!(src instanceof SimpleNode sn)) {
@@ -602,7 +604,7 @@ public final class SymbolicConstraintGenerator {
     return SymVar.nameOf(value);
   }
 
-  private boolean isStackVariable(final LValue value) {
+  private static boolean isStackVariable(final LValue value) {
     return value.toString().contains("$stack");
   }
 }
