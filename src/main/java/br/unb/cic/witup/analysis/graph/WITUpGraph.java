@@ -174,19 +174,23 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
     List<WITUpPath> result = new ArrayList<>();
-    Set<WITUpNode> visited = new HashSet<>();
+    Set<WITUpEdge> visitedEdges = new HashSet<>();
     List<WITUpNode> pathNodes = new ArrayList<>();
     List<WITUpEdge> pathEdges = new ArrayList<>();
-    visited.add(end);
     pathNodes.add(end);
-    backDFS(start, end, visited, pathNodes, pathEdges, result);
+    backDFS(start, end, visitedEdges, pathNodes, pathEdges, result);
     return result;
   }
 
+  // Tracks visited *edges* rather than visited nodes so a join node (e.g. a loop header)
+  // can be entered from one predecessor edge and re-entered from a back-edge on the same
+  // path. Per-edge cycle protection is sufficient: a path cannot traverse the same edge
+  // twice, so termination is preserved without forbidding legitimate back-edge revisits
+  // that the catch-block-inside-a-loop case (commons-io FileUtils#cleanDirectory) needs.
   private void backDFS(
       final WITUpNode start,
       final WITUpNode current,
-      final Set<WITUpNode> visited,
+      final Set<WITUpEdge> visitedEdges,
       final List<WITUpNode> pathNodes,
       final List<WITUpEdge> pathEdges,
       final List<WITUpPath> witUpPaths) {
@@ -198,15 +202,16 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     List<WITUpEdge> incoming = incomingCfgEdges(current);
     for (int i = incoming.size() - 1; i >= 0; i--) {
       WITUpEdge edge = incoming.get(i);
-      WITUpNode pred = edge.getSource();
-      if (visited.add(pred)) {
-        pathNodes.add(pred);
-        pathEdges.add(edge);
-        backDFS(start, pred, visited, pathNodes, pathEdges, witUpPaths);
-        pathNodes.removeLast();
-        pathEdges.removeLast();
-        visited.remove(pred);
+      if (!visitedEdges.add(edge)) {
+        continue;
       }
+      WITUpNode pred = edge.getSource();
+      pathNodes.add(pred);
+      pathEdges.add(edge);
+      backDFS(start, pred, visitedEdges, pathNodes, pathEdges, witUpPaths);
+      pathNodes.removeLast();
+      pathEdges.removeLast();
+      visitedEdges.remove(edge);
     }
   }
 
