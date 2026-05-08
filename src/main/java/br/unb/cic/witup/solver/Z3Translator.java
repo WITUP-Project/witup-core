@@ -83,7 +83,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   private Map<SymExpr, Expr<?>> exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
   private Map<SymExpr, String> exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
   private Map<String, String> idToTruncatedDescription = new HashMap<>(PER_PATH_CACHE_CAPACITY);
-  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(CROSS_PATH_CACHE_CAPACITY);
+  // sortCache keys on per-path Z3 Expr instances, so cross-path lookups never hit — it
+  // would only ever grow, pinning every Expr from every path for the translator's lifetime.
+  // Reset per-path along with the other caches so worker memory stays bounded.
+  private Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(PER_PATH_CACHE_CAPACITY);
+  // intConstCache keys on boxed Integer values — bounded across paths, safe to keep alive.
   private final Map<Integer, IntNum> intConstCache = new HashMap<>(CROSS_PATH_CACHE_CAPACITY);
   private int exprCounter = 0;
   private final IntNum zero;
@@ -99,10 +103,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   /**
-   * Clears per-path state (declarations, IDs, descriptions, and the SymExpr→Z3 cache) while
-   * preserving the cross-path caches that key on Z3 expressions (sortCache, intConstCache).
-   * exprCache is per-path now that it's content-keyed: holding it across paths would re-serve Z3
-   * consts created against a previous path's exprMap, so model extraction would miss them.
+   * Replaces per-path state with fresh maps on entry to a new path. Replace-not-clear because
+   * {@link HashMap#clear} is O(table.length) and never shrinks — a single deep path that
+   * grows the table to thousands of buckets would make every subsequent reset walk that whole
+   * array. Allocating a new small map is O(1) and the orphaned map dies in young-gen.
+   * intConstCache stays cross-path since its keys (boxed Integer literals) are bounded.
    */
   public void resetForNewPath() {
     exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
@@ -110,6 +115,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
     exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
     idToTruncatedDescription = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    sortCache = new IdentityHashMap<>(PER_PATH_CACHE_CAPACITY);
     exprCounter = 0;
   }
 
