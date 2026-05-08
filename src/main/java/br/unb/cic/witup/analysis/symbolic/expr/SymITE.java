@@ -11,6 +11,7 @@ public final class SymITE extends SymExpr {
   private final boolean hasUnboxing;
   private final int cachedDepth;
   private String cachedToString;
+  private int cachedHashCode;
 
   public SymITE(final SymExpr condition, final SymExpr thenExpr, final SymExpr elseExpr) {
     super(
@@ -122,7 +123,12 @@ public final class SymITE extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * (prime * condition.hashCode() + thenExpr.hashCode()) + elseExpr.hashCode();
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h = prime * (prime * condition.hashCode() + thenExpr.hashCode()) + elseExpr.hashCode();
+      cachedHashCode = h;
+    }
+    return h;
   }
 }

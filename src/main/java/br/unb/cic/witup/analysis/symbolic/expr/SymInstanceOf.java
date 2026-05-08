@@ -9,6 +9,7 @@ public final class SymInstanceOf extends SymExpr {
   private final SymExpr op;
   private final String type;
   private String cachedToString;
+  private int cachedHashCode;
 
   public SymInstanceOf(final JInstanceOfExpr e) {
     super(SymKind.BOOLEAN);
@@ -65,7 +66,12 @@ public final class SymInstanceOf extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * op.hashCode() + type.hashCode();
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h = prime * op.hashCode() + type.hashCode();
+      cachedHashCode = h;
+    }
+    return h;
   }
 }

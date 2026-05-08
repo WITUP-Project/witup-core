@@ -10,6 +10,7 @@ public final class SymFieldAccess extends SymExpr {
   private final SymExpr base; // e.g., "this" or another object
   private final String fieldName; // e.g., "radius"
   private String cachedToString;
+  private int cachedHashCode;
 
   public SymFieldAccess(final SymExpr base, final JInstanceFieldRef r) {
     super(fromJimpleType(r.getType()));
@@ -91,7 +92,12 @@ public final class SymFieldAccess extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * base.hashCode() + fieldName.hashCode();
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h = prime * base.hashCode() + fieldName.hashCode();
+      cachedHashCode = h;
+    }
+    return h;
   }
 }

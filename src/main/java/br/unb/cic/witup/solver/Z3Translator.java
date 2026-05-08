@@ -69,14 +69,22 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String CLASS_PREFIX = "class_";
   private final Context context;
   private final Z3SortDetector sortInferrer;
-  private final Map<String, Expr<?>> exprMap = new HashMap<>();
-  private final Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>();
+  // Per-path caches are reallocated each path rather than cleared in place, because
+  // HashMap.clear is O(table.length) and never shrinks the table — so a single deep
+  // path that grows the table to thousands of buckets makes every subsequent path's
+  // reset walk that whole array even when the path itself is tiny. Replacing with a
+  // fresh small map is O(1) and the orphaned map is short-lived in young-gen GC.
+  private static final int PER_PATH_CACHE_CAPACITY = 256;
+  private static final int CROSS_PATH_CACHE_CAPACITY = 2048;
   public static final int MAX_DESCRIPTION_CHARS = 256;
-  private final Map<SymExpr, Expr<?>> exprCache = new HashMap<>(2048);
-  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(2048);
-  private final Map<SymExpr, String> exprIds = new HashMap<>(2048);
-  private final Map<String, String> idToTruncatedDescription = new HashMap<>(2048);
-  private final Map<Integer, IntNum> intConstCache = new HashMap<>(2048);
+
+  private Map<String, Expr<?>> exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<SymExpr, Expr<?>> exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<SymExpr, String> exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<String, String> idToTruncatedDescription = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private final Map<Expr<?>, Sort> sortCache = new IdentityHashMap<>(CROSS_PATH_CACHE_CAPACITY);
+  private final Map<Integer, IntNum> intConstCache = new HashMap<>(CROSS_PATH_CACHE_CAPACITY);
   private int exprCounter = 0;
   private final IntNum zero;
   private final IntNum one;
@@ -97,11 +105,11 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
    * consts created against a previous path's exprMap, so model extraction would miss them.
    */
   public void resetForNewPath() {
-    exprMap.clear();
-    fieldFunctions.clear();
-    exprIds.clear();
-    exprCache.clear();
-    idToTruncatedDescription.clear();
+    exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    fieldFunctions = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    idToTruncatedDescription = new HashMap<>(PER_PATH_CACHE_CAPACITY);
     exprCounter = 0;
   }
 

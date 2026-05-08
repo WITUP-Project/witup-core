@@ -15,6 +15,7 @@ public final class SymVirtualInvoke extends SymExpr {
   private final SymExpr[] args;
   private final boolean hasUnboxing;
   private String cachedToString;
+  private int cachedHashCode;
 
   public SymExpr getBase() {
     return base;
@@ -189,9 +190,16 @@ public final class SymVirtualInvoke extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime
-            * (prime * (prime * signature.hashCode() + base.hashCode()) + Arrays.hashCode(args))
-        + Boolean.hashCode(returnsBoolean);
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h =
+          prime
+                  * (prime * (prime * signature.hashCode() + base.hashCode())
+                      + Arrays.hashCode(args))
+              + Boolean.hashCode(returnsBoolean);
+      cachedHashCode = h;
+    }
+    return h;
   }
 }

@@ -13,6 +13,7 @@ public final class SymNewMultiArray extends SymExpr {
   private final String objectType;
   private final List<SymExpr> sizes;
   private String cachedToString;
+  private int cachedHashCode;
 
   public SymNewMultiArray(final JNewMultiArrayExpr e) {
     super(SymKind.OTHER);
@@ -137,7 +138,12 @@ public final class SymNewMultiArray extends SymExpr {
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    return prime * objectType.hashCode() + sizes.hashCode();
+    int h = cachedHashCode;
+    if (h == 0) {
+      final int prime = 31;
+      h = prime * objectType.hashCode() + sizes.hashCode();
+      cachedHashCode = h;
+    }
+    return h;
   }
 }
