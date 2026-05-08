@@ -101,4 +101,24 @@ public final class SymArray extends SymExpr {
     SymExpr newSize = size.resolveWith(env);
     return (newSize != size) ? new SymArray("newarray", objectType, newSize, getKind()) : this;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymArray symArray)) {
+      return false;
+    }
+    return name.equals(symArray.name)
+        && objectType.equals(symArray.objectType)
+        && java.util.Objects.equals(size, symArray.size);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime * (prime * name.hashCode() + objectType.hashCode())
+        + (size == null ? 0 : size.hashCode());
+  }
 }

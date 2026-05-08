@@ -59,6 +59,23 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private final Map<WITUpNode, List<WITUpPath>> cachedReturnPaths = new HashMap<>();
   private Map<WITUpNode, List<WITUpEdge>> cfgIncoming;
   private Map<WITUpNode, List<WITUpEdge>> cfgOutgoing;
+  // Bounds back-edge revisits during path enumeration. With max=1 every CFG edge can be
+  // traversed at most once on a single path, which lets a loop header be entered via the
+  // entry-edge AND once more via a back-edge — i.e. the body is symbolically unrolled
+  // exactly once. Increase to widen the unrolling at the cost of (max+1)^loop-depth more
+  // paths per method.
+  private int maxEdgeTraversals = 1;
+
+  public void setMaxEdgeTraversals(final int n) {
+    if (n < 1) {
+      throw new IllegalArgumentException("maxEdgeTraversals must be >= 1");
+    }
+    this.maxEdgeTraversals = n;
+  }
+
+  public int getMaxEdgeTraversals() {
+    return maxEdgeTraversals;
+  }
 
   public String getMethodSignature() {
     return methodSignature;
@@ -174,19 +191,24 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
 
   private List<WITUpPath> backwardDFS(final WITUpNode start, final WITUpNode end) {
     List<WITUpPath> result = new ArrayList<>();
-    Set<WITUpNode> visited = new HashSet<>();
+    Map<WITUpEdge, Integer> edgeCounts = new HashMap<>();
     List<WITUpNode> pathNodes = new ArrayList<>();
     List<WITUpEdge> pathEdges = new ArrayList<>();
-    visited.add(end);
     pathNodes.add(end);
-    backDFS(start, end, visited, pathNodes, pathEdges, result);
+    backDFS(start, end, edgeCounts, pathNodes, pathEdges, result);
     return result;
   }
 
+  // Tracks per-edge traversal *counts* (capped at maxEdgeTraversals) so a join node
+  // (e.g. a loop header) can be entered from its forward-edge predecessor AND re-entered
+  // from a back-edge on the same path. With max=1 each CFG edge appears at most once on
+  // a given path → unrolls each loop's body exactly once, which is sufficient for the
+  // catch-block-inside-a-loop case (FileUtils#cleanDirectory). Larger max widens the
+  // unrolling but multiplies path count by ~(max+1) per loop.
   private void backDFS(
       final WITUpNode start,
       final WITUpNode current,
-      final Set<WITUpNode> visited,
+      final Map<WITUpEdge, Integer> edgeCounts,
       final List<WITUpNode> pathNodes,
       final List<WITUpEdge> pathEdges,
       final List<WITUpPath> witUpPaths) {
@@ -198,14 +220,21 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     List<WITUpEdge> incoming = incomingCfgEdges(current);
     for (int i = incoming.size() - 1; i >= 0; i--) {
       WITUpEdge edge = incoming.get(i);
+      int count = edgeCounts.getOrDefault(edge, 0);
+      if (count >= maxEdgeTraversals) {
+        continue;
+      }
+      edgeCounts.put(edge, count + 1);
       WITUpNode pred = edge.getSource();
-      if (visited.add(pred)) {
-        pathNodes.add(pred);
-        pathEdges.add(edge);
-        backDFS(start, pred, visited, pathNodes, pathEdges, witUpPaths);
-        pathNodes.removeLast();
-        pathEdges.removeLast();
-        visited.remove(pred);
+      pathNodes.add(pred);
+      pathEdges.add(edge);
+      backDFS(start, pred, edgeCounts, pathNodes, pathEdges, witUpPaths);
+      pathNodes.removeLast();
+      pathEdges.removeLast();
+      if (count == 0) {
+        edgeCounts.remove(edge);
+      } else {
+        edgeCounts.put(edge, count);
       }
     }
   }
@@ -310,12 +339,14 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   public List<ThrowConstraint> getThrowConstraints(final WITUpPath path) {
-    List<ThrowConstraint> throwConstraints = new ArrayList<>();
-    for (WITUpEdge e : path.edges().reversed()) {
+    List<WITUpEdge> forwardEdges = path.forwardEdges();
+    List<ThrowConstraint> throwConstraints = new ArrayList<>(forwardEdges.size());
+    for (int i = 0; i < forwardEdges.size(); i++) {
+      WITUpEdge e = forwardEdges.get(i);
       if (e instanceof BooleanCFGEdge boolEdge) {
-        throwConstraints.add(new ThrowConstraint(e.getSource(), boolEdge.getCondition()));
+        throwConstraints.add(new ThrowConstraint(e.getSource(), boolEdge.getCondition(), i));
       } else if (e instanceof ExceptionalCFGEdge) {
-        throwConstraints.add(new ThrowConstraint(e.getTarget(), true));
+        throwConstraints.add(new ThrowConstraint(e.getTarget(), true, i));
       }
     }
     return throwConstraints;

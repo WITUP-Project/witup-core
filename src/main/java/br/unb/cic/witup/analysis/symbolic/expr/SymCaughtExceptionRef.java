@@ -39,4 +39,20 @@ public final class SymCaughtExceptionRef extends SymExpr {
   public boolean contains(final String varName) {
     return false;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymCaughtExceptionRef symCaughtExceptionRef)) {
+      return false;
+    }
+    return caughtType.equals(symCaughtExceptionRef.caughtType);
+  }
+
+  @Override
+  public int hashCode() {
+    return caughtType.hashCode();
+  }
 }

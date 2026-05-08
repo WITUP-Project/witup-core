@@ -37,4 +37,20 @@ public final class SymStringConst extends SymExpr {
   public String toString() {
     return cachedToString;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymStringConst symStringConst)) {
+      return false;
+    }
+    return value.equals(symStringConst.value);
+  }
+
+  @Override
+  public int hashCode() {
+    return value.hashCode();
+  }
 }

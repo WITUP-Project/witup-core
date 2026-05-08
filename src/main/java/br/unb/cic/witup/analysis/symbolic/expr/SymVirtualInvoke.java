@@ -178,13 +178,13 @@ public final class SymVirtualInvoke extends SymExpr {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SymVirtualInvoke other)) {
+    if (!(o instanceof SymVirtualInvoke symVirtualInvoke)) {
       return false;
     }
-    return returnsBoolean == other.returnsBoolean
-        && signature.equals(other.signature)
-        && base.equals(other.base)
-        && Arrays.equals(args, other.args);
+    return returnsBoolean == symVirtualInvoke.returnsBoolean
+        && signature.equals(symVirtualInvoke.signature)
+        && base.equals(symVirtualInvoke.base)
+        && Arrays.equals(args, symVirtualInvoke.args);
   }
 
   @Override

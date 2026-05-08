@@ -38,4 +38,20 @@ public final class SymLongConstant extends SymExpr {
   public boolean contains(final String varName) {
     return false;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymLongConstant symLongConstant)) {
+      return false;
+    }
+    return value == symLongConstant.value;
+  }
+
+  @Override
+  public int hashCode() {
+    return Long.hashCode(value);
+  }
 }

@@ -55,8 +55,7 @@ public class FileSummaryTest {
 
   @Test
   public void cleanDirectorySummary() {
-    String methodSignature =
-        "<br.unb.cic.witup.samples.File: void cleanDirectory(java.io.File)>";
+    String methodSignature = "<br.unb.cic.witup.samples.File: void cleanDirectory(java.io.File)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
@@ -72,13 +71,10 @@ public class FileSummaryTest {
     // (so the caller has actually pulled the callee summary in).
     String dump = path0.toString();
     assertTrue(
-        dump.contains("directory.exists()"),
-        "expected directory.exists() in path, got " + dump);
+        dump.contains("directory.exists()"), "expected directory.exists() in path, got " + dump);
     assertTrue(
         dump.contains("directory.isDirectory()"),
         "expected directory.isDirectory() in path, got " + dump);
-    assertTrue(
-        dump.contains("listFiles()"),
-        "expected listFiles() in path, got " + dump);
+    assertTrue(dump.contains("listFiles()"), "expected listFiles() in path, got " + dump);
   }
 }

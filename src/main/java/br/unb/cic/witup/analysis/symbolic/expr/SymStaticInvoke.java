@@ -2,6 +2,7 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
@@ -147,5 +148,25 @@ public final class SymStaticInvoke extends SymExpr {
     sb.append(")");
     cachedToString = sb.toString();
     return cachedToString;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymStaticInvoke symStaticInvoke)) {
+      return false;
+    }
+    return returnsBoolean == symStaticInvoke.returnsBoolean
+        && invokeName.equals(symStaticInvoke.invokeName)
+        && Arrays.equals(args, symStaticInvoke.args);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime * (prime * invokeName.hashCode() + Arrays.hashCode(args))
+        + Boolean.hashCode(returnsBoolean);
   }
 }

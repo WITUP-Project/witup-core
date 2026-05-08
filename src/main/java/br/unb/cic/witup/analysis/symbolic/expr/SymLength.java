@@ -61,4 +61,20 @@ public final class SymLength extends SymExpr {
     SymExpr newOp = op.resolveWith(env);
     return (newOp != op) ? new SymLength(newOp) : this;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymLength symLength)) {
+      return false;
+    }
+    return op.equals(symLength.op);
+  }
+
+  @Override
+  public int hashCode() {
+    return op.hashCode();
+  }
 }

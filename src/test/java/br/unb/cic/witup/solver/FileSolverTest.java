@@ -43,8 +43,7 @@ public class FileSolverTest {
   // never tied them together and Z3 freely set the surfaced const to false.
   @Test
   public void cleanDirectoryPreconditionsReflectCalleeReturning() {
-    String methodSignature =
-        "<br.unb.cic.witup.samples.File: void cleanDirectory(java.io.File)>";
+    String methodSignature = "<br.unb.cic.witup.samples.File: void cleanDirectory(java.io.File)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     SolverResult sol = analysis.solutions().getFirst();
 

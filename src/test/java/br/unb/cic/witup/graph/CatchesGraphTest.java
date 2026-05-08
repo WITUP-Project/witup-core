@@ -9,27 +9,15 @@ import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class FileGraphTest {
+public class CatchesGraphTest {
   @Test
-  public void verifiedListFilesGraph() {
-    String methodSignature =
-        "<br.unb.cic.witup.samples.File: java.io.File[] verifiedListFiles(java.io.File)>";
-
+  public void simpleCatchGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void simpleCatch(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     WITUpGraph cpg = analysis.graph();
 
     List<WITUpNode> throwNodes = cpg.getThrowNodes();
-    assertEquals(3, throwNodes.size());
-  }
-
-  @Test
-  public void cleanDirectoryGraph() {
-    String methodSignature = "<br.unb.cic.witup.samples.File: void cleanDirectory(java.io.File)>";
-
-    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
-    WITUpGraph cpg = analysis.graph();
-
-    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    // simpleCatch contains exactly one throw stmt (`throw new IllegalArgumentException`).
     assertEquals(1, throwNodes.size());
   }
 }

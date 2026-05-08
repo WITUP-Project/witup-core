@@ -51,4 +51,21 @@ public final class SymInstanceOf extends SymExpr {
   public void collectVarNames(final Set<String> vars) {
     op.collectVarNames(vars);
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SymInstanceOf symInstanceOf)) {
+      return false;
+    }
+    return op.equals(symInstanceOf.op) && type.equals(symInstanceOf.type);
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    return prime * op.hashCode() + type.hashCode();
+  }
 }
