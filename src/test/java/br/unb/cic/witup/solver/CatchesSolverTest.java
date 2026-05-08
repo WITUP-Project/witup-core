@@ -19,10 +19,9 @@ public class CatchesSolverTest {
     assertTrue(sol0.isSat());
     assertFalse(sol0.getBool("exception_is_null"), "catch-fired path requires exception non-null");
 
-    // path 1: catch did not fire; the φ-style relaxation on `exception` lets Z3 still
-    // satisfy the post-loop null check. Surfaced as SAT until path-aware joining lands.
+    // unsat if path-aware joining works
     SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isSat());
+    assertTrue(sol1.isUnsat());
   }
 
   @Test
@@ -37,12 +36,12 @@ public class CatchesSolverTest {
     assertTrue(sol0.isSat());
     assertFalse(sol0.getBool("exception_is_null"), "catch-fired path requires exception non-null");
 
-    // path 1: loop iterated, catch did not fire.
+    // unsat if path-aware joining works
     SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isSat());
+    assertTrue(sol1.isUnsat());
 
-    // path 2: loop did not iterate (empty xs).
+    // unsat if path-aware joining works
     SolverResult sol2 = analysis.solutions().get(2);
-    assertTrue(sol2.isSat());
+    assertTrue(sol2.isUnsat());
   }
 }

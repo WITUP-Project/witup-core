@@ -94,7 +94,7 @@ final class IterationContext {
       if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
         continue;
       }
-      String var = assign.getLeftOp().toString();
+      String var = SymVar.nameOf(assign.getLeftOp());
       SymExpr rhs = SymExpr.fromJimple(assign.getRightOp());
       kinds.putIfAbsent(var, SymExpr.fromJimple(assign.getLeftOp()).getKind());
       if (rhs.contains(var)) {

@@ -150,7 +150,7 @@ public final class SymbolicConstraintGenerator {
   private Optional<ResolvedCallee> tryResolveLambda(
       final JInterfaceInvokeExpr invoke, final WITUpNode node) {
 
-    String receiverName = invoke.getBase().toString();
+    String receiverName = SymVar.nameOf(invoke.getBase());
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(node)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
       if (nodeNotInPath(sourceNode)) {
@@ -165,7 +165,7 @@ public final class SymbolicConstraintGenerator {
       if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
         continue;
       }
-      if (!assign.getLeftOp().toString().equals(receiverName)) {
+      if (!SymVar.nameOf(assign.getLeftOp()).equals(receiverName)) {
         continue;
       }
 
@@ -321,6 +321,9 @@ public final class SymbolicConstraintGenerator {
     Set<String> hasCatchDef = new HashSet<>();
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode src = cpg.getEdgeSource(edge);
+      if (nodeNotInPath(src)) {
+        continue;
+      }
       String var = definedVarOf(src);
       if (var == null || isSelfUpdate(src, var)) {
         continue;
@@ -517,7 +520,7 @@ public final class SymbolicConstraintGenerator {
   }
 
   private static String getVariableName(final Value value) {
-    return value.toString();
+    return SymVar.nameOf(value);
   }
 
   private boolean isStackVariable(final LValue value) {
