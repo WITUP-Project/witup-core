@@ -40,6 +40,7 @@ import sootup.core.jimple.common.expr.JInterfaceInvokeExpr;
 import sootup.core.jimple.common.expr.JSpecialInvokeExpr;
 import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.expr.JVirtualInvokeExpr;
+import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
@@ -216,6 +217,8 @@ public final class SymbolicConstraintGenerator {
     }
     visited.add(currentNode);
 
+    Set<String> ambiguous = multipleDefinitions(currentNode);
+
     for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
       WITUpNode sourceNode = cpg.getEdgeSource(edge);
       if (nodeNotInPath(sourceNode)) {
@@ -247,7 +250,7 @@ public final class SymbolicConstraintGenerator {
 
         if (resolvedCallee.isPresent()) {
           String definedVar = getVariableName(assign.getLeftOp());
-          if (freeVars.contains(definedVar)) {
+          if (freeVars.contains(definedVar) && !ambiguous.contains(definedVar)) {
             ResolvedCallee callee = resolvedCallee.get();
             if (callee.guardedReturn() != null) {
               SymVar freshVar =
@@ -285,12 +288,107 @@ public final class SymbolicConstraintGenerator {
       }
 
       String definedVar = getVariableName(lhsOp);
-      if (!freeVars.contains(definedVar)) {
+      if (!freeVars.contains(definedVar) || ambiguous.contains(definedVar)) {
+        // Phi-style join: the variable has multiple distinct reaching defs in the CFG, so
+        // we don't know which value applies on a given path. Leave the SymVar unsubstituted
+        // — Z3 will treat it as a free symbolic value rather than committing to one branch.
         continue;
       }
       addBinding(freeVars, env, definedVar, SymExpr.fromJimple(rhsOp));
       collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);
     }
+  }
+
+  // Detects variables with multiple reaching definitions at currentNode — the points where
+  // SSA would insert a φ. We restrict the check to the case actually missed by the current
+  // path enumerator: a def reachable from a CaughtExceptionNode (i.e., assigned inside a
+  // catch handler). For if/else conditionals the enumerator already produces a separate
+  // throw path per branch, so per-path substitution is correct and we don't want to
+  // override it with a free SymVar.
+  //
+  // Self-updating defs (`i = i + 1`, `sum = sum + x`) are excluded — those are loop
+  // back-edge updates, not alternate-branch defs.
+  private Set<String> multipleDefinitions(final WITUpNode currentNode) {
+    Map<String, Set<WITUpNode>> sourceNodes = new HashMap<>();
+    Set<String> hasCatchDef = new HashSet<>();
+    for (DataDependencyEdge edge : cpg.getIncomingDDGEdges(currentNode)) {
+      WITUpNode src = cpg.getEdgeSource(edge);
+      String var = definedVarOf(src);
+      if (var == null || isSelfUpdate(src, var)) {
+        continue;
+      }
+      sourceNodes.computeIfAbsent(var, k -> new HashSet<>()).add(src);
+      if (isCatchHandlerDef(src)) {
+        hasCatchDef.add(var);
+      }
+    }
+    Set<String> multipleDefs = new HashSet<>();
+    for (Map.Entry<String, Set<WITUpNode>> entry : sourceNodes.entrySet()) {
+      if (entry.getValue().size() > 1 && hasCatchDef.contains(entry.getKey())) {
+        multipleDefs.add(entry.getKey());
+      }
+    }
+    return multipleDefs;
+  }
+
+  private static String definedVarOf(final WITUpNode src) {
+    if (!(src instanceof SimpleNode sn)) {
+      return null;
+    }
+    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+      return null;
+    }
+    Stmt stmt = stmtNode.getStmt();
+    if (stmt instanceof JAssignStmt assign) {
+      return getVariableName(assign.getLeftOp());
+    }
+    if (stmt instanceof JIdentityStmt identity) {
+      return getVariableName(identity.getLeftOp());
+    }
+    return null;
+  }
+
+  private static boolean isSelfUpdate(final WITUpNode src, final String lhsName) {
+    if (!(src instanceof SimpleNode sn)) {
+      return false;
+    }
+    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+      return false;
+    }
+    if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
+      return false;
+    }
+    return SymExpr.fromJimple(assign.getRightOp()).contains(lhsName);
+  }
+
+  // True if the def's value originates from a caught-exception identity statement —
+  // either directly (`exception = (T) @caughtexception`) or one DDG hop away through a
+  // stack temporary (`$stack0 := @caughtexception; exception = $stack0`).
+  // may need to jump more than one DDG hop?
+  private boolean isCatchHandlerDef(final WITUpNode src) {
+    if (src instanceof CaughtExceptionNode) {
+      return true;
+    }
+    if (!(src instanceof SimpleNode sn)) {
+      return false;
+    }
+    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+      return false;
+    }
+    Stmt stmt = stmtNode.getStmt();
+    if (stmt instanceof JAssignStmt assign && assign.getRightOp() instanceof JCaughtExceptionRef) {
+      return true;
+    }
+    if (stmt instanceof JIdentityStmt identity
+        && identity.getRightOp() instanceof JCaughtExceptionRef) {
+      return true;
+    }
+    for (DataDependencyEdge ddg : cpg.getIncomingDDGEdges(src)) {
+      if (cpg.getEdgeSource(ddg) instanceof CaughtExceptionNode) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static void addBinding(
