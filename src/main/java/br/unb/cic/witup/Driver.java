@@ -77,9 +77,9 @@ public final class Driver {
     ObjectMapper mapper = new ObjectMapper();
     mapper.enable(SerializationFeature.INDENT_OUTPUT);
     mapper.writeValue(
-        projectResultsDir.resolve("witup-results.json-" + projectName).toFile(), rows);
+        projectResultsDir.resolve("witup-results-" + projectName + ".json").toFile(), rows);
     mapper.writeValue(
-        projectResultsDir.resolve("witup-failures.json" + projectName).toFile(), failures);
+        projectResultsDir.resolve("witup-failures-" + projectName + ".json").toFile(), failures);
     log.info("Results written to witup-results.json ({} methods)", methodSolutions.size());
     log.info("Failures written to witup-failures.json ({} methods)", failures.size());
   }
