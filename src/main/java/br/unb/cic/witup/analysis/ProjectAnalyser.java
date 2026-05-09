@@ -32,6 +32,7 @@ import sootup.java.core.views.JavaView;
 public final class ProjectAnalyser implements GraphRepository {
   // assumes jar ia witup-core/project-jars
   private final Path jarPath;
+  private final boolean emitImplicitExceptions;
   private static final Logger log = LoggerFactory.getLogger("ProjectAnalyser");
   private final Map<String, WITUpGraph> methodGraphs = new HashMap<>();
   private JavaView view;
@@ -39,7 +40,12 @@ public final class ProjectAnalyser implements GraphRepository {
   private List<List<String>> analysisOrder;
 
   public ProjectAnalyser(final Path jarPath) {
+    this(jarPath, false);
+  }
+
+  public ProjectAnalyser(final Path jarPath, final boolean emitImplicitExceptions) {
     this.jarPath = jarPath;
+    this.emitImplicitExceptions = emitImplicitExceptions;
   }
 
   public Map<String, WITUpGraph> analyseProject() {
@@ -215,7 +221,8 @@ public final class ProjectAnalyser implements GraphRepository {
       return;
     }
     try {
-      MethodSummariser ms = new MethodSummariser(graph, this, summaryCache);
+      MethodSummariser ms =
+          new MethodSummariser(graph, this, summaryCache, emitImplicitExceptions);
       summaries.put(sig, ms.summarise());
     } catch (Exception e) {
       log.warn("Failed to summarise {}: {}", sig, e.getMessage());
@@ -250,7 +257,8 @@ public final class ProjectAnalyser implements GraphRepository {
           continue;
         }
         try {
-          MethodSummariser ms = new MethodSummariser(graph, this, summaryCache);
+          MethodSummariser ms =
+              new MethodSummariser(graph, this, summaryCache, emitImplicitExceptions);
           MethodSummary newSummary = ms.summarise();
           MethodSummary oldSummary = summaryCache.getSummary(sig).orElse(null);
           if (!newSummary.equals(oldSummary)) {

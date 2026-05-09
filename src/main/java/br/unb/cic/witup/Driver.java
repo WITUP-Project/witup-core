@@ -41,7 +41,7 @@ public final class Driver {
     }
 
     log.info("Starting analysis for {}", jarPath);
-    ProjectAnalyser analyser = new ProjectAnalyser(jarPath);
+    ProjectAnalyser analyser = new ProjectAnalyser(jarPath, true);
     Map<String, WITUpGraph> methodGraphs = analyser.analyseProject();
     Map<String, String> failures = new LinkedHashMap<>();
     Map<String, MethodSummary> methodSummaries = analyser.summariseAll(methodGraphs, failures);

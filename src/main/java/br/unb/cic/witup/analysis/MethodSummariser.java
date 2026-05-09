@@ -28,6 +28,7 @@ public final class MethodSummariser implements SummaryResolver {
   private final SymbolicConstraintGenerator symbolicConstraintGenerator;
   private final Map<InstantiationKey, Optional<ResolvedCallee>> instantiationCache =
       new HashMap<>();
+  private final boolean emitImplicitExceptions;
 
   /**
    * Interprocedural MethodSummariser
@@ -35,14 +36,19 @@ public final class MethodSummariser implements SummaryResolver {
    * @param cpg WITUpGraph of the method being analysed
    * @param graphRepository GraphRepository
    * @param summaryRepository SummaryRepository
+   * @param emitImplicitExceptions when true, synthesise IMPLICIT-kind ExceptionPaths for JVM
+   *     implicit exceptions (NPE, AIOOBE, NegativeArraySize, ArithmeticException). Detection
+   *     rules land in subsequent commits; this commit is plumbing only.
    */
   public MethodSummariser(
       final WITUpGraph cpg,
       final GraphRepository graphRepository,
-      final SummaryRepository summaryRepository) {
+      final SummaryRepository summaryRepository,
+      final boolean emitImplicitExceptions) {
     this.cpg = cpg;
     this.graphRepository = graphRepository;
     this.summaryRepository = summaryRepository;
+    this.emitImplicitExceptions = emitImplicitExceptions;
     this.symbolicConstraintGenerator = new SymbolicConstraintGenerator(cpg, this);
   }
 
@@ -108,7 +114,8 @@ public final class MethodSummariser implements SummaryResolver {
 
     summaryRepository.markInProgress(calleeSignature);
     MethodSummariser calleeAnalysis =
-        new MethodSummariser(calleeGraph.get(), graphRepository, summaryRepository);
+        new MethodSummariser(
+            calleeGraph.get(), graphRepository, summaryRepository, emitImplicitExceptions);
 
     log.debug("summarising callee {}", calleeSignature);
     MethodSummary calleeSummary = calleeAnalysis.summarise();
