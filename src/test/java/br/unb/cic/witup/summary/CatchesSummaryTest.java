@@ -35,8 +35,25 @@ public class CatchesSummaryTest {
           ep.getProvenance(),
           "no callee-summary integration yet — provenance is empty until step 3");
     }
-    System.out.println("=== simpleCatch ===");
-    dump(summary);
+  }
+
+  @Test
+  public void simpleRethrowSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void simpleRethrow(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    assertFalse(summary.exceptionPaths().isEmpty(), "expected at least one exception path");
+    for (ExceptionPath ep : summary.exceptionPaths()) {
+      assertEquals(
+          ThrowSiteKind.RETHROW,
+          ep.getThrowSiteKind(),
+          "throw operand traces back to a caught exception ref, so this is a rethrow");
+      assertEquals(
+          List.of(),
+          ep.getProvenance(),
+          "no callee-summary integration yet — provenance is empty until step 3");
+    }
   }
 
   @Test

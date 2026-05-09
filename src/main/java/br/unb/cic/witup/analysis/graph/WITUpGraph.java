@@ -1,6 +1,7 @@
 package br.unb.cic.witup.analysis.graph;
 
 import br.unb.cic.witup.analysis.ThrowConstraint;
+import br.unb.cic.witup.analysis.ThrowSiteKind;
 import br.unb.cic.witup.analysis.graph.edge.BooleanCFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.CFGEdge;
 import br.unb.cic.witup.analysis.graph.edge.ControlDependencyEdge;
@@ -382,5 +383,51 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return null;
+  }
+
+  // Single source of truth for "is this node the source of a caught exception reference?"
+  // Shared by SymbolicConstraintGenerator (per-source check, used to collapse stack temps to
+  // SymCaughtExceptionRef) and classifyThrowSite (transitive walk for rethrow detection).
+  // Returns the underlying JCaughtExceptionRef or null.
+  public static JCaughtExceptionRef caughtExceptionRefOf(final WITUpNode src) {
+    if (src instanceof CaughtExceptionNode catchNode) {
+      return catchNode.getCaughtExceptionRef();
+    }
+    if (src instanceof SimpleNode sn
+        && sn.getNode() instanceof StmtGraphNode stmtNode
+        && stmtNode.getStmt() instanceof JIdentityStmt identity
+        && identity.getRightOp() instanceof JCaughtExceptionRef ref) {
+      return ref;
+    }
+    return null;
+  }
+
+  // RETHROW iff the throw operand's DDG ancestry includes a caught-exception source;
+  // otherwise DIRECT_ATHROW. Path-insensitive and conservative — a throw whose operand
+  // could be either a fresh object or a caught reference (e.g. a phi-like join) is
+  // labelled RETHROW. The transitive walk is bounded by the method's DDG.
+  public ThrowSiteKind classifyThrowSite(final ThrowStatementNode throwNode) {
+    List<DataDependencyEdge> seedEdges = getIncomingDDGEdges(throwNode);
+    if (seedEdges.isEmpty()) {
+      return ThrowSiteKind.DIRECT_ATHROW;
+    }
+    Set<WITUpNode> visited = new HashSet<>();
+    Deque<WITUpNode> worklist = new ArrayDeque<>();
+    for (DataDependencyEdge e : seedEdges) {
+      worklist.push(getEdgeSource(e));
+    }
+    while (!worklist.isEmpty()) {
+      WITUpNode src = worklist.pop();
+      if (!visited.add(src)) {
+        continue;
+      }
+      if (caughtExceptionRefOf(src) != null) {
+        return ThrowSiteKind.RETHROW;
+      }
+      for (DataDependencyEdge e : getIncomingDDGEdges(src)) {
+        worklist.push(getEdgeSource(e));
+      }
+    }
+    return ThrowSiteKind.DIRECT_ATHROW;
   }
 }

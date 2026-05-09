@@ -59,16 +59,14 @@ public final class MethodSummariser implements SummaryResolver {
     List<ExceptionPath> exceptionPaths = new ArrayList<>();
     List<List<SymbolicConstraint>> throwConstraintPaths = new ArrayList<>();
     for (WITUpNode throwNode : cpg.getThrowNodes()) {
-      String exceptionQualifiedName = cpg.resolveExceptionType((ThrowStatementNode) throwNode);
+      ThrowStatementNode throwStmt = (ThrowStatementNode) throwNode;
+      String exceptionQualifiedName = cpg.resolveExceptionType(throwStmt);
+      ThrowSiteKind throwSiteKind = cpg.classifyThrowSite(throwStmt);
       for (List<SymbolicConstraint> constraints :
           symbolicConstraintGenerator.buildThrowConstraintPaths(throwNode)) {
         exceptionPaths.add(
             new ExceptionPath(
-                constraints,
-                throwNode,
-                exceptionQualifiedName,
-                ThrowSiteKind.DIRECT_ATHROW,
-                List.of()));
+                constraints, throwNode, exceptionQualifiedName, throwSiteKind, List.of()));
         throwConstraintPaths.add(constraints);
       }
     }

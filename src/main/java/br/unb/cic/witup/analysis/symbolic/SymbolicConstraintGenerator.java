@@ -352,7 +352,7 @@ public final class SymbolicConstraintGenerator {
       if (nodeNotInPath(src)) {
         continue;
       }
-      JCaughtExceptionRef ref = resolveCaughtRef(src);
+      JCaughtExceptionRef ref = WITUpGraph.caughtExceptionRefOf(src);
       if (ref == null) {
         continue;
       }
@@ -362,23 +362,6 @@ public final class SymbolicConstraintGenerator {
       caughtRef = ref;
     }
     return caughtRef != null ? new SymCaughtExceptionRef(caughtRef) : fallback;
-  }
-
-  private static JCaughtExceptionRef resolveCaughtRef(final WITUpNode src) {
-    if (src instanceof CaughtExceptionNode catchNode) {
-      return catchNode.getCaughtExceptionRef();
-    }
-    if (!(src instanceof SimpleNode sn)) {
-      return null;
-    }
-    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
-      return null;
-    }
-    if (stmtNode.getStmt() instanceof JIdentityStmt identity
-        && identity.getRightOp() instanceof JCaughtExceptionRef ref) {
-      return ref;
-    }
-    return null;
   }
 
   private static boolean isShadowedByLaterDef(
