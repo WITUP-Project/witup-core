@@ -15,7 +15,7 @@ public final class SymLength extends SymExpr {
     this.op = fromJimple(e.getOp());
   }
 
-  private SymLength(final SymExpr op) {
+  public SymLength(final SymExpr op) {
     super(SymKind.INT);
     this.op = op;
   }

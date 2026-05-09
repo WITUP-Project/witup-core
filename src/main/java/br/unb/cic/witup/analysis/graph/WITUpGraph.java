@@ -42,14 +42,26 @@ import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 import sootup.codepropertygraph.propertygraph.edges.SwitchCfgEdge;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
+import sootup.core.jimple.basic.Immediate;
+import sootup.core.jimple.basic.Local;
+import sootup.core.jimple.common.expr.AbstractInstanceInvokeExpr;
+import sootup.core.jimple.common.expr.AbstractInvokeExpr;
+import sootup.core.jimple.common.expr.JDivExpr;
+import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
+import sootup.core.jimple.common.expr.JRemExpr;
+import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JCaughtExceptionRef;
+import sootup.core.jimple.common.ref.JInstanceFieldRef;
 import sootup.core.jimple.common.stmt.JAssignStmt;
 import sootup.core.jimple.common.stmt.JIdentityStmt;
 import sootup.core.jimple.common.stmt.JIfStmt;
+import sootup.core.jimple.common.stmt.JInvokeStmt;
 import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
 import sootup.core.jimple.common.stmt.Stmt;
+import sootup.core.types.PrimitiveType;
+import sootup.core.types.Type;
 import sootup.java.core.JavaSootMethod;
 
 /** A graph representation for control property graphs extending JGraphT's DirectedPseudograph. */
@@ -153,6 +165,179 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return throwNodes;
+  }
+
+  // Enumerates statements where dereferencing a Local could trigger a JVM-implicit NPE —
+  // no `athrow` in the bytecode. Three construct families:
+  //   * instance method invocation (`obj.method()`); constructor calls (`<init>`) are
+  //     skipped because the receiver was just allocated by `new` and is guaranteed non-null.
+  //   * instance field access (`obj.field`), both reads (RHS) and writes (LHS).
+  //   * array element access (`arr[i]`), both reads (RHS) and writes (LHS). The base array
+  //     reference is the receiver; bounds-check failures on the index are AIOOBE, handled
+  //     separately in step 2.4.b.
+  // Consumed by MethodSummariser when emitImplicitExceptions is on, to synthesise
+  // IMPLICIT-kind ExceptionPaths.
+  public List<ImplicitNpeReceiverSite> getImplicitNpeReceiverSites() {
+    List<ImplicitNpeReceiverSite> sites = new ArrayList<>();
+    for (WITUpNode n : this.vertexSet()) {
+      if (!(n instanceof SimpleNode sn)) {
+        continue;
+      }
+      if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      Stmt stmt = stmtNode.getStmt();
+      Local invokeBase = instanceInvokeReceiver(stmt);
+      if (invokeBase != null) {
+        sites.add(new ImplicitNpeReceiverSite(n, invokeBase));
+      }
+      Local fieldBase = instanceFieldReceiver(stmt);
+      if (fieldBase != null) {
+        sites.add(new ImplicitNpeReceiverSite(n, fieldBase));
+      }
+      Local arrayBase = arrayAccessBase(stmt);
+      if (arrayBase != null) {
+        sites.add(new ImplicitNpeReceiverSite(n, arrayBase));
+      }
+    }
+    return sites;
+  }
+
+  private static Local instanceInvokeReceiver(final Stmt stmt) {
+    AbstractInvokeExpr invoke = invokeExprOf(stmt);
+    if (!(invoke instanceof AbstractInstanceInvokeExpr instanceInvoke)) {
+      return null;
+    }
+    if ("<init>".equals(invoke.getMethodSignature().getName())) {
+      return null;
+    }
+    return instanceInvoke.getBase();
+  }
+
+  private static Local instanceFieldReceiver(final Stmt stmt) {
+    if (!(stmt instanceof JAssignStmt assign)) {
+      return null;
+    }
+    if (assign.getRightOp() instanceof JInstanceFieldRef rhs) {
+      return (Local) rhs.getBase();
+    }
+    if (assign.getLeftOp() instanceof JInstanceFieldRef lhs) {
+      return (Local) lhs.getBase();
+    }
+    return null;
+  }
+
+  private static Local arrayAccessBase(final Stmt stmt) {
+    JArrayRef ref = arrayRefOf(stmt);
+    return ref == null ? null : ref.getBase();
+  }
+
+  private static JArrayRef arrayRefOf(final Stmt stmt) {
+    if (!(stmt instanceof JAssignStmt assign)) {
+      return null;
+    }
+    if (assign.getRightOp() instanceof JArrayRef rhs) {
+      return rhs;
+    }
+    if (assign.getLeftOp() instanceof JArrayRef lhs) {
+      return lhs;
+    }
+    return null;
+  }
+
+  // Enumerates integer `/` and `%` operations for ArithmeticException synthesis. The
+  // divisor Immediate carries enough info for MethodSummariser to build the predicate
+  // `divisor == 0`. Floating-point divisions are skipped — they produce ±Infinity or NaN
+  // rather than raising the exception.
+  public List<ImplicitArithmeticSite> getImplicitArithmeticSites() {
+    List<ImplicitArithmeticSite> sites = new ArrayList<>();
+    for (WITUpNode n : this.vertexSet()) {
+      if (!(n instanceof SimpleNode sn)) {
+        continue;
+      }
+      if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
+        continue;
+      }
+      Immediate divisor = integerDivisor(assign.getRightOp());
+      if (divisor == null) {
+        continue;
+      }
+      sites.add(new ImplicitArithmeticSite(n, divisor));
+    }
+    return sites;
+  }
+
+  private static Immediate integerDivisor(final Object expr) {
+    if (expr instanceof JDivExpr div && isIntegerType(div.getType())) {
+      return div.getOp2();
+    }
+    if (expr instanceof JRemExpr rem && isIntegerType(rem.getType())) {
+      return rem.getOp2();
+    }
+    return null;
+  }
+
+  private static boolean isIntegerType(final Type t) {
+    return t instanceof PrimitiveType.IntType || t instanceof PrimitiveType.LongType;
+  }
+
+  // Enumerates `new T[n]` allocation sites for NegativeArraySizeException synthesis. The
+  // size Immediate carries enough info for MethodSummariser to build the predicate
+  // `size < 0`. Single-dimensional only — multi-dim (JNewMultiArrayExpr) lands later.
+  public List<ImplicitNegativeArraySizeSite> getImplicitNegativeArraySizeSites() {
+    List<ImplicitNegativeArraySizeSite> sites = new ArrayList<>();
+    for (WITUpNode n : this.vertexSet()) {
+      if (!(n instanceof SimpleNode sn)) {
+        continue;
+      }
+      if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      if (!(stmtNode.getStmt() instanceof JAssignStmt assign)) {
+        continue;
+      }
+      if (!(assign.getRightOp() instanceof JNewArrayExpr newArray)) {
+        continue;
+      }
+      sites.add(new ImplicitNegativeArraySizeSite(n, newArray.getSize()));
+    }
+    return sites;
+  }
+
+  // Enumerates array element accesses for AIOOBE-bounds synthesis. Each site carries the
+  // array base and the index Immediate; MethodSummariser builds the bounds-check predicate
+  // `arr != null AND (i < 0 || i >= arr.length)`. The non-null conjunct prevents the AIOOBE
+  // witness from overlapping with NPE.
+  public List<ImplicitAioobeSite> getImplicitAioobeSites() {
+    List<ImplicitAioobeSite> sites = new ArrayList<>();
+    for (WITUpNode n : this.vertexSet()) {
+      if (!(n instanceof SimpleNode sn)) {
+        continue;
+      }
+      if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      JArrayRef ref = arrayRefOf(stmtNode.getStmt());
+      if (ref == null) {
+        continue;
+      }
+      sites.add(new ImplicitAioobeSite(n, ref.getBase(), ref.getIndex()));
+    }
+    return sites;
+  }
+
+  private static AbstractInvokeExpr invokeExprOf(final Stmt stmt) {
+    if (stmt instanceof JInvokeStmt invokeStmt) {
+      return invokeStmt.getInvokeExpr().orElse(null);
+    }
+    if (stmt instanceof JAssignStmt assign
+        && assign.getRightOp() instanceof AbstractInvokeExpr invoke) {
+      return invoke;
+    }
+    return null;
   }
 
   public List<WITUpNode> getThrowConditionNodes(final ThrowStatementNode t) {

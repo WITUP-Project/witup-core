@@ -20,6 +20,9 @@ public final class TestAnalysisContext {
   private static final Map<String, List<SolverResult>> solutions;
   private static final Map<String, String> failures;
   private static final ProjectAnalyser projectAnalyser;
+  // Parallel analyser with emitImplicitExceptions = true. Lazy so existing tests don't pay
+  // the cost of a second SootUp pass unless an implicit-exception test actually asks for it.
+  private static volatile ProjectAnalyser implicitProjectAnalyser;
 
   static {
     Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
@@ -50,6 +53,23 @@ public final class TestAnalysisContext {
 
   public static ProjectAnalyser getAnalyser() {
     return projectAnalyser;
+  }
+
+  public static ProjectAnalyser getImplicitAnalyser() {
+    ProjectAnalyser local = implicitProjectAnalyser;
+    if (local == null) {
+      synchronized (TestAnalysisContext.class) {
+        local = implicitProjectAnalyser;
+        if (local == null) {
+          Path testClassesDir =
+              Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
+          local = new ProjectAnalyser(testClassesDir, true);
+          local.analyseProject();
+          implicitProjectAnalyser = local;
+        }
+      }
+    }
+    return local;
   }
 
   private TestAnalysisContext() {}
