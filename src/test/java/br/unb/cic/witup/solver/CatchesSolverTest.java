@@ -33,6 +33,28 @@ public class CatchesSolverTest {
   }
 
   @Test
+  public void simpleRethrowSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void simpleRethrow(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+
+    // Same path-condition shape as simpleCatch: the symbolic constraints depend on the
+    // catch-fired flag and the post-catch null-check, not on whether the throw operand
+    // is freshly allocated or rebound from the caught reference. Rethrow vs direct
+    // athrow shows up in classifyThrowSite, not in the solver's SAT/UNSAT verdict.
+    SolverResult sol0 = analysis.solutions().getFirst();
+    assertTrue(sol0.isSat());
+    assertTrue(
+        sol0.getBool("caught_java_lang_Throwable"),
+        "catch-fired path must assert the throwable was caught");
+    assertFalse(
+        sol0.getBool("caught_java_lang_Throwable_is_null"),
+        "catch-fired path requires the caught throwable to be non-null");
+
+    SolverResult sol1 = analysis.solutions().get(1);
+    assertTrue(sol1.isUnsat());
+  }
+
+  @Test
   public void loopCatchSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Catches: void loopCatch(int[])>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
