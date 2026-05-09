@@ -20,4 +20,15 @@ public class CatchesGraphTest {
     // simpleCatch contains exactly one throw stmt (`throw new IllegalArgumentException`).
     assertEquals(1, throwNodes.size());
   }
+
+  @Test
+  public void simpleRethrowGraph() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void simpleRethrow(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    WITUpGraph cpg = analysis.graph();
+
+    List<WITUpNode> throwNodes = cpg.getThrowNodes();
+    // simpleRethrow contains exactly one throw stmt (`throw exception`).
+    assertEquals(1, throwNodes.size());
+  }
 }

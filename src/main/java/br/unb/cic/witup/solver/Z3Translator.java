@@ -312,6 +312,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
       case SHIFT_LEFT -> context.mkBV2Int(context.mkBVSHL(bv(lhs), bv(rhs)), true);
       case SHIFT_RIGHT -> context.mkBV2Int(context.mkBVASHR(bv(lhs), bv(rhs)), true);
       case AND -> {
+        // Logical AND when both operands are booleans (e.g. implicit-exception predicates
+        // like `arr != null AND i >= arr.length`). The bit-vector path below is for
+        // bitwise int-AND, which is what BinOp.AND otherwise represents in Jimple.
+        if (lhs instanceof BoolExpr bL && rhs instanceof BoolExpr bR) {
+          yield context.mkAnd(bL, bR);
+        }
         // hacky but speeds up some Z3 paths massively. Need to come back here
         // and reconsider when we have better understood the best ways to
         // reprent each kind of symbolic constraint in Z3. Right now this
@@ -325,7 +331,12 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
         }
         yield context.mkBV2Int(context.mkBVAND(bv(lhs), bv(rhs)), true);
       }
-      case OR -> context.mkBV2Int(context.mkBVOR(bv(lhs), bv(rhs)), true);
+      case OR -> {
+        if (lhs instanceof BoolExpr bL && rhs instanceof BoolExpr bR) {
+          yield context.mkOr(bL, bR);
+        }
+        yield context.mkBV2Int(context.mkBVOR(bv(lhs), bv(rhs)), true);
+      }
       case UNSIGNED_SHIFT_RIGHT -> context.mkBV2Int(context.mkBVLSHR(bv(lhs), bv(rhs)), false);
       case XOR -> context.mkBV2Int(context.mkBVXOR(bv(lhs), bv(rhs)), true);
       default -> throw new IllegalStateException("Unhandled op in arith path: " + op);

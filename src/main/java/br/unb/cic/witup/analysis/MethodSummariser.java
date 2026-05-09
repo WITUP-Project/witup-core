@@ -1,13 +1,22 @@
 package br.unb.cic.witup.analysis;
 
 import br.unb.cic.witup.analysis.graph.GraphRepository;
+import br.unb.cic.witup.analysis.graph.ImplicitAioobeSite;
+import br.unb.cic.witup.analysis.graph.ImplicitArithmeticSite;
+import br.unb.cic.witup.analysis.graph.ImplicitNegativeArraySizeSite;
+import br.unb.cic.witup.analysis.graph.ImplicitNpeReceiverSite;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.GuardedExpr;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
+import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymLength;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNull;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +37,7 @@ public final class MethodSummariser implements SummaryResolver {
   private final SymbolicConstraintGenerator symbolicConstraintGenerator;
   private final Map<InstantiationKey, Optional<ResolvedCallee>> instantiationCache =
       new HashMap<>();
+  private final boolean emitImplicitExceptions;
 
   /**
    * Interprocedural MethodSummariser
@@ -35,14 +45,19 @@ public final class MethodSummariser implements SummaryResolver {
    * @param cpg WITUpGraph of the method being analysed
    * @param graphRepository GraphRepository
    * @param summaryRepository SummaryRepository
+   * @param emitImplicitExceptions when true, synthesise IMPLICIT-kind ExceptionPaths for JVM
+   *     implicit exceptions (NPE, AIOOBE, NegativeArraySize, ArithmeticException). Detection
+   *     rules land in subsequent commits; this commit is plumbing only.
    */
   public MethodSummariser(
       final WITUpGraph cpg,
       final GraphRepository graphRepository,
-      final SummaryRepository summaryRepository) {
+      final SummaryRepository summaryRepository,
+      final boolean emitImplicitExceptions) {
     this.cpg = cpg;
     this.graphRepository = graphRepository;
     this.summaryRepository = summaryRepository;
+    this.emitImplicitExceptions = emitImplicitExceptions;
     this.symbolicConstraintGenerator = new SymbolicConstraintGenerator(cpg, this);
   }
 
@@ -59,12 +74,23 @@ public final class MethodSummariser implements SummaryResolver {
     List<ExceptionPath> exceptionPaths = new ArrayList<>();
     List<List<SymbolicConstraint>> throwConstraintPaths = new ArrayList<>();
     for (WITUpNode throwNode : cpg.getThrowNodes()) {
-      String exceptionQualifiedName = cpg.resolveExceptionType((ThrowStatementNode) throwNode);
+      ThrowStatementNode throwStmt = (ThrowStatementNode) throwNode;
+      String exceptionQualifiedName = cpg.resolveExceptionType(throwStmt);
+      ThrowSiteKind throwSiteKind = cpg.classifyThrowSite(throwStmt);
       for (List<SymbolicConstraint> constraints :
           symbolicConstraintGenerator.buildThrowConstraintPaths(throwNode)) {
-        exceptionPaths.add(new ExceptionPath(constraints, throwNode, exceptionQualifiedName));
+        exceptionPaths.add(
+            new ExceptionPath(
+                constraints, throwNode, exceptionQualifiedName, throwSiteKind, List.of()));
         throwConstraintPaths.add(constraints);
       }
+    }
+
+    if (emitImplicitExceptions) {
+      collectImplicitNpePaths(exceptionPaths, throwConstraintPaths);
+      collectImplicitAioobePaths(exceptionPaths, throwConstraintPaths);
+      collectImplicitNegativeArraySizePaths(exceptionPaths, throwConstraintPaths);
+      collectImplicitArithmeticPaths(exceptionPaths, throwConstraintPaths);
     }
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
@@ -75,6 +101,142 @@ public final class MethodSummariser implements SummaryResolver {
 
     summaryRepository.putSummary(sig, summary);
     return summary;
+  }
+
+  // For each instance-method invocation in the body, synthesise an ExceptionPath whose
+  // predicate conjoins the path conditions reaching the call site with `receiver == null`.
+  // Empty path-condition lists (sites unconditionally reachable from entry) fall back to
+  // a single empty list so the null check still emits.
+  private void collectImplicitNpePaths(
+      final List<ExceptionPath> exceptionPaths,
+      final List<List<SymbolicConstraint>> throwConstraintPaths) {
+    for (ImplicitNpeReceiverSite site : cpg.getImplicitNpeReceiverSites()) {
+      SymExpr receiverExpr = SymExpr.fromJimple(site.receiver());
+      SymbolicConstraint nullCheck =
+          new SymbolicConstraint(new SymBinOp(BinOp.EQ, receiverExpr, SymNull.INSTANCE), true);
+
+      List<List<SymbolicConstraint>> pathConditions =
+          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
+      if (pathConditions.isEmpty()) {
+        pathConditions = List.of(List.of());
+      }
+      for (List<SymbolicConstraint> path : pathConditions) {
+        List<SymbolicConstraint> withNull = new ArrayList<>(path.size() + 1);
+        withNull.addAll(path);
+        withNull.add(nullCheck);
+        exceptionPaths.add(
+            new ExceptionPath(
+                withNull,
+                site.node(),
+                "java.lang.NullPointerException",
+                ThrowSiteKind.IMPLICIT,
+                List.of()));
+        throwConstraintPaths.add(withNull);
+      }
+    }
+  }
+
+  // For each array element access, synthesise an ExceptionPath whose predicate conjoins
+  // the path conditions reaching the access with `arr != null AND (i < 0 || i >= arr.length)`.
+  // The non-null conjunct distinguishes the AIOOBE witness from the NPE-on-array-base case
+  // (the JVM raises NPE before AIOOBE when both could fire). Empty path-condition lists
+  // fall back to a single empty list so the bounds check still emits.
+  private void collectImplicitAioobePaths(
+      final List<ExceptionPath> exceptionPaths,
+      final List<List<SymbolicConstraint>> throwConstraintPaths) {
+    for (ImplicitAioobeSite site : cpg.getImplicitAioobeSites()) {
+      SymExpr arrExpr = SymExpr.fromJimple(site.arrayBase());
+      SymExpr indexExpr = SymExpr.fromJimple(site.index());
+      SymExpr nonNull = new SymBinOp(BinOp.NE, arrExpr, SymNull.INSTANCE);
+      SymExpr lt = new SymBinOp(BinOp.LT, indexExpr, SymIntConst.zero());
+      SymExpr ge = new SymBinOp(BinOp.GE, indexExpr, new SymLength(arrExpr));
+      SymExpr orBounds = new SymBinOp(BinOp.OR, lt, ge);
+      SymbolicConstraint boundsCheck =
+          new SymbolicConstraint(new SymBinOp(BinOp.AND, nonNull, orBounds), true);
+
+      List<List<SymbolicConstraint>> pathConditions =
+          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
+      if (pathConditions.isEmpty()) {
+        pathConditions = List.of(List.of());
+      }
+      for (List<SymbolicConstraint> path : pathConditions) {
+        List<SymbolicConstraint> withBounds = new ArrayList<>(path.size() + 1);
+        withBounds.addAll(path);
+        withBounds.add(boundsCheck);
+        exceptionPaths.add(
+            new ExceptionPath(
+                withBounds,
+                site.node(),
+                "java.lang.ArrayIndexOutOfBoundsException",
+                ThrowSiteKind.IMPLICIT,
+                List.of()));
+        throwConstraintPaths.add(withBounds);
+      }
+    }
+  }
+
+  // For each `new T[n]` allocation, synthesise an ExceptionPath whose predicate conjoins
+  // the path conditions reaching the allocation with `size < 0`.
+  private void collectImplicitNegativeArraySizePaths(
+      final List<ExceptionPath> exceptionPaths,
+      final List<List<SymbolicConstraint>> throwConstraintPaths) {
+    for (ImplicitNegativeArraySizeSite site : cpg.getImplicitNegativeArraySizeSites()) {
+      SymExpr sizeExpr = SymExpr.fromJimple(site.size());
+      SymbolicConstraint negativeCheck =
+          new SymbolicConstraint(
+              new SymBinOp(BinOp.LT, sizeExpr, SymIntConst.zero()), true);
+
+      List<List<SymbolicConstraint>> pathConditions =
+          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
+      if (pathConditions.isEmpty()) {
+        pathConditions = List.of(List.of());
+      }
+      for (List<SymbolicConstraint> path : pathConditions) {
+        List<SymbolicConstraint> withNegative = new ArrayList<>(path.size() + 1);
+        withNegative.addAll(path);
+        withNegative.add(negativeCheck);
+        exceptionPaths.add(
+            new ExceptionPath(
+                withNegative,
+                site.node(),
+                "java.lang.NegativeArraySizeException",
+                ThrowSiteKind.IMPLICIT,
+                List.of()));
+        throwConstraintPaths.add(withNegative);
+      }
+    }
+  }
+
+  // For each integer `/` or `%`, synthesise an ExceptionPath whose predicate conjoins the
+  // path conditions reaching the operation with `divisor == 0`.
+  private void collectImplicitArithmeticPaths(
+      final List<ExceptionPath> exceptionPaths,
+      final List<List<SymbolicConstraint>> throwConstraintPaths) {
+    for (ImplicitArithmeticSite site : cpg.getImplicitArithmeticSites()) {
+      SymExpr divisorExpr = SymExpr.fromJimple(site.divisor());
+      SymbolicConstraint zeroCheck =
+          new SymbolicConstraint(
+              new SymBinOp(BinOp.EQ, divisorExpr, SymIntConst.zero()), true);
+
+      List<List<SymbolicConstraint>> pathConditions =
+          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
+      if (pathConditions.isEmpty()) {
+        pathConditions = List.of(List.of());
+      }
+      for (List<SymbolicConstraint> path : pathConditions) {
+        List<SymbolicConstraint> withZero = new ArrayList<>(path.size() + 1);
+        withZero.addAll(path);
+        withZero.add(zeroCheck);
+        exceptionPaths.add(
+            new ExceptionPath(
+                withZero,
+                site.node(),
+                "java.lang.ArithmeticException",
+                ThrowSiteKind.IMPLICIT,
+                List.of()));
+        throwConstraintPaths.add(withZero);
+      }
+    }
   }
 
   @Override
@@ -104,7 +266,8 @@ public final class MethodSummariser implements SummaryResolver {
 
     summaryRepository.markInProgress(calleeSignature);
     MethodSummariser calleeAnalysis =
-        new MethodSummariser(calleeGraph.get(), graphRepository, summaryRepository);
+        new MethodSummariser(
+            calleeGraph.get(), graphRepository, summaryRepository, emitImplicitExceptions);
 
     log.debug("summarising callee {}", calleeSignature);
     MethodSummary calleeSummary = calleeAnalysis.summarise();

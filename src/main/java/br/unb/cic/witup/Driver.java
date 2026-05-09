@@ -1,5 +1,6 @@
 package br.unb.cic.witup;
 
+import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodParts;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
@@ -40,7 +41,7 @@ public final class Driver {
     }
 
     log.info("Starting analysis for {}", jarPath);
-    ProjectAnalyser analyser = new ProjectAnalyser(jarPath);
+    ProjectAnalyser analyser = new ProjectAnalyser(jarPath, true);
     Map<String, WITUpGraph> methodGraphs = analyser.analyseProject();
     Map<String, String> failures = new LinkedHashMap<>();
     Map<String, MethodSummary> methodSummaries = analyser.summariseAll(methodGraphs, failures);
@@ -70,6 +71,8 @@ public final class Driver {
         rows.add(row);
       }
     }
+    List<Map<String, Object>> summaryRows = buildSummaryRows(args[0], methodSummaries);
+
     String projectName = args[0].replaceFirst("\\.jar$", "");
     Path projectResultsDir = PROJECT_RESULTS.resolve(projectName);
 
@@ -79,8 +82,45 @@ public final class Driver {
     mapper.writeValue(
         projectResultsDir.resolve("witup-results-" + projectName + ".json").toFile(), rows);
     mapper.writeValue(
+        projectResultsDir.resolve("witup-summaries-" + projectName + ".json").toFile(),
+        summaryRows);
+    mapper.writeValue(
         projectResultsDir.resolve("witup-failures-" + projectName + ".json").toFile(), failures);
     log.info("Results written to witup-results.json ({} methods)", methodSolutions.size());
+    log.info("Summaries written to witup-summaries.json ({} paths)", summaryRows.size());
     log.info("Failures written to witup-failures.json ({} methods)", failures.size());
+  }
+
+  // Per-(method, exception-path) view of the analysis output. Independent of solver outcome —
+  // includes paths regardless of SAT/UNSAT — and carries the schema fields the rollup phase
+  // consumes (exceptionType, throwSiteKind, provenance). modelValues live in witup-results.
+  private static List<Map<String, Object>> buildSummaryRows(
+      final String artifact, final Map<String, MethodSummary> methodSummaries) {
+    List<Map<String, Object>> summaryRows = new ArrayList<>();
+    for (var entry : methodSummaries.entrySet()) {
+      MethodSummary summary = entry.getValue();
+      List<ExceptionPath> paths = summary.exceptionPaths();
+      if (paths == null) {
+        continue;
+      }
+      MethodParts parts = MethodParts.parseSignature(entry.getKey());
+      for (int i = 0; i < paths.size(); i++) {
+        ExceptionPath ep = paths.get(i);
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("artifact", artifact);
+        row.put("package", parts.pkg());
+        row.put("class", parts.clazz());
+        row.put("method", parts.method());
+        row.put("returnType", parts.returnType());
+        row.put("params", parts.params());
+        row.put("pathIndex", i);
+        row.put("pathId", entry.getKey() + "#" + i);
+        row.put("exceptionType", ep.getExceptionQualifiedName());
+        row.put("throwSiteKind", ep.getThrowSiteKind().name());
+        row.put("provenance", ep.getProvenance());
+        summaryRows.add(row);
+      }
+    }
+    return summaryRows;
   }
 }

@@ -1,10 +1,13 @@
 package br.unb.cic.witup.summary;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodSummary;
+import br.unb.cic.witup.analysis.ThrowSiteKind;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import java.util.List;
@@ -17,8 +20,40 @@ public class CatchesSummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    System.out.println("=== simpleCatch ===");
-    dump(summary);
+    assertFalse(summary.exceptionPaths().isEmpty(), "expected at least one exception path");
+    for (ExceptionPath ep : summary.exceptionPaths()) {
+      assertEquals(
+          "java.lang.IllegalArgumentException",
+          ep.getExceptionQualifiedName(),
+          "simpleCatch only authors IAE");
+      assertEquals(
+          ThrowSiteKind.DIRECT_ATHROW,
+          ep.getThrowSiteKind(),
+          "simpleCatch's `throw new IAE()` is a direct athrow, not a rethrow");
+      assertEquals(
+          List.of(),
+          ep.getProvenance(),
+          "no callee-summary integration yet — provenance is empty until step 3");
+    }
+  }
+
+  @Test
+  public void simpleRethrowSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void simpleRethrow(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    assertFalse(summary.exceptionPaths().isEmpty(), "expected at least one exception path");
+    for (ExceptionPath ep : summary.exceptionPaths()) {
+      assertEquals(
+          ThrowSiteKind.RETHROW,
+          ep.getThrowSiteKind(),
+          "throw operand traces back to a caught exception ref, so this is a rethrow");
+      assertEquals(
+          List.of(),
+          ep.getProvenance(),
+          "no callee-summary integration yet — provenance is empty until step 3");
+    }
   }
 
   @Test

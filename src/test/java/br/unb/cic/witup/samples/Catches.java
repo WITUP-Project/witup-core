@@ -26,6 +26,21 @@ public class Catches {
     }
   }
 
+  // Same shape as simpleCatch, but rethrows the captured Throwable instead of authoring a
+  // fresh exception. The throw operand traces back through DDG to a JCaughtExceptionRef,
+  // which is what classifyThrowSite uses to label the path RETHROW.
+  public static void simpleRethrow(int x) throws Throwable {
+    Throwable exception = null;
+    try {
+      mayThrow(x);
+    } catch (Throwable t) {
+      exception = t;
+    }
+    if (null != exception) {
+      throw exception;
+    }
+  }
+
   // Mirrors org.apache.commons.io.FileUtils#cleanDirectory shape: a try/catch inside a
   // for-each loop, with the caught throwable assigned to a variable used after the loop.
   public static void loopCatch(int[] xs) {
