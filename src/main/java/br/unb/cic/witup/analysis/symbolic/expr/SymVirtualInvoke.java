@@ -194,9 +194,7 @@ public final class SymVirtualInvoke extends SymExpr {
     if (h == 0) {
       final int prime = 31;
       h =
-          prime
-                  * (prime * (prime * signature.hashCode() + base.hashCode())
-                      + Arrays.hashCode(args))
+          prime * (prime * (prime * signature.hashCode() + base.hashCode()) + Arrays.hashCode(args))
               + Boolean.hashCode(returnsBoolean);
       cachedHashCode = h;
     }

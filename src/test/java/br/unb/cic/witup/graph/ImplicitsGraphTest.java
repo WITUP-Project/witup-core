@@ -53,8 +53,7 @@ public class ImplicitsGraphTest {
 
   @Test
   public void negativeArraySizeGraph() {
-    String methodSignature =
-        "<br.unb.cic.witup.samples.Implicits: int[] negativeArraySize(int)>";
+    String methodSignature = "<br.unb.cic.witup.samples.Implicits: int[] negativeArraySize(int)>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     WITUpGraph cpg = analysis.graph();
 

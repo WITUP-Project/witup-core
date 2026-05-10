@@ -71,8 +71,7 @@ public class CatchesSummaryTest {
     System.out.println("formalParams.size=" + summary.formalParams().size());
     for (int i = 0; i < summary.formalParams().size(); i++) {
       var p = summary.formalParams().get(i);
-      System.out.println(
-          "  formal[" + i + "] type=" + p.getParamType() + " kind=" + p.getKind());
+      System.out.println("  formal[" + i + "] type=" + p.getParamType() + " kind=" + p.getKind());
     }
     System.out.println("guardedReturn.size=" + summary.guardedReturn().size());
     System.out.println("exceptionPaths.size=" + summary.exceptionPaths().size());

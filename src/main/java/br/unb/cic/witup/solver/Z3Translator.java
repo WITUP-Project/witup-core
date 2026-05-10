@@ -104,10 +104,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   /**
    * Replaces per-path state with fresh maps on entry to a new path. Replace-not-clear because
-   * {@link HashMap#clear} is O(table.length) and never shrinks — a single deep path that
-   * grows the table to thousands of buckets would make every subsequent reset walk that whole
-   * array. Allocating a new small map is O(1) and the orphaned map dies in young-gen.
-   * intConstCache stays cross-path since its keys (boxed Integer literals) are bounded.
+   * {@link HashMap#clear} is O(table.length) and never shrinks — a single deep path that grows the
+   * table to thousands of buckets would make every subsequent reset walk that whole array.
+   * Allocating a new small map is O(1) and the orphaned map dies in young-gen. intConstCache stays
+   * cross-path since its keys (boxed Integer literals) are bounded.
    */
   public void resetForNewPath() {
     exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);

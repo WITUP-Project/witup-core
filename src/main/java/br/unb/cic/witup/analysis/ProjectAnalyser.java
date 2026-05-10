@@ -221,8 +221,7 @@ public final class ProjectAnalyser implements GraphRepository {
       return;
     }
     try {
-      MethodSummariser ms =
-          new MethodSummariser(graph, this, summaryCache, emitImplicitExceptions);
+      MethodSummariser ms = new MethodSummariser(graph, this, summaryCache, emitImplicitExceptions);
       summaries.put(sig, ms.summarise());
     } catch (Exception e) {
       log.warn("Failed to summarise {}: {}", sig, e.getMessage());

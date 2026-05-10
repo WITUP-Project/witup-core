@@ -50,6 +50,7 @@ import sootup.core.jimple.common.expr.JDivExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
+import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
@@ -243,6 +244,53 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       return lhs;
     }
     return null;
+  }
+
+  // True if this node has an outgoing exceptional CFG edge that lands on a catch handler
+  // — i.e. the stmt is inside a try block whose handler is part of the same method. The
+  // rollup phase uses this to distinguish unguarded calls (handled in 3.3) from calls
+  // that need catch-type matching (3.4).
+  public boolean hasInScopeCatchHandler(final WITUpNode node) {
+    for (WITUpEdge edge : outgoingEdgesOf(node)) {
+      if (edge instanceof ExceptionalCFGEdge && edge.getTarget() instanceof CaughtExceptionNode) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Enumerates Jimple call sites: each entry carries the call's WITUpNode, the callee's
+  // soot-format signature, and the actuals in the order MethodSummariser.buildFormals()
+  // expects (params first, receiver last for instance calls). Consumed by the rollup phase
+  // to compose callee escape sets into the caller's summary. Dynamic invokes (lambdas,
+  // method handles) are skipped — they don't have a static method signature in the usual
+  // sense; SymbolicConstraintGenerator's tryResolveLambda handles them separately.
+  public List<MethodCallSite> getCallSites() {
+    List<MethodCallSite> sites = new ArrayList<>();
+    for (WITUpNode n : this.vertexSet()) {
+      if (!(n instanceof SimpleNode sn)) {
+        continue;
+      }
+      if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      AbstractInvokeExpr invoke = invokeExprOf(stmtNode.getStmt());
+      if (invoke == null) {
+        continue;
+      }
+      if (!(invoke instanceof AbstractInstanceInvokeExpr || invoke instanceof JStaticInvokeExpr)) {
+        continue;
+      }
+      List<Immediate> actuals = new ArrayList<>();
+      for (Immediate arg : invoke.getArgs()) {
+        actuals.add(arg);
+      }
+      if (invoke instanceof AbstractInstanceInvokeExpr inst) {
+        actuals.add(inst.getBase());
+      }
+      sites.add(new MethodCallSite(n, invoke.getMethodSignature().toString(), actuals));
+    }
+    return sites;
   }
 
   // Enumerates integer `/` and `%` operations for ArithmeticException synthesis. The
