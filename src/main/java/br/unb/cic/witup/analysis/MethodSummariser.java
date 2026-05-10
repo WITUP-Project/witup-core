@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -252,9 +253,7 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (MethodCallSite site : cpg.getCallSites()) {
-      if (cpg.hasInScopeCatchHandler(site.node())) {
-        continue;
-      }
+      Set<String> caughtTypes = cpg.inScopeCatchTypes(site.node());
       Optional<MethodSummary> calleeSummaryOpt =
           summaryRepository.getSummary(site.calleeSignature());
       if (calleeSummaryOpt.isEmpty()) {
@@ -295,6 +294,9 @@ public final class MethodSummariser implements SummaryResolver {
       }
 
       for (ExceptionPath calleeEp : callee.exceptionPaths()) {
+        if (isCaughtByAny(calleeEp.getExceptionQualifiedName(), caughtTypes)) {
+          continue;
+        }
         List<SymbolicConstraint> substituted = new ArrayList<>(calleeEp.getConstraints().size());
         for (SymbolicConstraint c : calleeEp.getConstraints()) {
           SymExpr expr = c.symExpr();
@@ -324,6 +326,52 @@ public final class MethodSummariser implements SummaryResolver {
         }
       }
     }
+  }
+
+  // Pragmatic catch-type matcher: exact match plus a hardcoded recogniser for the three
+  // catch-all aliases at the top of the JDK exception hierarchy. Real subtype matching
+  // across user-defined hierarchies is deferred to a SootUp TypeHierarchy integration
+  // (see project_deferred_work.md) — this approximation covers the common Commons IO
+  // patterns (catch IOException specifically; catch Throwable for defensive absorption).
+  private static boolean isCaughtByAny(final String thrownType, final Set<String> caughtTypes) {
+    if (thrownType == null || caughtTypes.isEmpty()) {
+      return false;
+    }
+    for (String caught : caughtTypes) {
+      if (thrownType.equals(caught)) {
+        return true;
+      }
+      if ("java.lang.Throwable".equals(caught)) {
+        return true;
+      }
+      if ("java.lang.Exception".equals(caught) && !isErrorType(thrownType)) {
+        return true;
+      }
+      if ("java.lang.RuntimeException".equals(caught) && isUncheckedType(thrownType)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean isErrorType(final String type) {
+    return "java.lang.Error".equals(type)
+        || "java.lang.OutOfMemoryError".equals(type)
+        || "java.lang.StackOverflowError".equals(type)
+        || "java.lang.AssertionError".equals(type);
+  }
+
+  private static boolean isUncheckedType(final String type) {
+    return "java.lang.RuntimeException".equals(type)
+        || "java.lang.NullPointerException".equals(type)
+        || "java.lang.IllegalArgumentException".equals(type)
+        || "java.lang.IllegalStateException".equals(type)
+        || "java.lang.ArrayIndexOutOfBoundsException".equals(type)
+        || "java.lang.IndexOutOfBoundsException".equals(type)
+        || "java.lang.ArithmeticException".equals(type)
+        || "java.lang.NegativeArraySizeException".equals(type)
+        || "java.lang.ClassCastException".equals(type)
+        || "java.lang.UnsupportedOperationException".equals(type);
   }
 
   @Override

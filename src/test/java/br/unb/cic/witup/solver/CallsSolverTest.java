@@ -14,7 +14,7 @@ public class CallsSolverTest {
     AnalysisResult analysis =
         TestAnalysisContext.getImplicitAnalyser().analyseMethod(methodSignature);
 
-    // Single CALLEE_PROPAGATED path. Predicate is calleeThrows's `x < 0`, with x bound to
+    // Single CALLEE_PROPAGATED path. Predicate is calleeMayThrow's `x < 0`, with x bound to
     // this method's parameter via formals→actuals substitution. The substitution should
     // resolve to the caller's own `x` parameter — model must concretely report x < 0.
     assertEquals(1, analysis.solutions().size());
@@ -23,5 +23,17 @@ public class CallsSolverTest {
     assertTrue(
         sol.getInt("x") < 0,
         "callee predicate `x < 0` substituted to caller's x; SAT model must bind x to a negative int");
+  }
+
+  @Test
+  public void caughtCalleeThrowSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Calls: void caughtCalleeThrow(int)>";
+    AnalysisResult analysis =
+        TestAnalysisContext.getImplicitAnalyser().analyseMethod(methodSignature);
+
+    // The catch handler absorbs calleeMayThrow's IAE before it can escape — no path makes
+    // it through to the solver. End-to-end confirmation that catch-type matching elides
+    // the propagation in the rollup.
+    assertEquals(0, analysis.solutions().size());
   }
 }

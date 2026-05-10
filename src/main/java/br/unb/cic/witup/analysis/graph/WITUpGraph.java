@@ -61,6 +61,7 @@ import sootup.core.jimple.common.stmt.JInvokeStmt;
 import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
 import sootup.core.jimple.common.stmt.Stmt;
+import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.java.core.JavaSootMethod;
@@ -247,9 +248,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   // True if this node has an outgoing exceptional CFG edge that lands on a catch handler
-  // — i.e. the stmt is inside a try block whose handler is part of the same method. The
-  // rollup phase uses this to distinguish unguarded calls (handled in 3.3) from calls
-  // that need catch-type matching (3.4).
+  // — i.e. the stmt is inside a try block whose handler is part of the same method.
   public boolean hasInScopeCatchHandler(final WITUpNode node) {
     for (WITUpEdge edge : outgoingEdgesOf(node)) {
       if (edge instanceof ExceptionalCFGEdge && edge.getTarget() instanceof CaughtExceptionNode) {
@@ -257,6 +256,31 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return false;
+  }
+
+  // Caught-exception types (fully-qualified) of every in-scope catch handler for this node's
+  // stmt. The actual catch type comes from the body's exception table; SootUp surfaces it
+  // per-stmt via `StmtGraph.exceptionalSuccessors(stmt)`, which returns a `Map<ClassType,
+  // Stmt>` (caught-type → handler-stmt). The Jimple synthetic `JCaughtExceptionRef.getType()`
+  // is unreliable for this purpose — it is always Throwable, since that's the static type
+  // of the synthetic ref on the operand stack at handler entry.
+  public Set<String> inScopeCatchTypes(final WITUpNode node) {
+    if (!(node instanceof SimpleNode sn)) {
+      return Set.of();
+    }
+    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+      return Set.of();
+    }
+    Map<ClassType, Stmt> handlers =
+        method.getBody().getStmtGraph().exceptionalSuccessors(stmtNode.getStmt());
+    if (handlers.isEmpty()) {
+      return Set.of();
+    }
+    Set<String> caughtTypes = new HashSet<>(handlers.size());
+    for (ClassType ct : handlers.keySet()) {
+      caughtTypes.add(ct.getFullyQualifiedName());
+    }
+    return caughtTypes;
   }
 
   // Enumerates Jimple call sites: each entry carries the call's WITUpNode, the callee's
