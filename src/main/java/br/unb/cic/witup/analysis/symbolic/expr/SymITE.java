@@ -5,6 +5,16 @@ import java.util.Map;
 import java.util.Set;
 
 public final class SymITE extends SymExpr {
+  // Bound on the depth that toString renders in full. Beyond this we emit a structural
+  // marker that includes the cached hashCode so cache keys built from toString — both
+  // ours (Z3Translator's visitLength / visitInstanceOf use *.toString as cache keys)
+  // and any external consumer — continue to distinguish different SymITEs of the same
+  // depth. The bound only affects the *rendering* function: equality, hashCode,
+  // substitution, and Z3 translation are all unchanged. Sized generously so typical
+  // predicates (depth ≤ ~10) render in full; the cap only bites the deep-chain encoding
+  // produced by encodeImplication on long guard lists, which would otherwise OOM.
+  private static final int MAX_DEPTH_FOR_TOSTRING = 32;
+
   private final SymExpr condition;
   private final SymExpr thenExpr;
   private final SymExpr elseExpr;
@@ -103,7 +113,11 @@ public final class SymITE extends SymExpr {
   @Override
   public String toString() {
     if (cachedToString == null) {
-      cachedToString = "(" + condition + " ? " + thenExpr + " : " + elseExpr + ")";
+      if (cachedDepth > MAX_DEPTH_FOR_TOSTRING) {
+        cachedToString = "<ite depth=" + cachedDepth + " hash=" + hashCode() + ">";
+      } else {
+        cachedToString = "(" + condition + " ? " + thenExpr + " : " + elseExpr + ")";
+      }
     }
     return cachedToString;
   }
