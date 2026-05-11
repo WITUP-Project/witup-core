@@ -3,6 +3,7 @@ package br.unb.cic.witup.analysis;
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.MethodCallSite;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.symbolic.SymExprResolver;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
@@ -82,7 +83,7 @@ public final class ExceptionFlowWalker {
       }
       List<SymExpr> actuals = new ArrayList<>(site.actuals().size());
       for (Immediate imm : site.actuals()) {
-        actuals.add(SymExpr.fromJimple(imm));
+        actuals.add(SymExprResolver.resolveLocalAt(SymExpr.fromJimple(imm), site.node(), cpg));
       }
       Set<String> caughtTypes = cpg.inScopeCatchTypes(site.node());
       List<ExceptionPath> calleeFlows = observablePaths(site.calleeSignature());

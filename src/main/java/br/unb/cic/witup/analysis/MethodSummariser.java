@@ -9,6 +9,7 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.GuardedExpr;
+import br.unb.cic.witup.analysis.symbolic.SymExprResolver;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
@@ -80,6 +81,12 @@ public final class MethodSummariser implements SummaryResolver {
       ThrowStatementNode throwStmt = (ThrowStatementNode) throwNode;
       String exceptionQualifiedName = cpg.resolveExceptionType(throwStmt);
       ThrowSiteKind throwSiteKind = cpg.classifyThrowSite(throwStmt);
+      // resolveExceptionType only handles `throw new X()`; for `throw caughtVar` (rethrow)
+      // it returns null. Fall back to the surrounding catch handler's declared type so
+      // the row is actually identifiable in benchmark matching.
+      if (exceptionQualifiedName == null && throwSiteKind == ThrowSiteKind.RETHROW) {
+        exceptionQualifiedName = cpg.resolveRethrowCaughtType(throwStmt);
+      }
       for (List<SymbolicConstraint> constraints :
           symbolicConstraintGenerator.buildThrowConstraintPaths(throwNode)) {
         exceptionPaths.add(
@@ -117,7 +124,8 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitNpeReceiverSite site : cpg.getImplicitNpeReceiverSites()) {
-      SymExpr receiverExpr = SymExpr.fromJimple(site.receiver());
+      SymExpr receiverExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.receiver()), site.node(), cpg);
       SymbolicConstraint nullCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.EQ, receiverExpr, SymNull.INSTANCE), true);
 
@@ -150,8 +158,10 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitAioobeSite site : cpg.getImplicitAioobeSites()) {
-      SymExpr arrExpr = SymExpr.fromJimple(site.arrayBase());
-      SymExpr indexExpr = SymExpr.fromJimple(site.index());
+      SymExpr arrExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.arrayBase()), site.node(), cpg);
+      SymExpr indexExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.index()), site.node(), cpg);
       SymExpr nonNull = new SymBinOp(BinOp.NE, arrExpr, SymNull.INSTANCE);
       SymExpr lt = new SymBinOp(BinOp.LT, indexExpr, SymIntConst.zero());
       SymExpr ge = new SymBinOp(BinOp.GE, indexExpr, new SymLength(arrExpr));
@@ -185,7 +195,8 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitNegativeArraySizeSite site : cpg.getImplicitNegativeArraySizeSites()) {
-      SymExpr sizeExpr = SymExpr.fromJimple(site.size());
+      SymExpr sizeExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.size()), site.node(), cpg);
       SymbolicConstraint negativeCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.LT, sizeExpr, SymIntConst.zero()), true);
 
@@ -215,7 +226,8 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitArithmeticSite site : cpg.getImplicitArithmeticSites()) {
-      SymExpr divisorExpr = SymExpr.fromJimple(site.divisor());
+      SymExpr divisorExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.divisor()), site.node(), cpg);
       SymbolicConstraint zeroCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.EQ, divisorExpr, SymIntConst.zero()), true);
 

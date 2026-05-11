@@ -73,8 +73,13 @@ public final class Driver {
         rows.add(row);
       }
     }
+    Map<String, String> pathIdToStatus = new LinkedHashMap<>();
+    for (Map<String, Object> r : rows) {
+      pathIdToStatus.put((String) r.get("pathId"), (String) r.get("status"));
+    }
     ExceptionFlowWalker walker = new ExceptionFlowWalker(methodSummaries, analyser);
-    List<Map<String, Object>> summaryRows = buildSummaryRows(args[0], methodSummaries, walker);
+    List<Map<String, Object>> summaryRows =
+        buildSummaryRows(args[0], methodSummaries, walker, pathIdToStatus);
 
     String projectName = args[0].replaceFirst("\\.jar$", "");
     Path projectResultsDir = PROJECT_RESULTS.resolve(projectName);
@@ -100,7 +105,8 @@ public final class Driver {
   private static List<Map<String, Object>> buildSummaryRows(
       final String artifact,
       final Map<String, MethodSummary> methodSummaries,
-      final ExceptionFlowWalker walker) {
+      final ExceptionFlowWalker walker,
+      final Map<String, String> pathIdToStatus) {
     List<Map<String, Object>> summaryRows = new ArrayList<>();
     for (var entry : methodSummaries.entrySet()) {
       String methodSig = entry.getKey();
@@ -111,6 +117,7 @@ public final class Driver {
       MethodParts parts = MethodParts.parseSignature(methodSig);
       for (int i = 0; i < paths.size(); i++) {
         ExceptionPath ep = paths.get(i);
+        String pathId = methodSig + "#" + i;
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("artifact", artifact);
         row.put("package", parts.pkg());
@@ -119,10 +126,21 @@ public final class Driver {
         row.put("returnType", parts.returnType());
         row.put("params", parts.params());
         row.put("pathIndex", i);
-        row.put("pathId", methodSig + "#" + i);
+        row.put("pathId", pathId);
         row.put("exceptionType", ep.getExceptionQualifiedName());
         row.put("throwSiteKind", ep.getThrowSiteKind().name());
         row.put("provenance", ep.getProvenance());
+        // Z3 only ran on each method's local own-throw paths (the entries in
+        // MethodSummary.throwConstraints). Callee-propagated paths are *composed* at
+        // query time by the walker and don't have their own pathId in the solver output.
+        // PROPAGATED means: the originating callee's path was solver-checked, and the
+        // composition here is the result of substituting actuals into that path's
+        // predicate. Substitution preserves UNSAT (more concrete predicate, never less)
+        // but may not preserve SAT in degenerate cases where the actuals contradict the
+        // predicate — so PROPAGATED is "likely SAT, traceable to a solver-verified source
+        // via the provenance chain", not an unchecked guess. To get the originating
+        // verdict, follow provenance[0] back to its method's witup-results.json entry.
+        row.put("solverStatus", pathIdToStatus.getOrDefault(pathId, "PROPAGATED"));
         row.put("constraints", flattenConstraints(ep.getConstraints()));
         summaryRows.add(row);
       }

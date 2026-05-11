@@ -30,6 +30,7 @@ import java.util.Set;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
+import sootup.core.graph.StmtGraph;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
@@ -75,6 +76,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private final Map<WITUpNode, List<WITUpPath>> cachedReturnPaths = new HashMap<>();
   private Map<WITUpNode, List<WITUpEdge>> cfgIncoming;
   private Map<WITUpNode, List<WITUpEdge>> cfgOutgoing;
+  // Lazy: handler stmt → fully-qualified caught-exception type. Built once from the body's
+  // StmtGraph exceptional successors so resolveRethrowCaughtType can look up the catch
+  // type behind a rethrow site without iterating the whole stmt graph per query.
+  private Map<Stmt, String> cachedCatchTypeByHandler;
 
   public String getMethodSignature() {
     return methodSignature;
@@ -190,19 +195,26 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
       Stmt stmt = stmtNode.getStmt();
       Local invokeBase = instanceInvokeReceiver(stmt);
-      if (invokeBase != null) {
+      if (invokeBase != null && !isThisLocal(invokeBase)) {
         sites.add(new ImplicitNpeReceiverSite(n, invokeBase));
       }
       Local fieldBase = instanceFieldReceiver(stmt);
-      if (fieldBase != null) {
+      if (fieldBase != null && !isThisLocal(fieldBase)) {
         sites.add(new ImplicitNpeReceiverSite(n, fieldBase));
       }
       Local arrayBase = arrayAccessBase(stmt);
-      if (arrayBase != null) {
+      if (arrayBase != null && !isThisLocal(arrayBase)) {
         sites.add(new ImplicitNpeReceiverSite(n, arrayBase));
       }
     }
     return sites;
+  }
+
+  // @this on an instance method is JVM-guaranteed non-null at the entry; receivers that
+  // dereference `this` can't be the source of an NPE. Soot's convention names this local
+  // `this`, so a name check suffices.
+  private static boolean isThisLocal(final Local local) {
+    return "this".equals(local.getName());
   }
 
   private static Local instanceInvokeReceiver(final Stmt stmt) {
@@ -686,5 +698,55 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return ThrowSiteKind.DIRECT_ATHROW;
+  }
+
+  // Resolves the caught-exception type behind a rethrow site. The throw operand traces
+  // back through DDG to a CaughtExceptionNode (the catch handler's @caughtexception
+  // identity stmt). That handler stmt is the key in the body's exception table, whose
+  // declared type is the actual catch type — JCaughtExceptionRef.getType() itself returns
+  // Throwable (the Jimple synthetic operand-stack type), so we look up the table instead.
+  // Returns null if no catch handler is reachable in DDG (i.e. not actually a rethrow).
+  public String resolveRethrowCaughtType(final ThrowStatementNode throwNode) {
+    Map<Stmt, String> handlerToType = catchTypeByHandler();
+    if (handlerToType.isEmpty()) {
+      return null;
+    }
+    Set<WITUpNode> visited = new HashSet<>();
+    Deque<WITUpNode> worklist = new ArrayDeque<>();
+    for (DataDependencyEdge edge : getIncomingDDGEdges(throwNode)) {
+      worklist.push(getEdgeSource(edge));
+    }
+    while (!worklist.isEmpty()) {
+      WITUpNode src = worklist.pop();
+      if (!visited.add(src)) {
+        continue;
+      }
+      if (src instanceof CaughtExceptionNode
+          && src.getNode() instanceof StmtGraphNode handlerNode) {
+        String type = handlerToType.get(handlerNode.getStmt());
+        if (type != null) {
+          return type;
+        }
+      }
+      for (DataDependencyEdge e : getIncomingDDGEdges(src)) {
+        worklist.push(getEdgeSource(e));
+      }
+    }
+    return null;
+  }
+
+  private Map<Stmt, String> catchTypeByHandler() {
+    if (cachedCatchTypeByHandler == null) {
+      Map<Stmt, String> map = new HashMap<>();
+      StmtGraph<?> graph = method.getBody().getStmtGraph();
+      for (Stmt stmt : graph.getNodes()) {
+        Map<ClassType, Stmt> handlers = graph.exceptionalSuccessors(stmt);
+        for (Map.Entry<ClassType, Stmt> e : handlers.entrySet()) {
+          map.putIfAbsent(e.getValue(), e.getKey().getFullyQualifiedName());
+        }
+      }
+      cachedCatchTypeByHandler = map;
+    }
+    return cachedCatchTypeByHandler;
   }
 }
