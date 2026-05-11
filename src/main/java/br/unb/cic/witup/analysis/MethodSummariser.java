@@ -5,7 +5,6 @@ import br.unb.cic.witup.analysis.graph.ImplicitAioobeSite;
 import br.unb.cic.witup.analysis.graph.ImplicitArithmeticSite;
 import br.unb.cic.witup.analysis.graph.ImplicitNegativeArraySizeSite;
 import br.unb.cic.witup.analysis.graph.ImplicitNpeReceiverSite;
-import br.unb.cic.witup.analysis.graph.MethodCallSite;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
@@ -24,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,8 +94,10 @@ public final class MethodSummariser implements SummaryResolver {
       collectImplicitAioobePaths(exceptionPaths, throwConstraintPaths);
       collectImplicitNegativeArraySizePaths(exceptionPaths, throwConstraintPaths);
       collectImplicitArithmeticPaths(exceptionPaths, throwConstraintPaths);
-      collectCalleePropagatedPaths(exceptionPaths, throwConstraintPaths);
     }
+    // Callee-propagated paths are no longer materialised in the summary itself; the
+    // ExceptionFlowWalker composes them on demand from this method's call sites and
+    // catch handlers (both already exposed by WITUpGraph).
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
     List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceGuardedReturn();
@@ -121,11 +121,10 @@ public final class MethodSummariser implements SummaryResolver {
       SymbolicConstraint nullCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.EQ, receiverExpr, SymNull.INSTANCE), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withNull = new ArrayList<>(path.size() + 1);
         withNull.addAll(path);
@@ -160,11 +159,10 @@ public final class MethodSummariser implements SummaryResolver {
       SymbolicConstraint boundsCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.AND, nonNull, orBounds), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withBounds = new ArrayList<>(path.size() + 1);
         withBounds.addAll(path);
@@ -191,11 +189,10 @@ public final class MethodSummariser implements SummaryResolver {
       SymbolicConstraint negativeCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.LT, sizeExpr, SymIntConst.zero()), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withNegative = new ArrayList<>(path.size() + 1);
         withNegative.addAll(path);
@@ -222,11 +219,10 @@ public final class MethodSummariser implements SummaryResolver {
       SymbolicConstraint zeroCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.EQ, divisorExpr, SymIntConst.zero()), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withZero = new ArrayList<>(path.size() + 1);
         withZero.addAll(path);
@@ -241,137 +237,6 @@ public final class MethodSummariser implements SummaryResolver {
         throwConstraintPaths.add(withZero);
       }
     }
-  }
-
-  // For each unguarded call site (no in-scope catch handler) where the callee has a
-  // summary, emit one CALLEE_PROPAGATED ExceptionPath per (caller-path × callee-path).
-  // Predicate is the caller's path conditions to the call site, conjoined with the
-  // callee's predicate after formals→actuals substitution. Provenance prepends the
-  // callee's signature to the callee's own provenance chain.
-  // Calls in try blocks are deferred to step 3.4 (catch-type matching).
-  private void collectCalleePropagatedPaths(
-      final List<ExceptionPath> exceptionPaths,
-      final List<List<SymbolicConstraint>> throwConstraintPaths) {
-    for (MethodCallSite site : cpg.getCallSites()) {
-      Set<String> caughtTypes = cpg.inScopeCatchTypes(site.node());
-      Optional<MethodSummary> calleeSummaryOpt =
-          summaryRepository.getSummary(site.calleeSignature());
-      if (calleeSummaryOpt.isEmpty()) {
-        // Cache miss: lazy-summarise the callee, mirroring resolveCallee's pattern.
-        // Methods with no own throw nodes never trigger resolveCallee during constraint
-        // generation, so their callees aren't pre-summarised by that path. Skip if the
-        // callee is already in progress (recursive cycle) or has no graph available
-        // (e.g. JDK method — opaque, deferred to JDK summaries).
-        if (summaryRepository.isInProgress(site.calleeSignature())) {
-          continue;
-        }
-        Optional<WITUpGraph> calleeGraph = graphRepository.getGraph(site.calleeSignature());
-        if (calleeGraph.isEmpty()) {
-          continue;
-        }
-        MethodSummariser calleeAnalysis =
-            new MethodSummariser(
-                calleeGraph.get(), graphRepository, summaryRepository, emitImplicitExceptions);
-        calleeSummaryOpt = Optional.of(calleeAnalysis.summarise());
-      }
-      MethodSummary callee = calleeSummaryOpt.get();
-      if (callee.exceptionPaths() == null || callee.exceptionPaths().isEmpty()) {
-        continue;
-      }
-      List<SymParamRef> formals = callee.formalParams();
-      if (formals == null || formals.size() != site.actuals().size()) {
-        continue;
-      }
-      List<SymExpr> actuals = new ArrayList<>(site.actuals().size());
-      for (var imm : site.actuals()) {
-        actuals.add(SymExpr.fromJimple(imm));
-      }
-
-      List<List<SymbolicConstraint>> callerPaths =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (callerPaths.isEmpty()) {
-        callerPaths = List.of(List.of());
-      }
-
-      for (ExceptionPath calleeEp : callee.exceptionPaths()) {
-        if (isCaughtByAny(calleeEp.getExceptionQualifiedName(), caughtTypes)) {
-          continue;
-        }
-        List<SymbolicConstraint> substituted = new ArrayList<>(calleeEp.getConstraints().size());
-        for (SymbolicConstraint c : calleeEp.getConstraints()) {
-          SymExpr expr = c.symExpr();
-          for (int i = 0; i < formals.size(); i++) {
-            expr = expr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
-          }
-          substituted.add(new SymbolicConstraint(expr, c.truthValue()));
-        }
-
-        List<String> provenance = new ArrayList<>(calleeEp.getProvenance().size() + 1);
-        provenance.add(site.calleeSignature());
-        provenance.addAll(calleeEp.getProvenance());
-
-        for (List<SymbolicConstraint> callerPath : callerPaths) {
-          List<SymbolicConstraint> combined =
-              new ArrayList<>(callerPath.size() + substituted.size());
-          combined.addAll(callerPath);
-          combined.addAll(substituted);
-          exceptionPaths.add(
-              new ExceptionPath(
-                  combined,
-                  site.node(),
-                  calleeEp.getExceptionQualifiedName(),
-                  ThrowSiteKind.CALLEE_PROPAGATED,
-                  provenance));
-          throwConstraintPaths.add(combined);
-        }
-      }
-    }
-  }
-
-  // Pragmatic catch-type matcher: exact match plus a hardcoded recogniser for the three
-  // catch-all aliases at the top of the JDK exception hierarchy. Real subtype matching
-  // across user-defined hierarchies is deferred to a SootUp TypeHierarchy integration
-  // (see project_deferred_work.md) — this approximation covers the common Commons IO
-  // patterns (catch IOException specifically; catch Throwable for defensive absorption).
-  private static boolean isCaughtByAny(final String thrownType, final Set<String> caughtTypes) {
-    if (thrownType == null || caughtTypes.isEmpty()) {
-      return false;
-    }
-    for (String caught : caughtTypes) {
-      if (thrownType.equals(caught)) {
-        return true;
-      }
-      if ("java.lang.Throwable".equals(caught)) {
-        return true;
-      }
-      if ("java.lang.Exception".equals(caught) && !isErrorType(thrownType)) {
-        return true;
-      }
-      if ("java.lang.RuntimeException".equals(caught) && isUncheckedType(thrownType)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private static boolean isErrorType(final String type) {
-    return "java.lang.Error".equals(type)
-        || "java.lang.OutOfMemoryError".equals(type)
-        || "java.lang.StackOverflowError".equals(type)
-        || "java.lang.AssertionError".equals(type);
-  }
-
-  private static boolean isUncheckedType(final String type) {
-    return "java.lang.RuntimeException".equals(type)
-        || "java.lang.NullPointerException".equals(type)
-        || "java.lang.IllegalArgumentException".equals(type)
-        || "java.lang.IllegalStateException".equals(type)
-        || "java.lang.ArrayIndexOutOfBoundsException".equals(type)
-        || "java.lang.IndexOutOfBoundsException".equals(type)
-        || "java.lang.ArithmeticException".equals(type)
-        || "java.lang.NegativeArraySizeException".equals(type)
-        || "java.lang.ClassCastException".equals(type)
-        || "java.lang.UnsupportedOperationException".equals(type);
   }
 
   @Override

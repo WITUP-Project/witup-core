@@ -1,10 +1,12 @@
 package br.unb.cic.witup;
 
+import br.unb.cic.witup.analysis.ExceptionFlowWalker;
 import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodParts;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,7 +73,8 @@ public final class Driver {
         rows.add(row);
       }
     }
-    List<Map<String, Object>> summaryRows = buildSummaryRows(args[0], methodSummaries);
+    ExceptionFlowWalker walker = new ExceptionFlowWalker(methodSummaries, analyser);
+    List<Map<String, Object>> summaryRows = buildSummaryRows(args[0], methodSummaries, walker);
 
     String projectName = args[0].replaceFirst("\\.jar$", "");
     Path projectResultsDir = PROJECT_RESULTS.resolve(projectName);
@@ -91,19 +94,21 @@ public final class Driver {
     log.info("Failures written to witup-failures.json ({} methods)", failures.size());
   }
 
-  // Per-(method, exception-path) view of the analysis output. Independent of solver outcome —
-  // includes paths regardless of SAT/UNSAT — and carries the schema fields the rollup phase
-  // consumes (exceptionType, throwSiteKind, provenance). modelValues live in witup-results.
+  // Per-(method, observable-exception-path) view of the analysis output. The walker
+  // composes each method's local own throws with its callees' observable flows on
+  // demand, filtering through in-scope catch handlers. modelValues live in witup-results.
   private static List<Map<String, Object>> buildSummaryRows(
-      final String artifact, final Map<String, MethodSummary> methodSummaries) {
+      final String artifact,
+      final Map<String, MethodSummary> methodSummaries,
+      final ExceptionFlowWalker walker) {
     List<Map<String, Object>> summaryRows = new ArrayList<>();
     for (var entry : methodSummaries.entrySet()) {
-      MethodSummary summary = entry.getValue();
-      List<ExceptionPath> paths = summary.exceptionPaths();
-      if (paths == null) {
+      String methodSig = entry.getKey();
+      List<ExceptionPath> paths = walker.observablePaths(methodSig);
+      if (paths.isEmpty()) {
         continue;
       }
-      MethodParts parts = MethodParts.parseSignature(entry.getKey());
+      MethodParts parts = MethodParts.parseSignature(methodSig);
       for (int i = 0; i < paths.size(); i++) {
         ExceptionPath ep = paths.get(i);
         Map<String, Object> row = new LinkedHashMap<>();
@@ -114,13 +119,32 @@ public final class Driver {
         row.put("returnType", parts.returnType());
         row.put("params", parts.params());
         row.put("pathIndex", i);
-        row.put("pathId", entry.getKey() + "#" + i);
+        row.put("pathId", methodSig + "#" + i);
         row.put("exceptionType", ep.getExceptionQualifiedName());
         row.put("throwSiteKind", ep.getThrowSiteKind().name());
         row.put("provenance", ep.getProvenance());
+        row.put("constraints", flattenConstraints(ep.getConstraints()));
         summaryRows.add(row);
       }
     }
     return summaryRows;
+  }
+
+  // Each constraint becomes a `{symExpr, truthValue}` map. The list semantics is implicit
+  // conjunction — every entry must hold for the path's exception to fire. Sufficient for
+  // human eyeball-matching against Nassif's `State` column.
+  private static List<Map<String, Object>> flattenConstraints(
+      final List<SymbolicConstraint> constraints) {
+    if (constraints == null || constraints.isEmpty()) {
+      return List.of();
+    }
+    List<Map<String, Object>> rows = new ArrayList<>(constraints.size());
+    for (SymbolicConstraint c : constraints) {
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("symExpr", c.symExpr().toString());
+      row.put("truthValue", c.truthValue());
+      rows.add(row);
+    }
+    return rows;
   }
 }

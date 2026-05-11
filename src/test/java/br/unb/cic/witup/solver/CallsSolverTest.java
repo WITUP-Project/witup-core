@@ -1,28 +1,22 @@
 package br.unb.cic.witup.solver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import org.junit.jupiter.api.Test;
 
 public class CallsSolverTest {
+  // Both methods have no own throws — the summary is empty, so the solver has nothing to
+  // solve here. The transitive caller-observable contract (and the constraint solving for
+  // each propagated path) lives at the ExceptionFlowWalker level, not in MethodSummary.
+
   @Test
   public void unguardedCalleeThrowSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Calls: void unguardedCalleeThrow(int)>";
     AnalysisResult analysis =
         TestAnalysisContext.getImplicitAnalyser().analyseMethod(methodSignature);
-
-    // Single CALLEE_PROPAGATED path. Predicate is calleeMayThrow's `x < 0`, with x bound to
-    // this method's parameter via formals→actuals substitution. The substitution should
-    // resolve to the caller's own `x` parameter — model must concretely report x < 0.
-    assertEquals(1, analysis.solutions().size());
-    SolverResult sol = analysis.solutions().getFirst();
-    assertTrue(sol.isSat());
-    assertTrue(
-        sol.getInt("x") < 0,
-        "callee predicate `x < 0` substituted to caller's x; SAT model must bind x to a negative int");
+    assertEquals(0, analysis.solutions().size());
   }
 
   @Test
@@ -30,10 +24,6 @@ public class CallsSolverTest {
     String methodSignature = "<br.unb.cic.witup.samples.Calls: void caughtCalleeThrow(int)>";
     AnalysisResult analysis =
         TestAnalysisContext.getImplicitAnalyser().analyseMethod(methodSignature);
-
-    // The catch handler absorbs calleeMayThrow's IAE before it can escape — no path makes
-    // it through to the solver. End-to-end confirmation that catch-type matching elides
-    // the propagation in the rollup.
     assertEquals(0, analysis.solutions().size());
   }
 }
