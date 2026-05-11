@@ -129,10 +129,17 @@ public final class SymbolicConstraintGenerator {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
     for (WITUpPath p : throwConstraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
-
-      if (!resolved.isEmpty() && !hasDirectContradiction(resolved)) {
-        symbolicConstraints.add(resolved);
+      if (resolved.isEmpty()) {
+        continue;
       }
+      if (hasDirectContradiction(resolved)) {
+        continue;
+      }
+      List<SymbolicConstraint> folded = foldAndFilterConstraints(resolved);
+      if (folded == null) {
+        continue; // any constraint folded to a constant that contradicts its truthValue
+      }
+      symbolicConstraints.add(folded);
     }
     return symbolicConstraints;
   }
@@ -155,6 +162,74 @@ public final class SymbolicConstraintGenerator {
       }
     }
     return false;
+  }
+
+  // Constant-folds each constraint's SymExpr and filters out tautologies. Returns null if
+  // any constraint folds to a constant that contradicts its truthValue — the path is
+  // trivially UNSAT. Otherwise returns the (possibly-empty) list of remaining constraints;
+  // an empty list means every constraint folded to "trivially satisfied", and the path is
+  // unconditionally reachable (kept). Z3 would deliver the same verdicts on each constraint
+  // shape; doing it here saves a solver round trip and de-noises the JSON output.
+  private static List<SymbolicConstraint> foldAndFilterConstraints(
+      final List<SymbolicConstraint> constraints) {
+    List<SymbolicConstraint> result = new ArrayList<>(constraints.size());
+    for (SymbolicConstraint c : constraints) {
+      SymExpr folded = foldConstants(c.symExpr());
+      if (folded instanceof SymIntConst constant) {
+        boolean value = constant.getValue() != 0;
+        if (value == c.truthValue()) {
+          continue;
+        }
+        return null;
+      }
+      result.add(folded == c.symExpr() ? c : new SymbolicConstraint(folded, c.truthValue()));
+    }
+    return result;
+  }
+
+  // Recursively evaluates SymBinOps whose children are both SymIntConst, producing a new
+  // SymIntConst. Non-foldable cases (div-by-zero, non-arithmetic ops, non-constant children)
+  // fall through to a structurally-rebuilt SymBinOp if any child changed, or the original
+  // expr if not. Only walks compound BinOp trees; other SymExpr shapes are returned as-is.
+  private static SymExpr foldConstants(final SymExpr expr) {
+    if (!(expr instanceof SymBinOp b)) {
+      return expr;
+    }
+    SymExpr lhs = foldConstants(b.getLhs());
+    SymExpr rhs = foldConstants(b.getRhs());
+    if (lhs instanceof SymIntConst lc && rhs instanceof SymIntConst rc) {
+      Integer evaluated = evaluateBinOp(b.getOp(), lc.getValue(), rc.getValue());
+      if (evaluated != null) {
+        return SymIntConst.of(evaluated);
+      }
+    }
+    if (lhs != b.getLhs() || rhs != b.getRhs()) {
+      return new SymBinOp(b.getOp(), lhs, rhs);
+    }
+    return expr;
+  }
+
+  private static Integer evaluateBinOp(final BinOp op, final int a, final int b) {
+    return switch (op) {
+      case EQ -> a == b ? 1 : 0;
+      case NE -> a != b ? 1 : 0;
+      case LT -> a < b ? 1 : 0;
+      case LE -> a <= b ? 1 : 0;
+      case GT -> a > b ? 1 : 0;
+      case GE -> a >= b ? 1 : 0;
+      case ADD -> a + b;
+      case SUB -> a - b;
+      case MUL -> a * b;
+      case DIV -> b == 0 ? null : a / b;
+      case MOD -> b == 0 ? null : a % b;
+      case AND -> a & b;
+      case OR -> a | b;
+      case XOR -> a ^ b;
+      case SHIFT_LEFT -> a << b;
+      case SHIFT_RIGHT -> a >> b;
+      case UNSIGNED_SHIFT_RIGHT -> a >>> b;
+      case CMP, CMPG, CMPL -> Integer.compare(a, b);
+    };
   }
 
   private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> preconditions) {}

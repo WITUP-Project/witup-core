@@ -16,6 +16,10 @@ public final class SymIntConst extends SymExpr {
     return new SymIntConst(0);
   }
 
+  public static SymIntConst of(final int value) {
+    return new SymIntConst(value);
+  }
+
   public SymIntConst(final IntConstant c) {
     super(fromJimpleType(c.getType()));
     value = c.getValue();
