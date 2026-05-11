@@ -1,5 +1,6 @@
 package br.unb.cic.witup.solver;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -41,8 +42,9 @@ public class BoolSolverTest {
   public void throwIfFalseCalleeIsUnsat() {
     String methodSignature = "<br.unb.cic.witup.samples.Bool: void throwIfFalseCallee()>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
-    SolverResult sol0 = analysis.solutions().getFirst();
-
-    assertTrue(sol0.isUnsat());
+    // Previously asserted Z3 returned UNSAT on this path. The summariser now catches the
+    // direct (X, true) ∧ (X, false) contradiction structurally, so the path is dropped
+    // before the solver runs. Same end state (path is impossible), shifted upstream.
+    assertEquals(0, analysis.solutions().size());
   }
 }

@@ -110,10 +110,9 @@ public class BoolSummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(1, summary.exceptionPaths().size());
-    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
-    assertTrue(
-        path0.size() >= 2,
-        "expected at least a guarded-return precondition + the path constraint, got " + path0);
+    // The path through `throwIfFalseCallee` asserts both (X, true) and (X, false) on the
+    // same SymExpr — a direct structural contradiction the summariser now prunes before
+    // emission (previously this surfaced as an UNSAT solver verdict). No path emitted.
+    assertEquals(0, summary.exceptionPaths().size());
   }
 }

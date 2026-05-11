@@ -130,11 +130,31 @@ public final class SymbolicConstraintGenerator {
     for (WITUpPath p : throwConstraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
 
-      if (!resolved.isEmpty()) {
+      if (!resolved.isEmpty() && !hasDirectContradiction(resolved)) {
         symbolicConstraints.add(resolved);
       }
     }
     return symbolicConstraints;
+  }
+
+  // Path is trivially UNSAT if it asserts both `(X, true)` and `(X, false)` for the same
+  // SymExpr. Happens when CFG branches converge onto a throw site (loop unrolling, dead
+  // branches that the structural enumerator can't tell from live ones). Z3 would prove
+  // these UNSAT anyway; checking here just saves the trip and removes noise rows from
+  // the summary output. SymExpr.equals/hashCode are structural, so the map keys by
+  // semantic identity.
+  private static boolean hasDirectContradiction(final List<SymbolicConstraint> constraints) {
+    if (constraints.size() < 2) {
+      return false;
+    }
+    Map<SymExpr, Boolean> seen = new HashMap<>(constraints.size() * 2);
+    for (SymbolicConstraint c : constraints) {
+      Boolean prev = seen.putIfAbsent(c.symExpr(), c.truthValue());
+      if (prev != null && prev != c.truthValue()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> preconditions) {}
