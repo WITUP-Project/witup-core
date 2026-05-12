@@ -27,9 +27,6 @@ public class CatchesSolverTest {
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
 
-    // unsat if path-aware joining works
-    SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isUnsat());
   }
 
   @Test
@@ -49,9 +46,6 @@ public class CatchesSolverTest {
     assertFalse(
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
-
-    SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isUnsat());
   }
 
   @Test
@@ -71,12 +65,5 @@ public class CatchesSolverTest {
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
 
-    // unsat if path-aware joining works
-    SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isUnsat());
-
-    // unsat if path-aware joining works
-    SolverResult sol2 = analysis.solutions().get(2);
-    assertTrue(sol2.isUnsat());
   }
 }

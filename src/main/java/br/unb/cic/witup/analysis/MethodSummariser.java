@@ -137,14 +137,19 @@ public final class MethodSummariser implements SummaryResolver {
         List<SymbolicConstraint> withNull = new ArrayList<>(path.size() + 1);
         withNull.addAll(path);
         withNull.add(nullCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withNull);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withNull,
+                filtered,
                 site.node(),
                 "java.lang.NullPointerException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withNull);
+        throwConstraintPaths.add(filtered);
       }
     }
   }
@@ -177,14 +182,19 @@ public final class MethodSummariser implements SummaryResolver {
         List<SymbolicConstraint> withBounds = new ArrayList<>(path.size() + 1);
         withBounds.addAll(path);
         withBounds.add(boundsCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withBounds);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withBounds,
+                filtered,
                 site.node(),
                 "java.lang.ArrayIndexOutOfBoundsException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withBounds);
+        throwConstraintPaths.add(filtered);
       }
     }
   }
@@ -208,14 +218,19 @@ public final class MethodSummariser implements SummaryResolver {
         List<SymbolicConstraint> withNegative = new ArrayList<>(path.size() + 1);
         withNegative.addAll(path);
         withNegative.add(negativeCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withNegative);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withNegative,
+                filtered,
                 site.node(),
                 "java.lang.NegativeArraySizeException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withNegative);
+        throwConstraintPaths.add(filtered);
       }
     }
   }
@@ -239,14 +254,19 @@ public final class MethodSummariser implements SummaryResolver {
         List<SymbolicConstraint> withZero = new ArrayList<>(path.size() + 1);
         withZero.addAll(path);
         withZero.add(zeroCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withZero);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withZero,
+                filtered,
                 site.node(),
                 "java.lang.ArithmeticException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withZero);
+        throwConstraintPaths.add(filtered);
       }
     }
   }

@@ -5,6 +5,7 @@ import br.unb.cic.witup.analysis.graph.MethodCallSite;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.symbolic.SymExprResolver;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import java.util.ArrayList;
@@ -101,12 +102,21 @@ public final class ExceptionFlowWalker {
           }
           substituted.add(new SymbolicConstraint(expr, c.truthValue()));
         }
+        // Substitution can collapse constraints to constants (e.g. caller passes the
+        // literal 3 where the callee predicate was `formal < 0` — folds to `(3 < 0) = 0`,
+        // i.e. trivially UNSAT). Filter before emission so we don't propagate impossible
+        // paths up the call graph.
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(substituted);
+        if (filtered == null) {
+          continue;
+        }
         List<String> provenance = new ArrayList<>(calleeFlow.getProvenance().size() + 1);
         provenance.add(site.calleeSignature());
         provenance.addAll(calleeFlow.getProvenance());
         result.add(
             new ExceptionPath(
-                substituted,
+                filtered,
                 site.node(),
                 calleeFlow.getExceptionQualifiedName(),
                 ThrowSiteKind.CALLEE_PROPAGATED,
