@@ -80,6 +80,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   // StmtGraph exceptional successors so resolveRethrowCaughtType can look up the catch
   // type behind a rethrow site without iterating the whole stmt graph per query.
   private Map<Stmt, String> cachedCatchTypeByHandler;
+  private static final String THROWABLE_FQN = "java.lang.Throwable";
 
   public String getMethodSignature() {
     return methodSignature;
@@ -233,10 +234,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       return null;
     }
     if (assign.getRightOp() instanceof JInstanceFieldRef rhs) {
-      return (Local) rhs.getBase();
+      return rhs.getBase();
     }
     if (assign.getLeftOp() instanceof JInstanceFieldRef lhs) {
-      return (Local) lhs.getBase();
+      return lhs.getBase();
     }
     return null;
   }
@@ -733,6 +734,57 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return null;
+  }
+
+  // A `finally` block — and try-with-resources' cleanup — is compiled into a synthetic handler
+  // that catches everything and rethrows the caught reference unchanged. In the class file that
+  // handler carries `catch_type = any`, but SootUp's bytecode frontend maps `any` onto
+  // java.lang.Throwable (AsmMethodSource: `trycatch.type != null ? toQualifiedName(...) :
+  // "java.lang.Throwable"`), so the declared type alone cannot separate it from a source-level
+  // `catch (Throwable t)`.
+  //
+  // Such a site is not an exception *source*: it re-raises whatever the guarded region already
+  // threw, which is reported separately as an own-throw or CALLEE_PROPAGATED path. Emitting it
+  // double counts that exception under a type no caller catches, once per enumerated path, and
+  // then propagates it to every caller.
+  //
+  // Recognised by walking the DDG back from the throw operand, requiring:
+  //   1. a linear copy chain — every node on the walk has exactly one incoming DDG definition.
+  //      A genuine rethrow through a variable (`Throwable ex = null; ... ex = t; ...
+  //      if (ex != null) throw ex;`) joins two definitions and is kept;
+  //   2. no `new` on the walk — `catch (X e) { throw new Y(e); }` authors a fresh exception and
+  //      is a real throw site;
+  //   3. the chain ends at a caught-exception ref whose handler declares java.lang.Throwable.
+  //
+  // Known false negative: a bare `catch (Throwable t) { throw t; }` is indistinguishable from
+  // the synthetic form once SootUp has collapsed `any`, so it is suppressed too. Callers gate
+  // this behind the emitSyntheticRethrows knob to keep the suppression measurable.
+  public boolean isSyntheticCatchAllRethrow(final ThrowStatementNode throwNode) {
+    WITUpNode current = throwNode;
+    Set<WITUpNode> visited = new HashSet<>();
+    while (visited.add(current)) {
+      List<DataDependencyEdge> defs = getIncomingDDGEdges(current);
+      if (defs.size() != 1) {
+        return false;
+      }
+      WITUpNode def = getEdgeSource(defs.getFirst());
+      if (allocatesFreshException(def)) {
+        return false;
+      }
+      if (caughtExceptionRefOf(def) != null) {
+        return def.getNode() instanceof StmtGraphNode handler
+            && THROWABLE_FQN.equals(catchTypeByHandler().get(handler.getStmt()));
+      }
+      current = def;
+    }
+    return false;
+  }
+
+  private static boolean allocatesFreshException(final WITUpNode node) {
+    return node instanceof SimpleNode simpleNode
+        && simpleNode.getNode() instanceof StmtGraphNode stmtNode
+        && stmtNode.getStmt() instanceof JAssignStmt assign
+        && assign.getRightOp() instanceof JNewExpr;
   }
 
   private Map<Stmt, String> catchTypeByHandler() {

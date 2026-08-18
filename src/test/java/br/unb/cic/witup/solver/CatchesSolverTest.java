@@ -49,6 +49,19 @@ public class CatchesSolverTest {
   }
 
   @Test
+  public void tryFinallySolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void tryFinally(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+
+    // Suppressing the synthetic finally rethrow leaves the method with no own exception path,
+    // so the solver has nothing to check. This is the end of the chain the graph and summary
+    // tests start: predicate recognises it, summariser drops it, solver never sees it.
+    assertTrue(
+        analysis.solutions().isEmpty(),
+        "no exception paths means no solver work for the synthetic rethrow");
+  }
+
+  @Test
   public void loopCatchSolution() {
     String methodSignature = "<br.unb.cic.witup.samples.Catches: void loopCatch(int[])>";
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);

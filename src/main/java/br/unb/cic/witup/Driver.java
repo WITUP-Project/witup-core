@@ -15,9 +15,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,9 +117,29 @@ public final class Driver {
         continue;
       }
       MethodParts parts = MethodParts.parseSignature(methodSig);
+      // Within-method dedup: two paths with identical (exceptionType, throwSiteKind,
+      // provenance, constraints) are the same observable flow as far as the benchmark
+      // is concerned. Common when the walker produces many CALLEE_PROPAGATED rows that
+      // share a deep ancestor predicate (e.g. every call to a normalising helper
+      // re-emits the same `(fileName == null, true)` NPE), or when implicit-NPE
+      // collectors fire at every dereference of the same expression. Keep the first
+      // occurrence so the pathId for solver verdicts still lines up.
+      Set<String> seenKeys = new HashSet<>();
       for (int i = 0; i < paths.size(); i++) {
         ExceptionPath ep = paths.get(i);
         String pathId = methodSig + "#" + i;
+        List<Map<String, Object>> constraintRows = flattenConstraints(ep.getConstraints());
+        String dedupKey =
+            ep.getExceptionQualifiedName()
+                + "|"
+                + ep.getThrowSiteKind().name()
+                + "|"
+                + ep.getProvenance()
+                + "|"
+                + constraintRows;
+        if (!seenKeys.add(dedupKey)) {
+          continue;
+        }
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("artifact", artifact);
         row.put("package", parts.pkg());
@@ -141,7 +163,7 @@ public final class Driver {
         // via the provenance chain", not an unchecked guess. To get the originating
         // verdict, follow provenance[0] back to its method's witup-results.json entry.
         row.put("solverStatus", pathIdToStatus.getOrDefault(pathId, "PROPAGATED"));
-        row.put("constraints", flattenConstraints(ep.getConstraints()));
+        row.put("constraints", constraintRows);
         summaryRows.add(row);
       }
     }

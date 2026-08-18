@@ -79,6 +79,14 @@ public final class MethodSummariser implements SummaryResolver {
     List<List<SymbolicConstraint>> throwConstraintPaths = new ArrayList<>();
     for (WITUpNode throwNode : cpg.getThrowNodes()) {
       ThrowStatementNode throwStmt = (ThrowStatementNode) throwNode;
+      // javac synthesises a catch-all rethrow for `finally` and try-with-resources. It
+      // re-raises whatever the guarded region already threw — already reported as an
+      // own-throw or CALLEE_PROPAGATED path — so emitting it double counts that exception
+      // under java.lang.Throwable, a type no caller catches, once per enumerated path.
+      if (cpg.isSyntheticCatchAllRethrow(throwStmt)) {
+        log.debug("skipping synthetic catch-all rethrow in {}", sig);
+        continue;
+      }
       String exceptionQualifiedName = cpg.resolveExceptionType(throwStmt);
       ThrowSiteKind throwSiteKind = cpg.classifyThrowSite(throwStmt);
       // resolveExceptionType only handles `throw new X()`; for `throw caughtVar` (rethrow)

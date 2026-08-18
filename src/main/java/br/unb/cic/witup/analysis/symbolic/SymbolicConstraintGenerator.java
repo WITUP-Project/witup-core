@@ -350,6 +350,7 @@ public final class SymbolicConstraintGenerator {
           "<java.lang.String: java.lang.String valueOf(char[])>",
           "<java.lang.String: java.lang.String valueOf(char[],int,int)>");
 
+  // idea: grab invariants from language specification
   private static boolean isProvablyNonNull(final SymExpr e) {
     if (e instanceof SymNew
         || e instanceof SymArray

@@ -3,6 +3,7 @@ package br.unb.cic.witup.summary;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
 import br.unb.cic.witup.analysis.ExceptionPath;
@@ -54,6 +55,20 @@ public class CatchesSummaryTest {
           ep.getProvenance(),
           "no callee-summary integration yet — provenance is empty until step 3");
     }
+  }
+
+  @Test
+  public void tryFinallySummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void tryFinally(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+    // The method's only athrow is javac's synthetic finally rethrow, which re-raises what
+    // mayThrow already raised. That exception reaches the caller as a CALLEE_PROPAGATED path,
+    // so emitting the rethrow as well would double count it under java.lang.Throwable.
+    assertTrue(
+        summary.exceptionPaths().isEmpty(),
+        "synthetic finally rethrow must not produce an exception path");
   }
 
   @Test
