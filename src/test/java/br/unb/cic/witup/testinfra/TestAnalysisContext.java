@@ -1,5 +1,6 @@
 package br.unb.cic.witup.testinfra;
 
+import br.unb.cic.witup.analysis.ExceptionFlowWalker;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
@@ -20,9 +21,9 @@ public final class TestAnalysisContext {
   private static final Map<String, List<SolverResult>> solutions;
   private static final Map<String, String> failures;
   private static final ProjectAnalyser projectAnalyser;
-  // Parallel analyser with emitImplicitExceptions = true. Lazy so existing tests don't pay
-  // the cost of a second SootUp pass unless an implicit-exception test actually asks for it.
-  private static volatile ProjectAnalyser implicitProjectAnalyser;
+  private static ProjectAnalyser implicitProjectAnalyser;
+  private static Map<String, WITUpGraph> implicitGraphs;
+  private static ExceptionFlowWalker implicitWalker;
 
   static {
     Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
@@ -56,20 +57,29 @@ public final class TestAnalysisContext {
   }
 
   public static ProjectAnalyser getImplicitAnalyser() {
-    ProjectAnalyser local = implicitProjectAnalyser;
-    if (local == null) {
-      synchronized (TestAnalysisContext.class) {
-        local = implicitProjectAnalyser;
-        if (local == null) {
-          Path testClassesDir =
-              Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
-          local = new ProjectAnalyser(testClassesDir, true);
-          local.analyseProject();
-          implicitProjectAnalyser = local;
-        }
-      }
+    if (implicitProjectAnalyser == null) {
+      Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
+      ProjectAnalyser local = new ProjectAnalyser(testClassesDir, true);
+      implicitGraphs = local.analyseProject();
+      implicitProjectAnalyser = local;
     }
-    return local;
+    return implicitProjectAnalyser;
+  }
+
+  /**
+   * Walker over the implicit-exceptions analyser, so tests can see the composed observable view.
+   * CALLEE_PROPAGATED paths are not stored in a MethodSummary. provenance is only
+   * ever populated here. A test that goes through analyseMethod().summary() structurally cannot
+   * see a cross-provenance duplicate.
+   */
+  public static ExceptionFlowWalker getImplicitWalker() {
+    if (implicitWalker == null) {
+      ProjectAnalyser analyser = getImplicitAnalyser();
+      Map<String, MethodSummary> implicitSummaries =
+          analyser.summariseAll(implicitGraphs, new LinkedHashMap<>());
+      implicitWalker = new ExceptionFlowWalker(implicitSummaries, analyser);
+    }
+    return implicitWalker;
   }
 
   private TestAnalysisContext() {}
