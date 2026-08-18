@@ -225,24 +225,6 @@ public abstract class SymExpr {
     return expr;
   }
 
-  // Strip `b != 0` to `b` for boolean lhs. Leave `b == 0` alone — that form means
-  // "b is false" and Z3Translator coerces the bool/int equality correctly. Stripping
-  // both forms would lose the polarity and require the caller to flip truthValue,
-  // which is impossible to do correctly without knowing which op was stripped.
-  public static SymExpr stripBooleanEncoding(final SymExpr expr) {
-    if (!(expr instanceof SymBinOp bin)) {
-      return expr;
-    }
-    SymExpr lhs = bin.getLhs();
-    SymExpr rhs = bin.getRhs();
-    if (bin.getOp() == BinOp.NE
-        && isZeroConst(rhs)
-        && (lhs.getKind() == SymKind.BOOLEAN_METHOD || lhs.getKind() == SymKind.BOOLEAN)) {
-      return lhs;
-    }
-    return expr;
-  }
-
   public static SymExpr simplifyBoxingPatterns(final SymExpr expr) {
     if (!expr.containsUnboxing()) {
       return expr;

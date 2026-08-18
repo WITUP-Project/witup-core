@@ -15,8 +15,18 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
+import br.unb.cic.witup.analysis.symbolic.expr.SymArray;
+import br.unb.cic.witup.analysis.symbolic.expr.SymCast;
+import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymLength;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNew;
+import br.unb.cic.witup.analysis.symbolic.expr.SymNewMultiArray;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNull;
+import br.unb.cic.witup.analysis.symbolic.expr.SymStaticFieldRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymStaticInvoke;
+import br.unb.cic.witup.analysis.symbolic.expr.SymStringConst;
+import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
@@ -129,12 +139,282 @@ public final class SymbolicConstraintGenerator {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
     for (WITUpPath p : throwConstraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
-
-      if (!resolved.isEmpty()) {
-        symbolicConstraints.add(resolved);
+      if (resolved.isEmpty()) {
+        continue;
       }
+      if (hasDirectContradiction(resolved)) {
+        continue;
+      }
+      List<SymbolicConstraint> folded = foldAndFilterConstraints(resolved);
+      if (folded == null) {
+        continue; // any constraint folded to a constant that contradicts its truthValue
+      }
+      symbolicConstraints.add(folded);
     }
     return symbolicConstraints;
+  }
+
+  // Path is trivially UNSAT if it asserts both `(X, true)` and `(X, false)` for the same
+  // SymExpr. Happens when CFG branches converge onto a throw site (loop unrolling, dead
+  // branches that the structural enumerator can't tell from live ones). Z3 would prove
+  // these UNSAT anyway; checking here just saves the trip and removes noise rows from
+  // the summary output. SymExpr.equals/hashCode are structural, so the map keys by
+  // semantic identity.
+  private static boolean hasDirectContradiction(final List<SymbolicConstraint> constraints) {
+    if (constraints.size() < 2) {
+      return false;
+    }
+    Map<SymExpr, Boolean> seen = new HashMap<>(constraints.size() * 2);
+    for (SymbolicConstraint c : constraints) {
+      Boolean prev = seen.putIfAbsent(c.symExpr(), c.truthValue());
+      if (prev != null && prev != c.truthValue()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Constant-folds each constraint's SymExpr and filters out tautologies. Returns null if
+  // any constraint folds to a constant that contradicts its truthValue — the path is
+  // trivially UNSAT. Otherwise returns the (possibly-empty) list of remaining constraints;
+  // an empty list means every constraint folded to "trivially satisfied", and the path is
+  // unconditionally reachable (kept). Z3 would deliver the same verdicts on each constraint
+  // shape; doing it here saves a solver round trip and de-noises the JSON output. Public so
+  // implicit-exception collectors and the rollup walker can apply the same filter — they
+  // build constraints directly and never go through generateThrowConstraintPath.
+  public static List<SymbolicConstraint> foldAndFilterConstraints(
+      final List<SymbolicConstraint> constraints) {
+    List<SymbolicConstraint> result = new ArrayList<>(constraints.size());
+    for (SymbolicConstraint c : constraints) {
+      SymExpr folded = foldConstants(c.symExpr());
+      if (folded instanceof SymIntConst constant) {
+        boolean value = constant.getValue() != 0;
+        if (value == c.truthValue()) {
+          continue;
+        }
+        return null;
+      }
+      SymbolicConstraint next =
+          folded == c.symExpr() ? c : new SymbolicConstraint(folded, c.truthValue());
+      result.add(stripBooleanEncoding(next));
+    }
+    return result;
+  }
+
+  // Strip `b == 0` to `b` (with flipped truthValue) and `b != 0` to `b` (truthValue
+  // unchanged) when `b` has boolean kind. Operates at the constraint level because
+  // handling `b == 0` requires flipping truthValue — a SymExpr-only version would
+  // either drop polarity or force every caller to remember which op was stripped.
+  // Cosmetic for the JSON output; semantically equivalent for Z3.
+  private static SymbolicConstraint stripBooleanEncoding(final SymbolicConstraint c) {
+    if (!(c.symExpr() instanceof SymBinOp bin)) {
+      return c;
+    }
+    if (!(bin.getRhs() instanceof SymIntConst rc) || rc.getValue() != 0) {
+      return c;
+    }
+    SymExpr lhs = bin.getLhs();
+    if (lhs.getKind() != SymKind.BOOLEAN && lhs.getKind() != SymKind.BOOLEAN_METHOD) {
+      return c;
+    }
+    if (bin.getOp() == BinOp.EQ) {
+      return new SymbolicConstraint(lhs, !c.truthValue());
+    }
+    if (bin.getOp() == BinOp.NE) {
+      return new SymbolicConstraint(lhs, c.truthValue());
+    }
+    return c;
+  }
+
+  // Recursively evaluates SymBinOps whose children are both SymIntConst, producing a new
+  // SymIntConst. Also applies short-circuit identities for AND/OR when one operand is a
+  // known constant — critical because partial folding can otherwise leave a SymBinOp with
+  // one int-typed child and one bool-typed child, which the Z3 translator can't handle
+  // cleanly (its OR/AND paths assume homogeneous operand types). Non-foldable cases fall
+  // through to a structurally-rebuilt SymBinOp if any child changed, or the original
+  // expr if not.
+  private static SymExpr foldConstants(final SymExpr expr) {
+    // `new T[N].length` folds to `N` when N is a constant — Java guarantees the field
+    // equals the allocation size. Common in <clinit> initialisers like BOM byte arrays
+    // where the analysis would otherwise treat `newarray(int[])[3].length` as opaque and
+    // emit spurious AIOOBE paths.
+    if (expr instanceof SymLength len && len.getOp() instanceof SymArray arr) {
+      SymExpr size = foldConstants(arr.getSize());
+      if (size instanceof SymIntConst) {
+        return size;
+      }
+    }
+    if (!(expr instanceof SymBinOp b)) {
+      return expr;
+    }
+    SymExpr lhs = foldConstants(b.getLhs());
+    SymExpr rhs = foldConstants(b.getRhs());
+    if (lhs instanceof SymIntConst lc && rhs instanceof SymIntConst rc) {
+      Integer evaluated = evaluateBinOp(b.getOp(), lc.getValue(), rc.getValue());
+      if (evaluated != null) {
+        return SymIntConst.of(evaluated);
+      }
+    }
+    // `null == null` / `null != null` fall out of substitution when a `var == null`
+    // branch decision is enumerated onto a path on which `var` has only the initial
+    // `var = null` reaching def (or vice versa). Z3 catches these as UNSAT but they
+    // outnumber genuine UNSAT in loop-heavy methods like Tailer.run.
+    if (lhs instanceof SymNull && rhs instanceof SymNull) {
+      if (b.getOp() == BinOp.EQ) {
+        return SymIntConst.one();
+      }
+      if (b.getOp() == BinOp.NE) {
+        return SymIntConst.zero();
+      }
+    }
+    // `new T(...)`, `new T[N]`, `new T[N][M]`, string literals, and class literals are all
+    // JLS-guaranteed non-null. Implicit NPE-receiver collectors emit (recv == null, true)
+    // for every dereference site; when the receiver is one of these forms (common for
+    // <clinit> static initialisers and StringBuilder chains) the constraint is trivially
+    // false. Z3 says SAT because these are opaque symbols — the analysis doesn't model
+    // JVM allocation invariants — so without this fold these become spurious SAT rows.
+    if (isProvablyNonNull(lhs) && rhs instanceof SymNull
+        || lhs instanceof SymNull && isProvablyNonNull(rhs)) {
+      if (b.getOp() == BinOp.EQ) {
+        return SymIntConst.zero();
+      }
+      if (b.getOp() == BinOp.NE) {
+        return SymIntConst.one();
+      }
+    }
+    // Short-circuit identities: (0 || X) = X, (1 || X) = 1, (1 && X) = X, (0 && X) = 0,
+    // and symmetric forms. Without these, a partial fold leaves a mixed-type SymBinOp.
+    if (b.getOp() == BinOp.OR) {
+      if (lhs instanceof SymIntConst lc) {
+        return lc.getValue() == 0 ? rhs : lc;
+      }
+      if (rhs instanceof SymIntConst rc) {
+        return rc.getValue() == 0 ? lhs : rc;
+      }
+    } else if (b.getOp() == BinOp.AND) {
+      if (lhs instanceof SymIntConst lc) {
+        return lc.getValue() == 0 ? lc : rhs;
+      }
+      if (rhs instanceof SymIntConst rc) {
+        return rc.getValue() == 0 ? rc : lhs;
+      }
+    }
+    if (lhs != b.getLhs() || rhs != b.getRhs()) {
+      return new SymBinOp(b.getOp(), lhs, rhs);
+    }
+    return expr;
+  }
+
+  // Static fields known to be non-null after class init. JDK and well-known library
+  // constants. Grow as the benchmark surfaces more. Format matches
+  // SymStaticFieldRef.getFieldSignature().
+  private static final Set<String> NON_NULL_STATIC_FIELDS =
+      Set.of(
+          "<java.nio.ByteOrder: java.nio.ByteOrder BIG_ENDIAN>",
+          "<java.nio.ByteOrder: java.nio.ByteOrder LITTLE_ENDIAN>",
+          "<java.nio.charset.StandardCharsets: java.nio.charset.Charset ISO_8859_1>",
+          "<java.nio.charset.StandardCharsets: java.nio.charset.Charset US_ASCII>",
+          "<java.nio.charset.StandardCharsets: java.nio.charset.Charset UTF_8>",
+          "<java.nio.charset.StandardCharsets: java.nio.charset.Charset UTF_16>",
+          "<java.nio.charset.StandardCharsets: java.nio.charset.Charset UTF_16BE>",
+          "<java.nio.charset.StandardCharsets: java.nio.charset.Charset UTF_16LE>",
+          "<org.apache.commons.io.IOCase: org.apache.commons.io.IOCase SENSITIVE>",
+          "<org.apache.commons.io.IOCase: org.apache.commons.io.IOCase INSENSITIVE>",
+          "<org.apache.commons.io.IOCase: org.apache.commons.io.IOCase SYSTEM>");
+
+  // JDK static methods documented to always return a non-null value. Format matches
+  // SymStaticInvoke.getInvokeName() (the full SootUp method signature).
+  private static final Set<String> NON_NULL_STATIC_METHODS =
+      Set.of(
+          "<java.lang.Integer: java.lang.String toHexString(int)>",
+          "<java.lang.Integer: java.lang.String toBinaryString(int)>",
+          "<java.lang.Integer: java.lang.String toOctalString(int)>",
+          "<java.lang.Integer: java.lang.String toString(int)>",
+          "<java.lang.Integer: java.lang.String toString(int,int)>",
+          "<java.lang.Long: java.lang.String toHexString(long)>",
+          "<java.lang.Long: java.lang.String toBinaryString(long)>",
+          "<java.lang.Long: java.lang.String toOctalString(long)>",
+          "<java.lang.Long: java.lang.String toString(long)>",
+          "<java.lang.Long: java.lang.String toString(long,int)>",
+          "<java.lang.Float: java.lang.String toString(float)>",
+          "<java.lang.Double: java.lang.String toString(double)>",
+          "<java.lang.Boolean: java.lang.String toString(boolean)>",
+          "<java.lang.Character: java.lang.String toString(char)>",
+          "<java.lang.String: java.lang.String valueOf(int)>",
+          "<java.lang.String: java.lang.String valueOf(long)>",
+          "<java.lang.String: java.lang.String valueOf(float)>",
+          "<java.lang.String: java.lang.String valueOf(double)>",
+          "<java.lang.String: java.lang.String valueOf(boolean)>",
+          "<java.lang.String: java.lang.String valueOf(char)>",
+          "<java.lang.String: java.lang.String valueOf(java.lang.Object)>",
+          "<java.lang.String: java.lang.String valueOf(char[])>",
+          "<java.lang.String: java.lang.String valueOf(char[],int,int)>");
+
+  // idea: grab invariants from language specification
+  private static boolean isProvablyNonNull(final SymExpr e) {
+    if (e instanceof SymNew
+        || e instanceof SymArray
+        || e instanceof SymNewMultiArray
+        || e instanceof SymStringConst
+        || e instanceof SymClassConst) {
+      return true;
+    }
+    // Reference casts don't change null-ness: `(T)X` is null iff X is null. Java
+    // permits casting null to any reference type without throwing.
+    if (e instanceof SymCast cast) {
+      return isProvablyNonNull(cast.getOp());
+    }
+    if (e instanceof SymStaticFieldRef sfr
+        && NON_NULL_STATIC_FIELDS.contains(sfr.getFieldSignature())) {
+      return true;
+    }
+    if (e instanceof SymStaticInvoke si
+        && NON_NULL_STATIC_METHODS.contains(si.getInvokeName())) {
+      return true;
+    }
+    // StringBuilder/StringBuffer.append(*) returns `this` (return-self contract). The
+    // chain is non-null iff the receiver is — recurse. Catches the typical fluent
+    // error-message construction pattern: `new StringBuilder().append(x).append(y)...`.
+    if (e instanceof SymVirtualInvoke vi
+        && "append".equals(vi.getSignature())
+        && isStringBuilderTyped(vi.getBase())) {
+      return isProvablyNonNull(vi.getBase());
+    }
+    return false;
+  }
+
+  private static boolean isStringBuilderTyped(final SymExpr e) {
+    if (e instanceof SymNew sn) {
+      String t = sn.getClassType();
+      return "java.lang.StringBuilder".equals(t) || "java.lang.StringBuffer".equals(t);
+    }
+    if (e instanceof SymVirtualInvoke vi && "append".equals(vi.getSignature())) {
+      return isStringBuilderTyped(vi.getBase());
+    }
+    return false;
+  }
+
+  private static Integer evaluateBinOp(final BinOp op, final int a, final int b) {
+    return switch (op) {
+      case EQ -> a == b ? 1 : 0;
+      case NE -> a != b ? 1 : 0;
+      case LT -> a < b ? 1 : 0;
+      case LE -> a <= b ? 1 : 0;
+      case GT -> a > b ? 1 : 0;
+      case GE -> a >= b ? 1 : 0;
+      case ADD -> a + b;
+      case SUB -> a - b;
+      case MUL -> a * b;
+      case DIV -> b == 0 ? null : a / b;
+      case MOD -> b == 0 ? null : a % b;
+      case AND -> a & b;
+      case OR -> a | b;
+      case XOR -> a ^ b;
+      case SHIFT_LEFT -> a << b;
+      case SHIFT_RIGHT -> a >> b;
+      case UNSIGNED_SHIFT_RIGHT -> a >>> b;
+      case CMP, CMPG, CMPL -> Integer.compare(a, b);
+    };
   }
 
   private record SubstituteResult(SymExpr expr, List<SymbolicConstraint> preconditions) {}
@@ -145,7 +425,6 @@ public final class SymbolicConstraintGenerator {
     SymExpr symExpr = backwardSubstitute(initial, startNode, new HashSet<>(), preconditions);
     symExpr = SymExpr.simplifyCmpPatterns(symExpr);
     symExpr = SymExpr.simplifyBoxingPatterns(symExpr);
-    symExpr = SymExpr.stripBooleanEncoding(symExpr);
     return new SubstituteResult(symExpr, preconditions);
   }
 

@@ -104,10 +104,10 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
 
   /**
    * Replaces per-path state with fresh maps on entry to a new path. Replace-not-clear because
-   * {@link HashMap#clear} is O(table.length) and never shrinks — a single deep path that
-   * grows the table to thousands of buckets would make every subsequent reset walk that whole
-   * array. Allocating a new small map is O(1) and the orphaned map dies in young-gen.
-   * intConstCache stays cross-path since its keys (boxed Integer literals) are bounded.
+   * {@link HashMap#clear} is O(table.length) and never shrinks — a single deep path that grows the
+   * table to thousands of buckets would make every subsequent reset walk that whole array.
+   * Allocating a new small map is O(1) and the orphaned map dies in young-gen. intConstCache stays
+   * cross-path since its keys (boxed Integer literals) are bounded.
    */
   public void resetForNewPath() {
     exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
@@ -618,18 +618,22 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   }
 
   private String idFor(final SymExpr expr) {
-    return exprIds.computeIfAbsent(
-        expr,
-        e -> {
-          String id = "expr_" + exprCounter++;
-          String raw = describeExpr(e);
-          idToTruncatedDescription.put(
-              id,
-              raw.length() > MAX_DESCRIPTION_CHARS
-                  ? raw.substring(0, MAX_DESCRIPTION_CHARS) + "..."
-                  : raw);
-          return id;
-        });
+    String existing = exprIds.get(expr);
+    if (existing != null) {
+      return existing;
+    }
+    // Commit the id before describing — describeExpr may recursively call back into
+    // idFor for compound subexpressions, and re-entering computeIfAbsent on the same
+    // HashMap (or on different keys mid-call) is undefined / throws CME on modern JDKs.
+    String id = "expr_" + exprCounter++;
+    exprIds.put(expr, id);
+    String raw = describeExpr(expr);
+    idToTruncatedDescription.put(
+        id,
+        raw.length() > MAX_DESCRIPTION_CHARS
+            ? raw.substring(0, MAX_DESCRIPTION_CHARS) + "..."
+            : raw);
+    return id;
   }
 
   // Produces the human-readable label that surfaces as the Z3 const description in the
@@ -638,7 +642,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   // to whatever each class's toString happens to produce. Leaf SymExprs (consts, refs)
   // fall through to toString because their toStrings are already canonical literals
   // (`"42"`, `"'foo'"`, `null`, `@this:Type`) and adding arms would just duplicate them.
-  private static String describeExpr(final SymExpr expr) {
+  private String describeExpr(final SymExpr expr) {
     return switch (expr) {
       case SymVar v -> v.getName();
       case SymParamRef p -> p.toString();
@@ -671,7 +675,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     };
   }
 
-  private static String describeInvoke(
+  private String describeInvoke(
       final String base, final String signature, final SymExpr[] args) {
     StringBuilder sb = new StringBuilder();
     if (base != null) {
@@ -688,11 +692,16 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     return sb.toString();
   }
 
-  private static String safeDescribe(final SymExpr expr) {
+  // Leaves describe inline; compounds route through idFor. Compounds' toString recursively
+  // expands (the cachedToString memo only sets after the recursive build completes, which
+  // is what OOMs on deep ITE trees), so we avoid calling it here. idFor's cache assigns
+  // one stable id per unique SymExpr and stores its bounded description in the map; the
+  // final description is a DAG-shaped reference network rather than an inlined tree.
+  private String safeDescribe(final SymExpr expr) {
     return switch (expr) {
       case SymVar v -> v.getName();
       case SymParamRef p -> p.toString();
-      default -> expr.toString();
+      default -> idFor(expr);
     };
   }
 

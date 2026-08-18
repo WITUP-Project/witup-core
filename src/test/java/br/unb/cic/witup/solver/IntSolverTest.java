@@ -77,13 +77,12 @@ public class IntSolverTest {
         "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaBoolean(int)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    // Pre-pruning we had two paths: UNSAT (boolean-indirection artifact) and SAT (a < 0
+    // triggers throw). 1b prunes the UNSAT path at the summariser; only the SAT survives.
+    assertEquals(1, analysis.solutions().size());
     SolverResult sol0 = analysis.solutions().getFirst();
-    assertTrue(sol0.isUnsat());
-
-    SolverResult sol1 = analysis.solutions().get(1);
-
-    assertTrue(sol1.isSat());
-    assertTrue(sol1.getInt("a") < 0, "Expected a < 0");
+    assertTrue(sol0.isSat());
+    assertTrue(sol0.getInt("a") < 0, "Expected a < 0");
   }
 
   @Test
@@ -92,14 +91,11 @@ public class IntSolverTest {
         "<br.unb.cic.witup.samples.Int: int lessThanConstantRhsViaNegatedBoolean(int)>";
 
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    // Symmetric to viaBoolean: SAT path requires a >= 0; UNSAT artifact pruned by 1b.
+    assertEquals(1, analysis.solutions().size());
     SolverResult sol0 = analysis.solutions().getFirst();
-
     assertTrue(sol0.isSat());
     assertTrue(sol0.getInt("a") >= 0, "Expected a >= 0");
-
-    SolverResult sol1 = analysis.solutions().get(1);
-
-    assertTrue(sol1.isUnsat());
   }
 
   @Test

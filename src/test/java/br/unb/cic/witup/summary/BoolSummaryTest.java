@@ -35,14 +35,13 @@ public class BoolSummaryTest {
     assertTrue(path0.get(0).truthValue());
     assertTrue(path0.get(0).symExpr().toString().contains("value != null"));
 
-    // bool-method-equals-zero: "equals(...) returned false" — encoded as (_ret == 0, true)
-    assertTrue(path0.get(1).truthValue());
-    assertTrue(path0.get(1).symExpr().toString().contains("value.equals(trueValue)"));
-    assertTrue(path0.get(1).symExpr().toString().contains("== 0"));
+    // bool-method-equals-zero: "equals(...) returned false" — the constraint-level
+    // stripBooleanEncoding peels `(b == 0, true)` to `(b, false)` for cleaner output.
+    assertFalse(path0.get(1).truthValue());
+    assertEquals("value.equals(trueValue)", path0.get(1).symExpr().toString());
 
-    assertTrue(path0.get(2).truthValue());
-    assertTrue(path0.get(2).symExpr().toString().contains("value.equals(falseValue)"));
-    assertTrue(path0.get(2).symExpr().toString().contains("== 0"));
+    assertFalse(path0.get(2).truthValue());
+    assertEquals("value.equals(falseValue)", path0.get(2).symExpr().toString());
 
     // second path: arr != null && i < 0.
     List<SymbolicConstraint> path1 = summary.exceptionPaths().get(1).getConstraints();
@@ -110,10 +109,9 @@ public class BoolSummaryTest {
     AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
-    assertEquals(1, summary.exceptionPaths().size());
-    List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
-    assertTrue(
-        path0.size() >= 2,
-        "expected at least a guarded-return precondition + the path constraint, got " + path0);
+    // The path through `throwIfFalseCallee` asserts both (X, true) and (X, false) on the
+    // same SymExpr — a direct structural contradiction the summariser now prunes before
+    // emission (previously this surfaced as an UNSAT solver verdict). No path emitted.
+    assertEquals(0, summary.exceptionPaths().size());
   }
 }

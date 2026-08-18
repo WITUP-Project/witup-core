@@ -30,6 +30,7 @@ import java.util.Set;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
+import sootup.core.graph.StmtGraph;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
@@ -50,6 +51,7 @@ import sootup.core.jimple.common.expr.JDivExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
+import sootup.core.jimple.common.expr.JStaticInvokeExpr;
 import sootup.core.jimple.common.ref.JArrayRef;
 import sootup.core.jimple.common.ref.JCaughtExceptionRef;
 import sootup.core.jimple.common.ref.JInstanceFieldRef;
@@ -60,6 +62,7 @@ import sootup.core.jimple.common.stmt.JInvokeStmt;
 import sootup.core.jimple.common.stmt.JReturnStmt;
 import sootup.core.jimple.common.stmt.JThrowStmt;
 import sootup.core.jimple.common.stmt.Stmt;
+import sootup.core.types.ClassType;
 import sootup.core.types.PrimitiveType;
 import sootup.core.types.Type;
 import sootup.java.core.JavaSootMethod;
@@ -73,6 +76,11 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   private final Map<WITUpNode, List<WITUpPath>> cachedReturnPaths = new HashMap<>();
   private Map<WITUpNode, List<WITUpEdge>> cfgIncoming;
   private Map<WITUpNode, List<WITUpEdge>> cfgOutgoing;
+  // Lazy: handler stmt → fully-qualified caught-exception type. Built once from the body's
+  // StmtGraph exceptional successors so resolveRethrowCaughtType can look up the catch
+  // type behind a rethrow site without iterating the whole stmt graph per query.
+  private Map<Stmt, String> cachedCatchTypeByHandler;
+  private static final String THROWABLE_FQN = "java.lang.Throwable";
 
   public String getMethodSignature() {
     return methodSignature;
@@ -188,19 +196,26 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
       Stmt stmt = stmtNode.getStmt();
       Local invokeBase = instanceInvokeReceiver(stmt);
-      if (invokeBase != null) {
+      if (invokeBase != null && !isThisLocal(invokeBase)) {
         sites.add(new ImplicitNpeReceiverSite(n, invokeBase));
       }
       Local fieldBase = instanceFieldReceiver(stmt);
-      if (fieldBase != null) {
+      if (fieldBase != null && !isThisLocal(fieldBase)) {
         sites.add(new ImplicitNpeReceiverSite(n, fieldBase));
       }
       Local arrayBase = arrayAccessBase(stmt);
-      if (arrayBase != null) {
+      if (arrayBase != null && !isThisLocal(arrayBase)) {
         sites.add(new ImplicitNpeReceiverSite(n, arrayBase));
       }
     }
     return sites;
+  }
+
+  // @this on an instance method is JVM-guaranteed non-null at the entry; receivers that
+  // dereference `this` can't be the source of an NPE. Soot's convention names this local
+  // `this`, so a name check suffices.
+  private static boolean isThisLocal(final Local local) {
+    return "this".equals(local.getName());
   }
 
   private static Local instanceInvokeReceiver(final Stmt stmt) {
@@ -219,10 +234,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       return null;
     }
     if (assign.getRightOp() instanceof JInstanceFieldRef rhs) {
-      return (Local) rhs.getBase();
+      return rhs.getBase();
     }
     if (assign.getLeftOp() instanceof JInstanceFieldRef lhs) {
-      return (Local) lhs.getBase();
+      return lhs.getBase();
     }
     return null;
   }
@@ -243,6 +258,76 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       return lhs;
     }
     return null;
+  }
+
+  // True if this node has an outgoing exceptional CFG edge that lands on a catch handler
+  // — i.e. the stmt is inside a try block whose handler is part of the same method.
+  public boolean hasInScopeCatchHandler(final WITUpNode node) {
+    for (WITUpEdge edge : outgoingEdgesOf(node)) {
+      if (edge instanceof ExceptionalCFGEdge && edge.getTarget() instanceof CaughtExceptionNode) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Caught-exception types (fully-qualified) of every in-scope catch handler for this node's
+  // stmt. The actual catch type comes from the body's exception table; SootUp surfaces it
+  // per-stmt via `StmtGraph.exceptionalSuccessors(stmt)`, which returns a `Map<ClassType,
+  // Stmt>` (caught-type → handler-stmt). The Jimple synthetic `JCaughtExceptionRef.getType()`
+  // is unreliable for this purpose — it is always Throwable, since that's the static type
+  // of the synthetic ref on the operand stack at handler entry.
+  public Set<String> inScopeCatchTypes(final WITUpNode node) {
+    if (!(node instanceof SimpleNode sn)) {
+      return Set.of();
+    }
+    if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+      return Set.of();
+    }
+    Map<ClassType, Stmt> handlers =
+        method.getBody().getStmtGraph().exceptionalSuccessors(stmtNode.getStmt());
+    if (handlers.isEmpty()) {
+      return Set.of();
+    }
+    Set<String> caughtTypes = new HashSet<>(handlers.size());
+    for (ClassType ct : handlers.keySet()) {
+      caughtTypes.add(ct.getFullyQualifiedName());
+    }
+    return caughtTypes;
+  }
+
+  // Enumerates Jimple call sites: each entry carries the call's WITUpNode, the callee's
+  // soot-format signature, and the actuals in the order MethodSummariser.buildFormals()
+  // expects (params first, receiver last for instance calls). Consumed by the rollup phase
+  // to compose callee escape sets into the caller's summary. Dynamic invokes (lambdas,
+  // method handles) are skipped — they don't have a static method signature in the usual
+  // sense; SymbolicConstraintGenerator's tryResolveLambda handles them separately.
+  public List<MethodCallSite> getCallSites() {
+    List<MethodCallSite> sites = new ArrayList<>();
+    for (WITUpNode n : this.vertexSet()) {
+      if (!(n instanceof SimpleNode sn)) {
+        continue;
+      }
+      if (!(sn.getNode() instanceof StmtGraphNode stmtNode)) {
+        continue;
+      }
+      AbstractInvokeExpr invoke = invokeExprOf(stmtNode.getStmt());
+      if (invoke == null) {
+        continue;
+      }
+      if (!(invoke instanceof AbstractInstanceInvokeExpr || invoke instanceof JStaticInvokeExpr)) {
+        continue;
+      }
+      List<Immediate> actuals = new ArrayList<>();
+      for (Immediate arg : invoke.getArgs()) {
+        actuals.add(arg);
+      }
+      if (invoke instanceof AbstractInstanceInvokeExpr inst) {
+        actuals.add(inst.getBase());
+      }
+      sites.add(new MethodCallSite(n, invoke.getMethodSignature().toString(), actuals));
+    }
+    return sites;
   }
 
   // Enumerates integer `/` and `%` operations for ArithmeticException synthesis. The
@@ -614,5 +699,106 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return ThrowSiteKind.DIRECT_ATHROW;
+  }
+
+  // Resolves the caught-exception type behind a rethrow site. The throw operand traces
+  // back through DDG to a CaughtExceptionNode (the catch handler's @caughtexception
+  // identity stmt). That handler stmt is the key in the body's exception table, whose
+  // declared type is the actual catch type — JCaughtExceptionRef.getType() itself returns
+  // Throwable (the Jimple synthetic operand-stack type), so we look up the table instead.
+  // Returns null if no catch handler is reachable in DDG (i.e. not actually a rethrow).
+  public String resolveRethrowCaughtType(final ThrowStatementNode throwNode) {
+    Map<Stmt, String> handlerToType = catchTypeByHandler();
+    if (handlerToType.isEmpty()) {
+      return null;
+    }
+    Set<WITUpNode> visited = new HashSet<>();
+    Deque<WITUpNode> worklist = new ArrayDeque<>();
+    for (DataDependencyEdge edge : getIncomingDDGEdges(throwNode)) {
+      worklist.push(getEdgeSource(edge));
+    }
+    while (!worklist.isEmpty()) {
+      WITUpNode src = worklist.pop();
+      if (!visited.add(src)) {
+        continue;
+      }
+      if (src instanceof CaughtExceptionNode
+          && src.getNode() instanceof StmtGraphNode handlerNode) {
+        String type = handlerToType.get(handlerNode.getStmt());
+        if (type != null) {
+          return type;
+        }
+      }
+      for (DataDependencyEdge e : getIncomingDDGEdges(src)) {
+        worklist.push(getEdgeSource(e));
+      }
+    }
+    return null;
+  }
+
+  // A `finally` block — and try-with-resources' cleanup — is compiled into a synthetic handler
+  // that catches everything and rethrows the caught reference unchanged. In the class file that
+  // handler carries `catch_type = any`, but SootUp's bytecode frontend maps `any` onto
+  // java.lang.Throwable (AsmMethodSource: `trycatch.type != null ? toQualifiedName(...) :
+  // "java.lang.Throwable"`), so the declared type alone cannot separate it from a source-level
+  // `catch (Throwable t)`.
+  //
+  // Such a site is not an exception *source*: it re-raises whatever the guarded region already
+  // threw, which is reported separately as an own-throw or CALLEE_PROPAGATED path. Emitting it
+  // double counts that exception under a type no caller catches, once per enumerated path, and
+  // then propagates it to every caller.
+  //
+  // Recognised by walking the DDG back from the throw operand, requiring:
+  //   1. a linear copy chain — every node on the walk has exactly one incoming DDG definition.
+  //      A genuine rethrow through a variable (`Throwable ex = null; ... ex = t; ...
+  //      if (ex != null) throw ex;`) joins two definitions and is kept;
+  //   2. no `new` on the walk — `catch (X e) { throw new Y(e); }` authors a fresh exception and
+  //      is a real throw site;
+  //   3. the chain ends at a caught-exception ref whose handler declares java.lang.Throwable.
+  //
+  // Known false negative: a bare `catch (Throwable t) { throw t; }` is indistinguishable from
+  // the synthetic form once SootUp has collapsed `any`, so it is suppressed too. Callers gate
+  // this behind the emitSyntheticRethrows knob to keep the suppression measurable.
+  public boolean isSyntheticCatchAllRethrow(final ThrowStatementNode throwNode) {
+    WITUpNode current = throwNode;
+    Set<WITUpNode> visited = new HashSet<>();
+    while (visited.add(current)) {
+      List<DataDependencyEdge> defs = getIncomingDDGEdges(current);
+      if (defs.size() != 1) {
+        return false;
+      }
+      WITUpNode def = getEdgeSource(defs.getFirst());
+      if (allocatesFreshException(def)) {
+        return false;
+      }
+      if (caughtExceptionRefOf(def) != null) {
+        return def.getNode() instanceof StmtGraphNode handler
+            && THROWABLE_FQN.equals(catchTypeByHandler().get(handler.getStmt()));
+      }
+      current = def;
+    }
+    return false;
+  }
+
+  private static boolean allocatesFreshException(final WITUpNode node) {
+    return node instanceof SimpleNode simpleNode
+        && simpleNode.getNode() instanceof StmtGraphNode stmtNode
+        && stmtNode.getStmt() instanceof JAssignStmt assign
+        && assign.getRightOp() instanceof JNewExpr;
+  }
+
+  private Map<Stmt, String> catchTypeByHandler() {
+    if (cachedCatchTypeByHandler == null) {
+      Map<Stmt, String> map = new HashMap<>();
+      StmtGraph<?> graph = method.getBody().getStmtGraph();
+      for (Stmt stmt : graph.getNodes()) {
+        Map<ClassType, Stmt> handlers = graph.exceptionalSuccessors(stmt);
+        for (Map.Entry<ClassType, Stmt> e : handlers.entrySet()) {
+          map.putIfAbsent(e.getValue(), e.getKey().getFullyQualifiedName());
+        }
+      }
+      cachedCatchTypeByHandler = map;
+    }
+    return cachedCatchTypeByHandler;
   }
 }

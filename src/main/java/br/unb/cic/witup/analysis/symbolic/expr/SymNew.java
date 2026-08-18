@@ -5,12 +5,17 @@ import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import sootup.core.jimple.common.expr.JNewExpr;
 
 public final class SymNew extends SymExpr {
+  private final String classType;
   private final String cachedToString;
 
   public SymNew(final JNewExpr expr) {
     super(SymKind.OTHER);
-    String classType = expr.getType().toString();
+    this.classType = expr.getType().toString();
     this.cachedToString = "new " + classType;
+  }
+
+  public String getClassType() {
+    return classType;
   }
 
   @Override

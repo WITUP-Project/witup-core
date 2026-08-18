@@ -10,7 +10,9 @@ import sootup.core.jimple.basic.Value;
 public final class SymVar extends SymExpr {
   public static final String VAR_PREFIX = "var_";
   public static final String STACK_PREFIX = "stack_";
+  public static final String LOCAL_PREFIX = "local_";
   private static final String STACK_LOCAL_PREFIX = "$stack";
+  private static final String HASH_LOCAL_PREFIX = "#l";
 
   private final String name;
   private final String typeName;
@@ -45,6 +47,13 @@ public final class SymVar extends SymExpr {
         && name.length() > STACK_LOCAL_PREFIX.length()
         && allDigits(name, STACK_LOCAL_PREFIX.length())) {
       return STACK_PREFIX + name.substring(STACK_LOCAL_PREFIX.length());
+    }
+    // SootUp also emits `#l<n>` for some compiler-generated locals. Keep them in their own
+    // namespace so we can still tell at a glance which Soot scheme produced them.
+    if (name.startsWith(HASH_LOCAL_PREFIX)
+        && name.length() > HASH_LOCAL_PREFIX.length()
+        && allDigits(name, HASH_LOCAL_PREFIX.length())) {
+      return LOCAL_PREFIX + name.substring(HASH_LOCAL_PREFIX.length());
     }
     return name;
   }

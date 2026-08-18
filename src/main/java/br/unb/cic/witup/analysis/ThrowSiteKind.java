@@ -6,6 +6,9 @@ public enum ThrowSiteKind {
   // Synthesised at receiver/index/divisor/array-length sites for JVM implicit exceptions
   // (NPE, AIOOBE, NegativeArraySize, ArithmeticException). No `athrow` in the bytecode —
   // the JVM raises the exception itself. Gated by the emitImplicitExceptions knob.
-  IMPLICIT
-  // Reserved: CALLEE_PROPAGATED — escapes from a callee that this method does not catch.
+  IMPLICIT,
+  // Escapes from a callee that this method does not catch. The caller's predicate is its
+  // path conditions to the call site conjoined with the callee's predicate (formals→actuals
+  // substituted). Provenance is non-empty: [calleeSig, ...calleeProvenance].
+  CALLEE_PROPAGATED
 }

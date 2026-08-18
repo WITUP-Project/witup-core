@@ -175,32 +175,21 @@ public class IntSummaryTest {
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.methodSignature());
-    // constraint paths
-    assertEquals(2, summary.exceptionPaths().size());
-    // constraint path 0: (a >= 0, true) -> (0 == 0, false), UNSAT
+    // Pre-pruning we emitted two paths: (a >= 0, true) -> (0 == 0, false) which was UNSAT
+    // by structural contradiction, and (a >= 0, false) -> (1 == 0, false) the SAT path.
+    // 1b's constant folding now drops the UNSAT path at summariser time and removes the
+    // trivially-satisfied (1 == 0, false) tautology from the SAT path. Single path remains.
+    assertEquals(1, summary.exceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertEquals(
         "java.lang.IllegalArgumentException",
         summary.exceptionPaths().getFirst().getExceptionQualifiedName());
-
-    assertTrue(path0.getFirst().truthValue());
+    assertFalse(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a >= 0"));
-    // constraint path 1: (a >= 0, false) -> (1 == 0, false), SAT
-    List<SymbolicConstraint> path1 = summary.exceptionPaths().get(1).getConstraints();
-    assertFalse(path1.getFirst().truthValue());
-    assertTrue(path1.getFirst().symExpr().toString().contains("a >= 0"));
-    assertEquals(
-        "java.lang.IllegalArgumentException",
-        summary.exceptionPaths().get(1).getExceptionQualifiedName());
 
-    // formal params
     assertEquals(2, summary.formalParams().size());
     assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
-
-    // return expr too complicated already
-    // (((a >= 0) ? ((0 == 0) ? 1 : 0) : 0) ? a : a)
-    // but correct and z3 handles
   }
 
   @Test
@@ -211,26 +200,20 @@ public class IntSummaryTest {
     MethodSummary summary = analysis.summary();
     assertNotNull(summary);
     assertEquals(methodSignature, summary.methodSignature());
-    assertEquals(2, summary.exceptionPaths().size());
-
+    // Symmetric to viaBoolean: pre-pruning we emitted two paths, one SAT with (a >= 0,
+    // true) and one UNSAT with a `0 != 0` artifact from the boolean indirection. 1b's
+    // constant folding drops the UNSAT path at summariser time. Single SAT path remains.
+    assertEquals(1, summary.exceptionPaths().size());
     List<SymbolicConstraint> path0 = summary.exceptionPaths().getFirst().getConstraints();
     assertEquals(
         "java.lang.IllegalArgumentException",
         summary.exceptionPaths().getFirst().getExceptionQualifiedName());
-
     assertTrue(path0.getFirst().truthValue());
     assertTrue(path0.getFirst().symExpr().toString().contains("a >= 0"));
 
-    List<SymbolicConstraint> path1 = summary.exceptionPaths().get(1).getConstraints();
-    assertFalse(path1.getFirst().truthValue());
-    assertTrue(path1.getFirst().symExpr().toString().contains("a >= 0"));
-    // formal params
     assertEquals(2, summary.formalParams().size());
     assertEquals(SymKind.INT, summary.formalParams().getFirst().getKind());
     assertEquals(SymKind.OBJECT, summary.formalParams().get(1).getKind());
-
-    // return expr
-    // (((a >= 0) ? ((0 != 0) ? 1 : 0) : 0) ? a : a)
   }
 
   @Test

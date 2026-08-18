@@ -9,6 +9,7 @@ import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.analysis.graph.node.ThrowStatementNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.GuardedExpr;
+import br.unb.cic.witup.analysis.symbolic.SymExprResolver;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
@@ -45,9 +46,12 @@ public final class MethodSummariser implements SummaryResolver {
    * @param cpg WITUpGraph of the method being analysed
    * @param graphRepository GraphRepository
    * @param summaryRepository SummaryRepository
-   * @param emitImplicitExceptions when true, synthesise IMPLICIT-kind ExceptionPaths for JVM
-   *     implicit exceptions (NPE, AIOOBE, NegativeArraySize, ArithmeticException). Detection
-   *     rules land in subsequent commits; this commit is plumbing only.
+   * @param emitImplicitExceptions when true, synthesise rollup-level ExceptionPaths beyond
+   *     the method's own athrow sites: IMPLICIT-kind paths for JVM implicit exceptions (NPE,
+   *     AIOOBE, NegativeArraySize, ArithmeticException) and CALLEE_PROPAGATED-kind paths for
+   *     uncaught escapes from callees. Both classes are gated together. Legacy tests remain
+   *     on the default-off branch for now — they'll be revisited so they reflect the new
+   *     synthesis when we trust it.
    */
   public MethodSummariser(
       final WITUpGraph cpg,
@@ -75,8 +79,22 @@ public final class MethodSummariser implements SummaryResolver {
     List<List<SymbolicConstraint>> throwConstraintPaths = new ArrayList<>();
     for (WITUpNode throwNode : cpg.getThrowNodes()) {
       ThrowStatementNode throwStmt = (ThrowStatementNode) throwNode;
+      // javac synthesises a catch-all rethrow for `finally` and try-with-resources. It
+      // re-raises whatever the guarded region already threw — already reported as an
+      // own-throw or CALLEE_PROPAGATED path — so emitting it double counts that exception
+      // under java.lang.Throwable, a type no caller catches, once per enumerated path.
+      if (cpg.isSyntheticCatchAllRethrow(throwStmt)) {
+        log.debug("skipping synthetic catch-all rethrow in {}", sig);
+        continue;
+      }
       String exceptionQualifiedName = cpg.resolveExceptionType(throwStmt);
       ThrowSiteKind throwSiteKind = cpg.classifyThrowSite(throwStmt);
+      // resolveExceptionType only handles `throw new X()`; for `throw caughtVar` (rethrow)
+      // it returns null. Fall back to the surrounding catch handler's declared type so
+      // the row is actually identifiable in benchmark matching.
+      if (exceptionQualifiedName == null && throwSiteKind == ThrowSiteKind.RETHROW) {
+        exceptionQualifiedName = cpg.resolveRethrowCaughtType(throwStmt);
+      }
       for (List<SymbolicConstraint> constraints :
           symbolicConstraintGenerator.buildThrowConstraintPaths(throwNode)) {
         exceptionPaths.add(
@@ -92,6 +110,9 @@ public final class MethodSummariser implements SummaryResolver {
       collectImplicitNegativeArraySizePaths(exceptionPaths, throwConstraintPaths);
       collectImplicitArithmeticPaths(exceptionPaths, throwConstraintPaths);
     }
+    // Callee-propagated paths are no longer materialised in the summary itself; the
+    // ExceptionFlowWalker composes them on demand from this method's call sites and
+    // catch handlers (both already exposed by WITUpGraph).
 
     List<SymParamRef> formals = symbolicConstraintGenerator.buildFormals();
     List<GuardedExpr> guardedReturn = symbolicConstraintGenerator.traceGuardedReturn();
@@ -111,27 +132,32 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitNpeReceiverSite site : cpg.getImplicitNpeReceiverSites()) {
-      SymExpr receiverExpr = SymExpr.fromJimple(site.receiver());
+      SymExpr receiverExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.receiver()), site.node(), cpg);
       SymbolicConstraint nullCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.EQ, receiverExpr, SymNull.INSTANCE), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withNull = new ArrayList<>(path.size() + 1);
         withNull.addAll(path);
         withNull.add(nullCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withNull);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withNull,
+                filtered,
                 site.node(),
                 "java.lang.NullPointerException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withNull);
+        throwConstraintPaths.add(filtered);
       }
     }
   }
@@ -145,8 +171,10 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitAioobeSite site : cpg.getImplicitAioobeSites()) {
-      SymExpr arrExpr = SymExpr.fromJimple(site.arrayBase());
-      SymExpr indexExpr = SymExpr.fromJimple(site.index());
+      SymExpr arrExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.arrayBase()), site.node(), cpg);
+      SymExpr indexExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.index()), site.node(), cpg);
       SymExpr nonNull = new SymBinOp(BinOp.NE, arrExpr, SymNull.INSTANCE);
       SymExpr lt = new SymBinOp(BinOp.LT, indexExpr, SymIntConst.zero());
       SymExpr ge = new SymBinOp(BinOp.GE, indexExpr, new SymLength(arrExpr));
@@ -154,23 +182,27 @@ public final class MethodSummariser implements SummaryResolver {
       SymbolicConstraint boundsCheck =
           new SymbolicConstraint(new SymBinOp(BinOp.AND, nonNull, orBounds), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withBounds = new ArrayList<>(path.size() + 1);
         withBounds.addAll(path);
         withBounds.add(boundsCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withBounds);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withBounds,
+                filtered,
                 site.node(),
                 "java.lang.ArrayIndexOutOfBoundsException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withBounds);
+        throwConstraintPaths.add(filtered);
       }
     }
   }
@@ -181,28 +213,32 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitNegativeArraySizeSite site : cpg.getImplicitNegativeArraySizeSites()) {
-      SymExpr sizeExpr = SymExpr.fromJimple(site.size());
+      SymExpr sizeExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.size()), site.node(), cpg);
       SymbolicConstraint negativeCheck =
-          new SymbolicConstraint(
-              new SymBinOp(BinOp.LT, sizeExpr, SymIntConst.zero()), true);
+          new SymbolicConstraint(new SymBinOp(BinOp.LT, sizeExpr, SymIntConst.zero()), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withNegative = new ArrayList<>(path.size() + 1);
         withNegative.addAll(path);
         withNegative.add(negativeCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withNegative);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withNegative,
+                filtered,
                 site.node(),
                 "java.lang.NegativeArraySizeException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withNegative);
+        throwConstraintPaths.add(filtered);
       }
     }
   }
@@ -213,28 +249,32 @@ public final class MethodSummariser implements SummaryResolver {
       final List<ExceptionPath> exceptionPaths,
       final List<List<SymbolicConstraint>> throwConstraintPaths) {
     for (ImplicitArithmeticSite site : cpg.getImplicitArithmeticSites()) {
-      SymExpr divisorExpr = SymExpr.fromJimple(site.divisor());
+      SymExpr divisorExpr =
+          SymExprResolver.resolveLocalAt(SymExpr.fromJimple(site.divisor()), site.node(), cpg);
       SymbolicConstraint zeroCheck =
-          new SymbolicConstraint(
-              new SymBinOp(BinOp.EQ, divisorExpr, SymIntConst.zero()), true);
+          new SymbolicConstraint(new SymBinOp(BinOp.EQ, divisorExpr, SymIntConst.zero()), true);
 
-      List<List<SymbolicConstraint>> pathConditions =
-          symbolicConstraintGenerator.buildThrowConstraintPaths(site.node());
-      if (pathConditions.isEmpty()) {
-        pathConditions = List.of(List.of());
-      }
+      // Caller branch context dropped — see deferred work for restoration plan. Per-site
+      // backward substitution on Commons IO blew the heap; recall is preserved (the rollup
+      // predicate stands on its own), only branch-gated precision is lost.
+      List<List<SymbolicConstraint>> pathConditions = List.of(List.of());
       for (List<SymbolicConstraint> path : pathConditions) {
         List<SymbolicConstraint> withZero = new ArrayList<>(path.size() + 1);
         withZero.addAll(path);
         withZero.add(zeroCheck);
+        List<SymbolicConstraint> filtered =
+            SymbolicConstraintGenerator.foldAndFilterConstraints(withZero);
+        if (filtered == null) {
+          continue;
+        }
         exceptionPaths.add(
             new ExceptionPath(
-                withZero,
+                filtered,
                 site.node(),
                 "java.lang.ArithmeticException",
                 ThrowSiteKind.IMPLICIT,
                 List.of()));
-        throwConstraintPaths.add(withZero);
+        throwConstraintPaths.add(filtered);
       }
     }
   }

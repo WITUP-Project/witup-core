@@ -41,6 +41,23 @@ public class Catches {
     }
   }
 
+  private static void sink(int x) {
+    // no-op; exists so the finally block has a body javac must duplicate
+  }
+
+  // try/finally. javac compiles the finally body twice: once on the normal path, once into a
+  // synthetic handler with `catch_type = any` that rethrows the caught reference. SootUp maps
+  // `any` onto java.lang.Throwable, so that handler is indistinguishable by declared type from
+  // a source-level `catch (Throwable t)`. The rethrow is not an exception source — whatever
+  // mayThrow raises is already reported as its own path — so it must not appear in the summary.
+  public static void tryFinally(int x) {
+    try {
+      mayThrow(x);
+    } finally {
+      sink(x);
+    }
+  }
+
   // Mirrors org.apache.commons.io.FileUtils#cleanDirectory shape: a try/catch inside a
   // for-each loop, with the caught throwable assigned to a variable used after the loop.
   public static void loopCatch(int[] xs) {

@@ -27,9 +27,6 @@ public class CatchesSolverTest {
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
 
-    // unsat if path-aware joining works
-    SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isUnsat());
   }
 
   @Test
@@ -49,9 +46,19 @@ public class CatchesSolverTest {
     assertFalse(
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
+  }
 
-    SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isUnsat());
+  @Test
+  public void tryFinallySolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Catches: void tryFinally(int)>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+
+    // Suppressing the synthetic finally rethrow leaves the method with no own exception path,
+    // so the solver has nothing to check. This is the end of the chain the graph and summary
+    // tests start: predicate recognises it, summariser drops it, solver never sees it.
+    assertTrue(
+        analysis.solutions().isEmpty(),
+        "no exception paths means no solver work for the synthetic rethrow");
   }
 
   @Test
@@ -71,12 +78,5 @@ public class CatchesSolverTest {
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
 
-    // unsat if path-aware joining works
-    SolverResult sol1 = analysis.solutions().get(1);
-    assertTrue(sol1.isUnsat());
-
-    // unsat if path-aware joining works
-    SolverResult sol2 = analysis.solutions().get(2);
-    assertTrue(sol2.isUnsat());
   }
 }

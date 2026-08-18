@@ -1,10 +1,12 @@
 package br.unb.cic.witup;
 
+import br.unb.cic.witup.analysis.ExceptionFlowWalker;
 import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodParts;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,9 +15,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +75,13 @@ public final class Driver {
         rows.add(row);
       }
     }
-    List<Map<String, Object>> summaryRows = buildSummaryRows(args[0], methodSummaries);
+    Map<String, String> pathIdToStatus = new LinkedHashMap<>();
+    for (Map<String, Object> r : rows) {
+      pathIdToStatus.put((String) r.get("pathId"), (String) r.get("status"));
+    }
+    ExceptionFlowWalker walker = new ExceptionFlowWalker(methodSummaries, analyser);
+    List<Map<String, Object>> summaryRows =
+        buildSummaryRows(args[0], methodSummaries, walker, pathIdToStatus);
 
     String projectName = args[0].replaceFirst("\\.jar$", "");
     Path projectResultsDir = PROJECT_RESULTS.resolve(projectName);
@@ -91,21 +101,45 @@ public final class Driver {
     log.info("Failures written to witup-failures.json ({} methods)", failures.size());
   }
 
-  // Per-(method, exception-path) view of the analysis output. Independent of solver outcome —
-  // includes paths regardless of SAT/UNSAT — and carries the schema fields the rollup phase
-  // consumes (exceptionType, throwSiteKind, provenance). modelValues live in witup-results.
+  // Per-(method, observable-exception-path) view of the analysis output. The walker
+  // composes each method's local own throws with its callees' observable flows on
+  // demand, filtering through in-scope catch handlers. modelValues live in witup-results.
   private static List<Map<String, Object>> buildSummaryRows(
-      final String artifact, final Map<String, MethodSummary> methodSummaries) {
+      final String artifact,
+      final Map<String, MethodSummary> methodSummaries,
+      final ExceptionFlowWalker walker,
+      final Map<String, String> pathIdToStatus) {
     List<Map<String, Object>> summaryRows = new ArrayList<>();
     for (var entry : methodSummaries.entrySet()) {
-      MethodSummary summary = entry.getValue();
-      List<ExceptionPath> paths = summary.exceptionPaths();
-      if (paths == null) {
+      String methodSig = entry.getKey();
+      List<ExceptionPath> paths = walker.observablePaths(methodSig);
+      if (paths.isEmpty()) {
         continue;
       }
-      MethodParts parts = MethodParts.parseSignature(entry.getKey());
+      MethodParts parts = MethodParts.parseSignature(methodSig);
+      // Within-method dedup: two paths with identical (exceptionType, throwSiteKind,
+      // provenance, constraints) are the same observable flow as far as the benchmark
+      // is concerned. Common when the walker produces many CALLEE_PROPAGATED rows that
+      // share a deep ancestor predicate (e.g. every call to a normalising helper
+      // re-emits the same `(fileName == null, true)` NPE), or when implicit-NPE
+      // collectors fire at every dereference of the same expression. Keep the first
+      // occurrence so the pathId for solver verdicts still lines up.
+      Set<String> seenKeys = new HashSet<>();
       for (int i = 0; i < paths.size(); i++) {
         ExceptionPath ep = paths.get(i);
+        String pathId = methodSig + "#" + i;
+        List<Map<String, Object>> constraintRows = flattenConstraints(ep.getConstraints());
+        String dedupKey =
+            ep.getExceptionQualifiedName()
+                + "|"
+                + ep.getThrowSiteKind().name()
+                + "|"
+                + ep.getProvenance()
+                + "|"
+                + constraintRows;
+        if (!seenKeys.add(dedupKey)) {
+          continue;
+        }
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("artifact", artifact);
         row.put("package", parts.pkg());
@@ -114,13 +148,43 @@ public final class Driver {
         row.put("returnType", parts.returnType());
         row.put("params", parts.params());
         row.put("pathIndex", i);
-        row.put("pathId", entry.getKey() + "#" + i);
+        row.put("pathId", pathId);
         row.put("exceptionType", ep.getExceptionQualifiedName());
         row.put("throwSiteKind", ep.getThrowSiteKind().name());
         row.put("provenance", ep.getProvenance());
+        // Z3 only ran on each method's local own-throw paths (the entries in
+        // MethodSummary.throwConstraints). Callee-propagated paths are *composed* at
+        // query time by the walker and don't have their own pathId in the solver output.
+        // PROPAGATED means: the originating callee's path was solver-checked, and the
+        // composition here is the result of substituting actuals into that path's
+        // predicate. Substitution preserves UNSAT (more concrete predicate, never less)
+        // but may not preserve SAT in degenerate cases where the actuals contradict the
+        // predicate — so PROPAGATED is "likely SAT, traceable to a solver-verified source
+        // via the provenance chain", not an unchecked guess. To get the originating
+        // verdict, follow provenance[0] back to its method's witup-results.json entry.
+        row.put("solverStatus", pathIdToStatus.getOrDefault(pathId, "PROPAGATED"));
+        row.put("constraints", constraintRows);
         summaryRows.add(row);
       }
     }
     return summaryRows;
+  }
+
+  // Each constraint becomes a `{symExpr, truthValue}` map. The list semantics is implicit
+  // conjunction — every entry must hold for the path's exception to fire. Sufficient for
+  // human eyeball-matching against Nassif's `State` column.
+  private static List<Map<String, Object>> flattenConstraints(
+      final List<SymbolicConstraint> constraints) {
+    if (constraints == null || constraints.isEmpty()) {
+      return List.of();
+    }
+    List<Map<String, Object>> rows = new ArrayList<>(constraints.size());
+    for (SymbolicConstraint c : constraints) {
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("symExpr", c.symExpr().toString());
+      row.put("truthValue", c.truthValue());
+      rows.add(row);
+    }
+    return rows;
   }
 }
