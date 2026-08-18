@@ -75,7 +75,7 @@ public final class SummaryRowBuilder {
       row.put("provenances", new ArrayList<List<String>>());
       // Z3 only ran on each method's local own-throw paths. Callee-propagated paths
       // are composed at query time by the walker
-      // TODO: solve composed paths and get a massive win for PROPAGATED_PATHS
+      // NEXT: solve composed paths and get a massive win for PROPAGATED_PATHS
       row.put("solverStatus", pathIdToStatus.getOrDefault(pathId, "PROPAGATED"));
       row.put("constraints", constraintRows);
       addProvenance(row, ep.getProvenance());
