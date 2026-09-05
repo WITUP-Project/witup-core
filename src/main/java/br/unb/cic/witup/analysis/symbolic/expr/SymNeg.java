@@ -11,14 +11,12 @@ public final class SymNeg extends SymExpr {
   private String cachedToString;
 
   public SymNeg(final JNegExpr e) {
-    super(fromJimpleType(e.getType()));
-    this.operand = fromJimple(e.getOp());
+    this(fromJimple(e.getOp()), fromJimpleType(e.getType()));
   }
 
   private SymNeg(final SymExpr operand, final SymKind kind) {
-    super(kind);
+    super(kind, maskOf(operand));
     this.operand = operand;
-    this.cachedToString = "-" + operand;
   }
 
   public SymExpr getOperand() {
@@ -66,6 +64,10 @@ public final class SymNeg extends SymExpr {
 
   @Override
   public String toString() {
+    // Lazy because SymITE can blow up when building eagerly
+    if (cachedToString == null) {
+      cachedToString = "-" + operand;
+    }
     return cachedToString;
   }
 

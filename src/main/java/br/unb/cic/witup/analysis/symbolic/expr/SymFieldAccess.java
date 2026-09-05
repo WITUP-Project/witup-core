@@ -13,13 +13,13 @@ public final class SymFieldAccess extends SymExpr {
   private int cachedHashCode;
 
   public SymFieldAccess(final SymExpr base, final JInstanceFieldRef r) {
-    super(fromJimpleType(r.getType()));
+    super(fromJimpleType(r.getType()), maskOf(base));
     this.base = base;
     this.fieldName = r.getFieldSignature().getName();
   }
 
   private SymFieldAccess(final SymExpr value, final String fieldName, final SymKind kind) {
-    super(kind);
+    super(kind, maskOf(value));
     this.fieldName = fieldName;
     this.base = value;
   }

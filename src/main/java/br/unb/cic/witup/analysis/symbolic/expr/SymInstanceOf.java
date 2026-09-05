@@ -12,9 +12,19 @@ public final class SymInstanceOf extends SymExpr {
   private int cachedHashCode;
 
   public SymInstanceOf(final JInstanceOfExpr e) {
-    super(SymKind.BOOLEAN);
-    this.op = fromJimple(e.getOp());
-    this.type = e.getCheckType().toString();
+    this(fromJimple(e.getOp()), e.getCheckType().toString());
+  }
+
+  private SymInstanceOf(final SymExpr op, final String type) {
+    super(SymKind.BOOLEAN, maskOf(op));
+    this.op = op;
+    this.type = type;
+  }
+
+  @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newOp = op.substituteParam(idx, actual);
+    return newOp == op ? this : new SymInstanceOf(newOp, type);
   }
 
   public SymExpr getOp() {

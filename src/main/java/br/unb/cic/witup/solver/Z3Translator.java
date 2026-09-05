@@ -62,7 +62,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final String FIELD_DECL_PREFIX = "field_";
   public static final String IS_NULL = "_is_null";
   public static final String NULL_STR = "__null__";
-  public static final String THIS_STR = "__this__";
+  public static final String THIS_STR = "this";
   public static final int BITS_32 = 32;
   public static final String BOOL_SUFFIX = "_bool";
   public static final String INT_SUFFIX = "_int";

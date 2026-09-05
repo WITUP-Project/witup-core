@@ -9,9 +9,12 @@ public final class SymThisRef extends SymExpr {
   private final String cachedToString;
 
   public SymThisRef(final JThisRef r) {
-    super(SymKind.OTHER);
+    // The receiver is formal index -1 by buildFormals' convention. Without it, compound
+    // parents short-circuit on containsParam(-1) and a callee's `this.field` predicate
+    // reaches the caller still talking about 'this
+    super(SymKind.OTHER, 1L << SymParamRef.THIS_INDEX);
     type = r.getType().toString();
-    this.cachedToString = "@this:" + type;
+    this.cachedToString = "this";
   }
 
   @Override
@@ -22,6 +25,11 @@ public final class SymThisRef extends SymExpr {
   @Override
   public SymExpr substitute(final String varName, final SymExpr replacement) {
     return this;
+  }
+
+  @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    return idx == SymParamRef.THIS_INDEX ? actual : this;
   }
 
   @Override

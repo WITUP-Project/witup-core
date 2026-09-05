@@ -20,6 +20,12 @@ public class Math {
     return pi * this.radius * this.radius;
   }
 
+  // Static caller of an instance method that throws on a field of its receiver. The callee's
+  // predicate is `this.radius < 0`; composed here it must become a predicate about `shape`.
+  public static double areaOf(Math shape) {
+    return shape.circleArea();
+  }
+
   public int invalidParameter(int x, int y) {
     if (y == 0) {
       throw new RuntimeException("Invalid arguments");
