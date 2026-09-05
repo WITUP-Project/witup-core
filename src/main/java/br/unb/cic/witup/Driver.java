@@ -58,7 +58,8 @@ public final class Driver {
     log.info("Composed {} observable paths across {} methods", totalPaths, observablePaths.size());
 
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(methodSummaries);
-    Map<String, List<SolverResult>> methodSolutions = solver.solveMethodPaths(observablePaths, failures);
+    Map<String, List<SolverResult>> methodSolutions =
+            solver.solveMethodPaths(observablePaths, failures);
     List<Map<String, Object>> rows = new ArrayList<>();
     for (var entry : methodSolutions.entrySet()) {
       MethodParts parts = MethodParts.parseSignature(entry.getKey());
