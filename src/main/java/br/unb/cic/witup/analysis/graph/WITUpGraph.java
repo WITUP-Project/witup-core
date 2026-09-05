@@ -80,6 +80,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   // StmtGraph exceptional successors so resolveRethrowCaughtType can look up the catch
   // type behind a rethrow site without iterating the whole stmt graph per query.
   private Map<Stmt, String> cachedCatchTypeByHandler;
+  private CfgSccIndex cachedSccIndex;
   private static final String THROWABLE_FQN = "java.lang.Throwable";
 
   public String getMethodSignature() {
@@ -513,6 +514,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return witUpPaths;
+  }
+
+  public CfgSccIndex sccIndex() {
+    if (cachedSccIndex == null) {
+      cachedSccIndex = CfgSccIndex.of(this);
+    }
+    return cachedSccIndex;
   }
 
   public List<WITUpPath> getThrowPaths(final WITUpNode throwNode) {
