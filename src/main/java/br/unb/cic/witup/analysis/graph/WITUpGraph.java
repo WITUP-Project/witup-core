@@ -528,18 +528,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   }
 
   private List<WITUpPath> computeThrowPaths(final WITUpNode throwNode) {
-    WITUpNode entry = findEntryNode();
-    List<WITUpPath> throwPaths = backwardDFS(entry, throwNode);
-    List<WITUpPath> pathsWithConstraints = new ArrayList<>();
-    for (WITUpPath path : throwPaths) {
-      for (WITUpNode node : path.nodes()) {
-        if (node instanceof IfStatementNode || node instanceof CaughtExceptionNode) {
-          pathsWithConstraints.add(path);
-          break;
-        }
-      }
-    }
-    return pathsWithConstraints;
+    return backwardDFS(findEntryNode(), throwNode);
   }
 
   private void buildCFGAdjacencies() {

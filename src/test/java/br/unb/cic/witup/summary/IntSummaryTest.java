@@ -397,4 +397,20 @@ public class IntSummaryTest {
 
     assertFalse(path0.get(2).truthValue());
   }
+
+  @Test
+  public void alwaysThrowsSummary() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int alwaysThrows()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    MethodSummary summary = analysis.summary();
+    assertNotNull(summary);
+
+    assertEquals(1, summary.exceptionPaths().size(), "an unguarded throw is still a throw");
+    assertEquals(
+        "java.lang.IllegalStateException",
+        summary.exceptionPaths().getFirst().getExceptionQualifiedName());
+    assertTrue(
+        summary.exceptionPaths().getFirst().getConstraints().isEmpty(),
+        "no decision guards it, so the predicate is empty rather than absent");
+  }
 }

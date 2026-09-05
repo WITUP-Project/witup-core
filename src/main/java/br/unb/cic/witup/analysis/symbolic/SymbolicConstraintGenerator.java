@@ -139,9 +139,6 @@ public final class SymbolicConstraintGenerator {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
     for (WITUpPath p : throwConstraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
-      if (resolved.isEmpty()) {
-        continue;
-      }
       if (hasDirectContradiction(resolved)) {
         continue;
       }

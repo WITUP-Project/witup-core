@@ -9,9 +9,8 @@ import java.util.Set;
 
 /**
  * The conjunction of branch decisions taken to reach a program point, as a persistent list that
- * shares its tail.
- * A branch forks one condition into two paths that agree on everything decided before it.
- * consing keeps one cell per decision no matter how many paths run through it.
+ * shares its tail. A branch forks one condition into two paths that agree on everything decided
+ * before it. consing keeps one cell per decision no matter how many paths run through it.
  */
 public final class PathCondition {
   public static final PathCondition EMPTY = new PathCondition(null, null, 0, 1);
