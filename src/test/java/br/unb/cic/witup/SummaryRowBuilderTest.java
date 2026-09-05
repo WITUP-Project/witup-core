@@ -1,12 +1,15 @@
 package br.unb.cic.witup;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
+import br.unb.cic.witup.solver.SolverResult;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,11 +102,67 @@ public class SummaryRowBuilderTest {
   }
 
   @Test
+  public void parameterUnderALengthExpressionIsSubstituted() {
+    // throwIfEmpty's predicate is `a.length == 0`, so the parameter sits under a SymLength.
+    // Composed into callThrowIfEmpty it must talk about the caller's `items`;
+    String sig = "<br.unb.cic.witup.samples.Calls: void callThrowIfEmpty(int[])>";
+    List<ExceptionPath> paths = pathsOf(sig);
+    assertEquals(1, paths.size());
+
+    String predicate = constraintsOf(paths.getFirst());
+    assertTrue(predicate.contains("items"), "expected the caller's array, got " + predicate);
+    assertFalse(predicate.contains("(a)"), "callee's local leaked into the caller: " + predicate);
+  }
+
+  @Test
+  public void receiverIsSubstitutedIntoAComposedPredicate() {
+    // circleArea throws on `this.radius < 0`. Composed into the static areaOf(Math shape), the
+    // receiver is passed as the last actual against formal index -1, so the predicate must be
+    // about `shape`.
+    String sig = "<br.unb.cic.witup.samples.Math: double areaOf(br.unb.cic.witup.samples.Math)>";
+    List<ExceptionPath> paths = pathsOf(sig);
+
+    // Two observable flows: dereferencing the receiver can raise NPE, and circleArea's own
+    // RuntimeException. The composed one is what carries the substituted predicate.
+    ExceptionPath composed =
+        paths.stream()
+            .filter(p -> "java.lang.RuntimeException".equals(p.getExceptionQualifiedName()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("circleArea's throw must escape areaOf: " + paths));
+
+    String predicate = constraintsOf(composed);
+    assertTrue(predicate.contains("shape"), "expected the caller's receiver, got " + predicate);
+    assertFalse(
+        predicate.contains("this."), "callee's `this` leaked into a static caller: " + predicate);
+  }
+
+  @Test
+  public void composedRowCarriesARealVerdictNotAPlaceholder() {
+    // End to end: compose, solve, then build the row. alwaysOrdered's only observable flow is
+    // infeasible after substitution, and the emitted row must say so.
+    String sig = "<br.unb.cic.witup.samples.Calls: void alwaysOrdered(int)>";
+    List<ExceptionPath> paths = pathsOf(sig);
+    List<SolverResult> results = TestAnalysisContext.solveObservablePaths(sig);
+
+    Map<String, String> statuses = new LinkedHashMap<>();
+    for (SolverResult r : results) {
+      statuses.put(r.getPathId(), r.getStatus().toString());
+    }
+
+    List<Map<String, Object>> rows = SummaryRowBuilder.rowsForMethod(ARTIFACT, sig, paths, statuses);
+
+    assertEquals(1, rows.size());
+    assertEquals("CALLEE_PROPAGATED", rows.getFirst().get("throwSiteKind"), "still a composed flow");
+    assertEquals(
+        "UNSAT",
+        rows.getFirst().get("solverStatus"),
+        "composed flows now carry a solver verdict; the kind field records that it was composed");
+  }
+
+  @Test
   public void collapsedRowKeepsFirstOccurrenceIdentity() {
     // The walker emits own throws before callee-propagated ones, so the colliding NPE paths sit
-    // at indices 1 and 2 behind the IAE at 0. The survivor must keep index 1: witup-results keys
-    // the solver's per-path verdicts by pathId, so taking the wrong occurrence would attach the
-    // wrong verdict to the row.
+    // at indices 1 and 2 behind the IAE at 0. We must keep index 1
     String sig =
         "<br.unb.cic.witup.samples.Calls: int ownThrowThenTwoChains(java.lang.String,int)>";
     List<ExceptionPath> paths = pathsOf(sig);

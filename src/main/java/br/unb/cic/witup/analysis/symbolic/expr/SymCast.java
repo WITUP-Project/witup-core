@@ -13,13 +13,11 @@ public final class SymCast extends SymExpr {
   private int cachedHashCode;
 
   public SymCast(final JCastExpr c) {
-    super(SymKind.CAST);
-    op = fromJimple(c.getOp());
-    type = c.getType().toString();
+    this(fromJimple(c.getOp()), c.getType().toString());
   }
 
   private SymCast(final SymExpr op, final String type) {
-    super(SymKind.CAST);
+    super(SymKind.CAST, maskOf(op));
     this.op = op;
     this.type = type;
   }

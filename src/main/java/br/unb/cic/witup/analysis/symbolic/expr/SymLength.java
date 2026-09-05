@@ -11,12 +11,11 @@ public final class SymLength extends SymExpr {
   private String cachedToString;
 
   public SymLength(final JLengthExpr e) {
-    super(SymKind.INT);
-    this.op = fromJimple(e.getOp());
+    this(fromJimple(e.getOp()));
   }
 
   public SymLength(final SymExpr op) {
-    super(SymKind.INT);
+    super(SymKind.INT, maskOf(op));
     this.op = op;
   }
 
@@ -27,6 +26,12 @@ public final class SymLength extends SymExpr {
   @Override
   public <T> T accept(final SymExprVisitor<T> visitor) {
     return visitor.visitLength(this);
+  }
+
+  @Override
+  public SymExpr substituteParam(final int idx, final SymExpr actual) {
+    SymExpr newOp = op.substituteParam(idx, actual);
+    return newOp == op ? this : new SymLength(newOp);
   }
 
   @Override

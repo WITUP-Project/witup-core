@@ -14,15 +14,16 @@ public final class SymArray extends SymExpr {
   private String cachedToString;
 
   public SymArray(final JNewArrayExpr newArrExpr) {
-    super(fromJimpleType(newArrExpr.getType()));
-    this.name = "newarray";
-    this.objectType = newArrExpr.getType().toString();
-    this.size = fromJimple(newArrExpr.getSize());
+    this(
+        "newarray",
+        newArrExpr.getType().toString(),
+        fromJimple(newArrExpr.getSize()),
+        fromJimpleType(newArrExpr.getType()));
   }
 
   private SymArray(
       final String name, final String objectType, final SymExpr size, final SymKind kind) {
-    super(kind);
+    super(kind, maskOf(size));
     this.name = name;
     this.objectType = objectType;
     this.size = size;

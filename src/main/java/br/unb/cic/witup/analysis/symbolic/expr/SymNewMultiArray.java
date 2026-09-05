@@ -16,13 +16,13 @@ public final class SymNewMultiArray extends SymExpr {
   private int cachedHashCode;
 
   public SymNewMultiArray(final JNewMultiArrayExpr e) {
-    super(SymKind.OTHER);
-    this.objectType = e.getType().toString();
-    this.sizes = e.getSizes().stream().map(SymExpr::fromJimple).collect(Collectors.toList());
+    this(
+        e.getType().toString(),
+        e.getSizes().stream().map(SymExpr::fromJimple).collect(Collectors.toList()));
   }
 
   private SymNewMultiArray(final String objectType, final List<SymExpr> sizes) {
-    super(SymKind.OTHER);
+    super(SymKind.OTHER, maskOf(sizes));
     this.objectType = objectType;
     this.sizes = sizes;
   }

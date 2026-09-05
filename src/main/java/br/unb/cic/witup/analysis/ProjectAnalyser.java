@@ -105,7 +105,7 @@ public final class ProjectAnalyser implements GraphRepository {
     MethodSummary summary = localSummaries.get(methodSignature);
     SymbolicConstraintSolver solver =
         new SymbolicConstraintSolver(Map.of(methodSignature, summary));
-    Map<String, List<SolverResult>> solutions = solver.solveConstraintsSafe(failures);
+    Map<String, List<SolverResult>> solutions = solver.solveMethods(failures);
 
     return new AnalysisResult(graph, summary, solutions.get(methodSignature), failures);
   }

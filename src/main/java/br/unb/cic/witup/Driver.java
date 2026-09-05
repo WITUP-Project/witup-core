@@ -48,10 +48,19 @@ public final class Driver {
     Map<String, MethodSummary> methodSummaries = analyser.summariseAll(methodGraphs, failures);
 
     log.info("Summarised {}/{} methods", methodSummaries.size(), methodGraphs.size());
+
+    ExceptionFlowWalker walker = new ExceptionFlowWalker(methodSummaries, analyser);
+    Map<String, List<ExceptionPath>> observablePaths = new LinkedHashMap<>();
+    for (String methodSig : methodSummaries.keySet()) {
+      observablePaths.put(methodSig, walker.observablePaths(methodSig));
+    }
+    int totalPaths = observablePaths.values().stream().mapToInt(List::size).sum();
+    log.info("Composed {} observable paths across {} methods", totalPaths, observablePaths.size());
+
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(methodSummaries);
-    Map<String, List<SolverResult>> methodSolutions = solver.solveConstraintsSafe(failures);
+    Map<String, List<SolverResult>> methodSolutions =
+            solver.solveMethodPaths(observablePaths, failures);
     List<Map<String, Object>> rows = new ArrayList<>();
-    // build something pandas/dataframe friendly
     for (var entry : methodSolutions.entrySet()) {
       MethodParts parts = MethodParts.parseSignature(entry.getKey());
       for (SolverResult r : entry.getValue()) {
@@ -76,9 +85,8 @@ public final class Driver {
     for (Map<String, Object> r : rows) {
       pathIdToStatus.put((String) r.get("pathId"), (String) r.get("status"));
     }
-    ExceptionFlowWalker walker = new ExceptionFlowWalker(methodSummaries, analyser);
     List<Map<String, Object>> summaryRows =
-        buildSummaryRows(args[0], methodSummaries, walker, pathIdToStatus);
+        buildSummaryRows(args[0], observablePaths, pathIdToStatus);
 
     String projectName = args[0].replaceFirst("\\.jar$", "");
     Path projectResultsDir = PROJECT_RESULTS.resolve(projectName);
@@ -98,20 +106,15 @@ public final class Driver {
     log.info("Failures written to witup-failures.json ({} methods)", failures.size());
   }
 
-  // Per-(method, observable-exception-path) view of the analysis output. The walker
-  // composes each method's local own throws with its callees' observable flows on
-  // demand, filtering through in-scope catch handlers. modelValues live in witup-results.
   private static List<Map<String, Object>> buildSummaryRows(
       final String artifact,
-      final Map<String, MethodSummary> methodSummaries,
-      final ExceptionFlowWalker walker,
+      final Map<String, List<ExceptionPath>> observablePaths,
       final Map<String, String> pathIdToStatus) {
     List<Map<String, Object>> summaryRows = new ArrayList<>();
-    for (var entry : methodSummaries.entrySet()) {
-      String methodSig = entry.getKey();
-      List<ExceptionPath> paths = walker.observablePaths(methodSig);
+    for (var entry : observablePaths.entrySet()) {
       summaryRows.addAll(
-          SummaryRowBuilder.rowsForMethod(artifact, methodSig, paths, pathIdToStatus));
+          SummaryRowBuilder.rowsForMethod(
+              artifact, entry.getKey(), entry.getValue(), pathIdToStatus));
     }
     return summaryRows;
   }

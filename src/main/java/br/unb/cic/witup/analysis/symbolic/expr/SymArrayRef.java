@@ -18,7 +18,7 @@ public final class SymArrayRef extends SymExpr {
   }
 
   public SymArrayRef(final SymExpr array, final SymExpr index) {
-    super(array.getKind());
+    super(array.getKind(), maskOf(array, index));
     this.array = array;
     this.index = index;
   }

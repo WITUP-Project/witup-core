@@ -502,7 +502,7 @@ public final class SymbolicConstraintGenerator {
       return symExpr;
     }
     Map<String, SymExpr> env = new HashMap<>();
-    collectBindings(freeVars, env, currentNode, visited, false, preconditions);
+    collectBindings(freeVars, env, currentNode, visited, true, preconditions);
     return env.isEmpty() ? symExpr : symExpr.resolveWith(env);
   }
 
@@ -598,6 +598,9 @@ public final class SymbolicConstraintGenerator {
       SymExpr boundValue = resolveCaughtExceptionRef(SymExpr.fromJimple(rhsOp), sourceNode);
       if (boundValue instanceof SymCaughtExceptionRef catchRef) {
         preconditions.add(sealCaughtExceptionRef(catchRef));
+      }
+      if (boundValue instanceof SymParamRef paramRef) {
+        boundValue = paramRef.withName(definedVar);
       }
       addBinding(freeVars, env, definedVar, boundValue);
       collectBindings(freeVars, env, sourceNode, visited, followIdentity, preconditions);

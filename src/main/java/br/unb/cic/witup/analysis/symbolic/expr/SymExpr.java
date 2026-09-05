@@ -2,6 +2,8 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
+
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import sootup.core.jimple.basic.Local;
@@ -105,6 +107,26 @@ public abstract class SymExpr {
   /** O(1) bitmask check — summary bits propagated at construction */
   public boolean containsParam(final int idx) {
     return idx < Long.SIZE && (paramMask & (1L << idx)) != 0;
+  }
+
+  protected static long maskOf(final SymExpr... children) {
+    long mask = 0L;
+    for (SymExpr child : children) {
+      if (child != null) {
+        mask |= child.getParamMask();
+      }
+    }
+    return mask;
+  }
+
+  protected static long maskOf(final List<SymExpr> children) {
+    long mask = 0L;
+    for (SymExpr child : children) {
+      if (child != null) {
+        mask |= child.getParamMask();
+      }
+    }
+    return mask;
   }
 
   /** also saves on hot path */

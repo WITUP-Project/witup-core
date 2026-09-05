@@ -19,6 +19,7 @@ import com.microsoft.z3.Solver;
 import com.microsoft.z3.Status;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -41,30 +42,38 @@ public final class SymbolicConstraintSolver {
 
   // need to extract constants shared across this layer.
   public static final String FIELD_FUNC_PREFIX = "field_";
-  public static final String IS_NULL = "_is_null";
   public static final int TWENTY_SECONDS = 20000;
   static final int MAX_CONSTRAINT_DEPTH = 100;
-  // Methods with more paths than this threshold get a per-thread Z3 workspace pool;
-  // smaller methods stay on the calling thread to avoid the pool's setup overhead.
   static final int PARALLEL_PATH_THRESHOLD = 1000;
   public static final int ONE_THOUSAND_TASKS = 1000;
   private final Map<String, MethodSummary> methodSummaries;
   private final Workspace mainWorkspace;
 
   // the method that receives method summaries needs to, for each set
-  // of symbolic constraints, translate them to z3, solve
-  // we produce MethodSolutions, that map method name to solutions
+  // of symbolic constraints, translate them to z3, and then solve
   public SymbolicConstraintSolver(final Map<String, MethodSummary> methodSummaries) {
     this.methodSummaries = methodSummaries;
     this.mainWorkspace = Workspace.make();
   }
 
-  public Map<String, List<SolverResult>> solveConstraintsSafe(final Map<String, String> failures) {
-    Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
+  public Map<String, List<SolverResult>> solveMethods(final Map<String, String> failures) {
+    Map<String, List<ExceptionPath>> pathsBySignature = new LinkedHashMap<>();
     for (MethodSummary summary : methodSummaries.values()) {
-      String sig = summary.methodSignature();
+      pathsBySignature.put(summary.methodSignature(), summary.exceptionPaths());
+    }
+    return solveMethodPaths(pathsBySignature, failures);
+  }
+
+  /**
+   * Solves an set of paths per method signature. Composes callee's flows.
+   */
+  public Map<String, List<SolverResult>> solveMethodPaths(
+      final Map<String, List<ExceptionPath>> pathsBySignature, final Map<String, String> failures) {
+    Map<String, List<SolverResult>> methodSolutions = new HashMap<>();
+    for (Map.Entry<String, List<ExceptionPath>> entry : pathsBySignature.entrySet()) {
+      String sig = entry.getKey();
       try {
-        List<ExceptionPath> paths = summary.exceptionPaths();
+        List<ExceptionPath> paths = entry.getValue();
         List<SolverResult> results =
             paths.size() > PARALLEL_PATH_THRESHOLD
                 ? solveInParallel(sig, paths)

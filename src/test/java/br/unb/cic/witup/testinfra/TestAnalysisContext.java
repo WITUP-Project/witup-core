@@ -1,10 +1,12 @@
 package br.unb.cic.witup.testinfra;
 
 import br.unb.cic.witup.analysis.ExceptionFlowWalker;
+import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ProjectAnalyser;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
 import br.unb.cic.witup.solver.SolverResult;
+import br.unb.cic.witup.solver.SymbolicConstraintSolver;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
@@ -23,6 +25,7 @@ public final class TestAnalysisContext {
   private static final ProjectAnalyser projectAnalyser;
   private static ProjectAnalyser implicitProjectAnalyser;
   private static Map<String, WITUpGraph> implicitGraphs;
+  private static Map<String, MethodSummary> implicitSummaries;
   private static ExceptionFlowWalker implicitWalker;
 
   static {
@@ -75,11 +78,28 @@ public final class TestAnalysisContext {
   public static ExceptionFlowWalker getImplicitWalker() {
     if (implicitWalker == null) {
       ProjectAnalyser analyser = getImplicitAnalyser();
-      Map<String, MethodSummary> implicitSummaries =
-          analyser.summariseAll(implicitGraphs, new LinkedHashMap<>());
+      implicitSummaries = analyser.summariseAll(implicitGraphs, new LinkedHashMap<>());
       implicitWalker = new ExceptionFlowWalker(implicitSummaries, analyser);
     }
     return implicitWalker;
+  }
+
+  /** Summaries behind {@link #getImplicitWalker()}; null until the walker has been built. */
+  public static Map<String, MethodSummary> getImplicitSummaries() {
+    getImplicitWalker();
+    return implicitSummaries;
+  }
+
+  /**
+   * Solves a method's observable paths the way Driver does: compose first, then solve everything,
+   * so callee-propagated paths get a real verdict instead of none.
+   */
+  public static List<SolverResult> solveObservablePaths(final String methodSignature) {
+    List<ExceptionPath> paths = getImplicitWalker().observablePaths(methodSignature);
+    SymbolicConstraintSolver solver = new SymbolicConstraintSolver(implicitSummaries);
+    return solver
+        .solveMethodPaths(Map.of(methodSignature, paths), new LinkedHashMap<>())
+        .get(methodSignature);
   }
 
   private TestAnalysisContext() {}

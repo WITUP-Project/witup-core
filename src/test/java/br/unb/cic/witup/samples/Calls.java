@@ -14,7 +14,7 @@ public class Calls {
   }
 
   // Same call as unguardedCalleeThrow, but wrapped in a try/catch that catches the exact
-  // type calleeThrows raises. Should be absorved
+  // type calleeThrows raises. Should be absorbed
   public static void caughtCalleeThrow(int x) {
     try {
       calleeMayThrow(x);
@@ -54,5 +54,39 @@ public class Calls {
       throw new IllegalArgumentException();
     }
     return derefLength(s) + derefIndirect(s);
+  }
+
+  // Predicate reaches the parameter through a length expression rather than directly, so the
+  // parameter reference sits under a SymLength inside the comparison.
+  public static void throwIfEmpty(int[] a) {
+    if (a.length == 0) {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  // Deliberately different parameter name from throwIfEmpty's `a`, so a composed predicate that
+  // still mentions `a` proves the length-wrapped parameter was never substituted.
+  public static void callThrowIfEmpty(int[] items) {
+    throwIfEmpty(items);
+  }
+
+  // Throws only when lo is strictly greater than hi.
+  public static void requireOrdered(int lo, int hi) {
+    if (lo > hi) {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  // Deliberately different parameter name from derefLength's `s`, so a composed predicate that
+  // still mentions `s` proves the callee's local leaked instead of the caller's actual.
+  public static int callDerefWithOtherName(String zzz) {
+    return derefLength(zzz);
+  }
+
+  // Passes the same value for both params, so the composed predicate becomes `x > x`.
+  // Infeasible, but only after substitution, and invisible to constant folding since neither
+  // side is a constant — so only the solver can refute it.
+  public static void alwaysOrdered(int x) {
+    requireOrdered(x, x);
   }
 }

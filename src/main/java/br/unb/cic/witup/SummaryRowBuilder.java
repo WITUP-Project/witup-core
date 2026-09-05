@@ -73,10 +73,8 @@ public final class SummaryRowBuilder {
       row.put("throwSiteKind", ep.getThrowSiteKind().name());
       row.put("provenance", ep.getProvenance());
       row.put("provenances", new ArrayList<List<String>>());
-      // Z3 only ran on each method's local own-throw paths. Callee-propagated paths
-      // are composed at query time by the walker
-      // NEXT: solve composed paths and get a massive win for PROPAGATED_PATHS
-      row.put("solverStatus", pathIdToStatus.getOrDefault(pathId, "PROPAGATED"));
+      // we should never see UNSOLVED; leaving here for debugging
+      row.put("solverStatus", pathIdToStatus.getOrDefault(pathId, "UNSOLVED"));
       row.put("constraints", constraintRows);
       addProvenance(row, ep.getProvenance());
       rowByFlow.put(flowKey, row);
