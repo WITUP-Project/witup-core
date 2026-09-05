@@ -26,7 +26,6 @@ public class CatchesSolverTest {
     assertFalse(
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
-
   }
 
   @Test
@@ -77,6 +76,5 @@ public class CatchesSolverTest {
     assertFalse(
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
-
   }
 }

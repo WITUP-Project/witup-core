@@ -60,7 +60,8 @@ public class SummaryRowBuilderTest {
         paths.get(1).getProvenance(),
         "and must differ only in the chain that reached it");
 
-    List<Map<String, Object>> rows = SummaryRowBuilder.rowsForMethod(ARTIFACT, sig, paths, Map.of());
+    List<Map<String, Object>> rows =
+        SummaryRowBuilder.rowsForMethod(ARTIFACT, sig, paths, Map.of());
 
     assertEquals(1, rows.size(), "one observable flow, so one row");
     assertEquals(
@@ -93,7 +94,8 @@ public class SummaryRowBuilderTest {
             .collect(Collectors.toSet())
             .size());
 
-    List<Map<String, Object>> rows = SummaryRowBuilder.rowsForMethod(ARTIFACT, sig, paths, Map.of());
+    List<Map<String, Object>> rows =
+        SummaryRowBuilder.rowsForMethod(ARTIFACT, sig, paths, Map.of());
 
     assertEquals(2, rows.size(), "throwSiteKind carries identity, so these must not collapse");
     assertEquals(
@@ -115,6 +117,19 @@ public class SummaryRowBuilderTest {
   }
 
   @Test
+  public void implicitSitePredicateIsSubstitutedIntoTheCaller() {
+    String sig = "<br.unb.cic.witup.samples.Calls: int callDerefWithOtherName(java.lang.String)>";
+    List<ExceptionPath> paths = pathsOf(sig);
+    assertEquals(1, paths.size());
+
+    String predicate = constraintsOf(paths.getFirst());
+    assertTrue(predicate.contains("zzz"), "expected the caller's parameter, got " + predicate);
+    assertFalse(
+        predicate.matches(".*\\bs\\b.*"),
+        "callee's parameter leaked into the caller: " + predicate);
+  }
+
+  @Test
   public void receiverIsSubstitutedIntoAComposedPredicate() {
     // circleArea throws on `this.radius < 0`. Composed into the static areaOf(Math shape), the
     // receiver is passed as the last actual against formal index -1, so the predicate must be
@@ -128,7 +143,8 @@ public class SummaryRowBuilderTest {
         paths.stream()
             .filter(p -> "java.lang.RuntimeException".equals(p.getExceptionQualifiedName()))
             .findFirst()
-            .orElseThrow(() -> new AssertionError("circleArea's throw must escape areaOf: " + paths));
+            .orElseThrow(
+                () -> new AssertionError("circleArea's throw must escape areaOf: " + paths));
 
     String predicate = constraintsOf(composed);
     assertTrue(predicate.contains("shape"), "expected the caller's receiver, got " + predicate);
@@ -149,10 +165,12 @@ public class SummaryRowBuilderTest {
       statuses.put(r.getPathId(), r.getStatus().toString());
     }
 
-    List<Map<String, Object>> rows = SummaryRowBuilder.rowsForMethod(ARTIFACT, sig, paths, statuses);
+    List<Map<String, Object>> rows =
+        SummaryRowBuilder.rowsForMethod(ARTIFACT, sig, paths, statuses);
 
     assertEquals(1, rows.size());
-    assertEquals("CALLEE_PROPAGATED", rows.getFirst().get("throwSiteKind"), "still a composed flow");
+    assertEquals(
+        "CALLEE_PROPAGATED", rows.getFirst().get("throwSiteKind"), "still a composed flow");
     assertEquals(
         "UNSAT",
         rows.getFirst().get("solverStatus"),

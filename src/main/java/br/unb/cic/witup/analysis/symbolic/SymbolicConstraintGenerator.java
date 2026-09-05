@@ -11,24 +11,24 @@ import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymArray;
 import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymCast;
 import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
-import br.unb.cic.witup.analysis.symbolic.expr.SymArray;
-import br.unb.cic.witup.analysis.symbolic.expr.SymCast;
-import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymLength;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNew;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNewMultiArray;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNull;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymStaticFieldRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.expr.SymStringConst;
-import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
-import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
+import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -368,8 +368,7 @@ public final class SymbolicConstraintGenerator {
         && NON_NULL_STATIC_FIELDS.contains(sfr.getFieldSignature())) {
       return true;
     }
-    if (e instanceof SymStaticInvoke si
-        && NON_NULL_STATIC_METHODS.contains(si.getInvokeName())) {
+    if (e instanceof SymStaticInvoke si && NON_NULL_STATIC_METHODS.contains(si.getInvokeName())) {
       return true;
     }
     // StringBuilder/StringBuffer.append(*) returns `this` (return-self contract). The

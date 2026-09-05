@@ -93,8 +93,7 @@ public final class ExceptionFlowWalker {
         if (isCaughtByAny(calleeFlow.getExceptionQualifiedName(), caughtTypes)) {
           continue;
         }
-        List<SymbolicConstraint> substituted =
-            new ArrayList<>(calleeFlow.getConstraints().size());
+        List<SymbolicConstraint> substituted = new ArrayList<>(calleeFlow.getConstraints().size());
         for (SymbolicConstraint c : calleeFlow.getConstraints()) {
           SymExpr expr = c.symExpr();
           for (int i = 0; i < formals.size(); i++) {
@@ -102,10 +101,8 @@ public final class ExceptionFlowWalker {
           }
           substituted.add(new SymbolicConstraint(expr, c.truthValue()));
         }
-        // Substitution can collapse constraints to constants (e.g. caller passes the
-        // literal 3 where the callee predicate was `formal < 0` — folds to `(3 < 0) = 0`,
-        // i.e. trivially UNSAT). Filter before emission so we don't propagate impossible
-        // paths up the call graph.
+        // Substitution can collapse constraints to constants. Filter before emission
+        // so we don't propagate impossible paths up the call graph.
         List<SymbolicConstraint> filtered =
             SymbolicConstraintGenerator.foldAndFilterConstraints(substituted);
         if (filtered == null) {
@@ -127,8 +124,8 @@ public final class ExceptionFlowWalker {
   }
 
   // Pragmatic catch-type matcher: exact match + recognise the three catch-all aliases
-  // at the top of the JDK exception hierarchy. Real subtype matching across user-defined
-  // hierarchies is deferred to a SootUp TypeHierarchy integration (see deferred work).
+  // at the top of the JDK exception hierarchy. Real subtype matching is deferred
+  // TypeHierarchy integration??.
   private static boolean isCaughtByAny(final String thrownType, final Set<String> caughtTypes) {
     if (thrownType == null || caughtTypes.isEmpty()) {
       return false;

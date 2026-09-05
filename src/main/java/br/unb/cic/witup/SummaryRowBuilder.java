@@ -8,9 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Turns a method's observable exception paths into the pandas-friendly rows
- */
+/** Turns a method's observable exception paths into the pandas-friendly rows */
 public final class SummaryRowBuilder {
 
   private SummaryRowBuilder() {
@@ -18,14 +16,12 @@ public final class SummaryRowBuilder {
   }
 
   /**
-   * Builds the rows for one method, collapsing paths that describe the same observable flow.
-   * two paths are the same flow when they agree on (exceptionType, throwSiteKind, constraints).
-   * The call chain that reached the flow is not part of that identity.
-   * a caller can arrive at one predicate through several helpers.
-   * Keying on provenance therefore manufactures duplicates that inflate match count
-   * throwSiteKind is part of the identity. The first occurrence is the one emitted
+   * Builds the rows for one method, collapsing paths that describe the same observable flow. two
+   * paths are the same flow when they agree on (exceptionType, throwSiteKind, constraints). The
+   * call chain that reached the flow is not part of that identity. a caller can arrive at one
+   * predicate through several helpers
    *
-   * @param artifact jar file name, echoed into every row
+   * @param artifact jar file name
    * @param methodSig SootUp signature of the method being reported
    * @param paths the walker's observable paths, in walker order
    * @param pathIdToStatus solver verdicts by pathId

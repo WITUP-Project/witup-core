@@ -7,8 +7,8 @@ import sootup.core.types.Type;
 
 public final class SymParamRef extends SymExpr {
   /**
-   * -1 is recerved for the receiver of the method. Matches buildFormals and how we pass actuals
-   * in. We will probably have issues with >= 64 parameters. Fix if there is empirical need
+   * -1 is recerved for the receiver of the method. Matches buildFormals and how we pass actuals in.
+   * We will probably have issues with >= 64 parameters. Fix if there is empirical need
    */
   public static final int THIS_INDEX = -1;
 
@@ -32,7 +32,7 @@ public final class SymParamRef extends SymExpr {
   }
 
   private SymParamRef(
-          final int index, final String paramType, final SymKind kind, final String name) {
+      final int index, final String paramType, final SymKind kind, final String name) {
     super(kind, 1L << index);
     this.index = index;
     this.paramType = paramType;

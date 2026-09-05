@@ -61,7 +61,8 @@ public final class TestAnalysisContext {
 
   public static ProjectAnalyser getImplicitAnalyser() {
     if (implicitProjectAnalyser == null) {
-      Path testClassesDir = Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
+      Path testClassesDir =
+          Paths.get(System.getProperty("user.dir")).resolve("target/test-classes");
       ProjectAnalyser local = new ProjectAnalyser(testClassesDir, true);
       implicitGraphs = local.analyseProject();
       implicitProjectAnalyser = local;
@@ -71,9 +72,9 @@ public final class TestAnalysisContext {
 
   /**
    * Walker over the implicit-exceptions analyser, so tests can see the composed observable view.
-   * CALLEE_PROPAGATED paths are not stored in a MethodSummary. provenance is only
-   * ever populated here. A test that goes through analyseMethod().summary() structurally cannot
-   * see a cross-provenance duplicate.
+   * CALLEE_PROPAGATED paths are not stored in a MethodSummary. provenance is only ever populated
+   * here. A test that goes through analyseMethod().summary() structurally cannot see a
+   * cross-provenance duplicate.
    */
   public static ExceptionFlowWalker getImplicitWalker() {
     if (implicitWalker == null) {

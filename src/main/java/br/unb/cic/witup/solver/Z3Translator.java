@@ -675,8 +675,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
     };
   }
 
-  private String describeInvoke(
-      final String base, final String signature, final SymExpr[] args) {
+  private String describeInvoke(final String base, final String signature, final SymExpr[] args) {
     StringBuilder sb = new StringBuilder();
     if (base != null) {
       sb.append(base).append(".");

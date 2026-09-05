@@ -59,7 +59,7 @@ public final class Driver {
 
     SymbolicConstraintSolver solver = new SymbolicConstraintSolver(methodSummaries);
     Map<String, List<SolverResult>> methodSolutions =
-            solver.solveMethodPaths(observablePaths, failures);
+        solver.solveMethodPaths(observablePaths, failures);
     List<Map<String, Object>> rows = new ArrayList<>();
     for (var entry : methodSolutions.entrySet()) {
       MethodParts parts = MethodParts.parseSignature(entry.getKey());

@@ -46,12 +46,12 @@ public final class MethodSummariser implements SummaryResolver {
    * @param cpg WITUpGraph of the method being analysed
    * @param graphRepository GraphRepository
    * @param summaryRepository SummaryRepository
-   * @param emitImplicitExceptions when true, synthesise rollup-level ExceptionPaths beyond
-   *     the method's own athrow sites: IMPLICIT-kind paths for JVM implicit exceptions (NPE,
-   *     AIOOBE, NegativeArraySize, ArithmeticException) and CALLEE_PROPAGATED-kind paths for
-   *     uncaught escapes from callees. Both classes are gated together. Legacy tests remain
-   *     on the default-off branch for now — they'll be revisited so they reflect the new
-   *     synthesis when we trust it.
+   * @param emitImplicitExceptions when true, synthesise rollup-level ExceptionPaths beyond the
+   *     method's own athrow sites: IMPLICIT-kind paths for JVM implicit exceptions (NPE, AIOOBE,
+   *     NegativeArraySize, ArithmeticException) and CALLEE_PROPAGATED-kind paths for uncaught
+   *     escapes from callees. Both classes are gated together. Legacy tests remain on the
+   *     default-off branch for now — they'll be revisited so they reflect the new synthesis when we
+   *     trust it.
    */
   public MethodSummariser(
       final WITUpGraph cpg,
