@@ -20,9 +20,8 @@ import sootup.core.jimple.common.stmt.Stmt;
 /**
  * Strongly-connected components of a method's CFG, in topological order. id's are sorted
  *
- * NEEDS FIX: Since atm SwitchCFGEdge is not a CFGEdge switch successors are invisible here
- * exactly as they are to every other traversal. Consumers must treat a case target as its
- * own root.
+ * <p>NEEDS FIX: Since atm SwitchCFGEdge is not a CFGEdge switch successors are invisible here
+ * exactly as they are to every other traversal. Consumers must treat a case target as its own root.
  */
 public final class CfgSccIndex {
   private final Map<WITUpNode, Integer> idByNode;
