@@ -11,6 +11,7 @@ import sootup.core.types.PrimitiveType;
 public final class SymVirtualInvoke extends SymExpr {
   private final SymExpr base; // e.g. s
   private final String signature; // e.g. length
+  private final String declaredSignature;
   private final boolean returnsBoolean;
   private final SymExpr[] args;
   private final boolean hasUnboxing;
@@ -29,6 +30,10 @@ public final class SymVirtualInvoke extends SymExpr {
     return signature;
   }
 
+  public String getDeclaredSignature() {
+    return declaredSignature;
+  }
+
   public static SymExpr fromVirtualInvokeExpr(final JVirtualInvokeExpr e) {
     SymExpr base = fromJimple(e.getBase());
     String invokedMethodName = e.getMethodSignature().getSubSignature().getName();
@@ -37,7 +42,8 @@ public final class SymVirtualInvoke extends SymExpr {
 
     SymExpr[] args = e.getArgs().stream().map(SymExpr::fromJimple).toArray(SymExpr[]::new);
 
-    return new SymVirtualInvoke(base, invokedMethodName, returnsBoolean, args);
+    return new SymVirtualInvoke(
+        base, invokedMethodName, e.getMethodSignature().toString(), returnsBoolean, args);
   }
 
   public SymVirtualInvoke(
@@ -45,9 +51,19 @@ public final class SymVirtualInvoke extends SymExpr {
       final String signature,
       final boolean returnsBoolean,
       final SymExpr[] args) {
+    this(base, signature, null, returnsBoolean, args);
+  }
+
+  public SymVirtualInvoke(
+      final SymExpr base,
+      final String signature,
+      final String declaredSignature,
+      final boolean returnsBoolean,
+      final SymExpr[] args) {
     super(returnsBoolean ? SymKind.BOOLEAN_METHOD : SymKind.OTHER, baseArgsMask(base, args));
     this.base = base;
     this.signature = signature;
+    this.declaredSignature = declaredSignature;
     this.returnsBoolean = returnsBoolean;
     this.args = args;
     this.hasUnboxing = SymExpr.isUnboxingCall(signature) || base.containsUnboxing();
@@ -75,7 +91,7 @@ public final class SymVirtualInvoke extends SymExpr {
 
     if (newBase != base || newArgs != null) {
       return new SymVirtualInvoke(
-          newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
+          newBase, signature, declaredSignature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;
   }
@@ -99,7 +115,7 @@ public final class SymVirtualInvoke extends SymExpr {
 
     if (newBase != base || newArgs != null) {
       return new SymVirtualInvoke(
-          newBase, signature, returnsBoolean, newArgs != null ? newArgs : args);
+          newBase, signature, declaredSignature, returnsBoolean, newArgs != null ? newArgs : args);
     }
     return this;
   }
@@ -152,7 +168,8 @@ public final class SymVirtualInvoke extends SymExpr {
       }
     }
     return (newBase != base || newArgs != null)
-        ? new SymVirtualInvoke(newBase, signature, returnsBoolean, newArgs != null ? newArgs : args)
+        ? new SymVirtualInvoke(
+            newBase, signature, declaredSignature, returnsBoolean, newArgs != null ? newArgs : args)
         : this;
   }
 

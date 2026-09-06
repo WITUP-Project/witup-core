@@ -1,6 +1,7 @@
 package br.unb.cic.witup.summary;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.ExceptionPath;
@@ -8,6 +9,7 @@ import br.unb.cic.witup.analysis.MethodSummary;
 import br.unb.cic.witup.analysis.ThrowSiteKind;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 public class GuardsSummaryTest {
@@ -54,5 +56,32 @@ public class GuardsSummaryTest {
         3,
         paths.getFirst().getConstraints().size(),
         "two guards and the null check: " + paths.getFirst().getConstraints());
+  }
+
+  @Test
+  public void aFreshArraysLengthFoldsToTheSizeItWasMadeWith() {
+    MethodSummary summary =
+        TestAnalysisContext.getImplicitAnalyser()
+            .analyseMethod(PKG + "byte[] copyOf(byte[])>")
+            .summary();
+
+    assertFalse(summary.exceptionPaths().isEmpty(), "sample must produce paths to inspect");
+    String predicates =
+        summary.exceptionPaths().stream()
+            .map(p -> p.getConstraints().toString())
+            .reduce("", (a, b) -> a + " " + b);
+
+    assertFalse(
+        Pattern.compile("newarray\\([^)]*\\)\\[[^\\]]+\\]\\.length").matcher(predicates).find(),
+        "an allocation's length must fold to its size: " + predicates);
+  }
+
+  @Test
+  public void readingALengthIsADereference() {
+    List<ExceptionPath> paths = npePathsOf(PKG + "int lengthThenIndex(int[])>");
+
+    // Two dereferences of `xs`: the length read and the array access. Both are sites; the second
+    // cannot fail because the first returning proves the array non-null.
+    assertEquals(2, paths.size(), "a length read is a dereference site of its own: " + paths);
   }
 }

@@ -107,11 +107,16 @@ public class SummaryRowBuilderTest {
   public void parameterUnderALengthExpressionIsSubstituted() {
     // throwIfEmpty's predicate is `a.length == 0`, so the parameter sits under a SymLength.
     // Composed into callThrowIfEmpty it must talk about the caller's `items`;
+    // Reading `a.length` is itself a dereference, so this caller also inherits an NPE on the
+    // array. The flow under test is the callee's own IllegalArgumentException.
     String sig = "<br.unb.cic.witup.samples.Calls: void callThrowIfEmpty(int[])>";
-    List<ExceptionPath> paths = pathsOf(sig);
-    assertEquals(1, paths.size());
+    ExceptionPath emptyArray =
+        pathsOf(sig).stream()
+            .filter(p -> "java.lang.IllegalArgumentException".equals(p.getExceptionQualifiedName()))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("throwIfEmpty's IAE must escape the caller"));
 
-    String predicate = constraintsOf(paths.getFirst());
+    String predicate = constraintsOf(emptyArray);
     assertTrue(predicate.contains("items"), "expected the caller's array, got " + predicate);
     assertFalse(predicate.contains("(a)"), "callee's local leaked into the caller: " + predicate);
   }

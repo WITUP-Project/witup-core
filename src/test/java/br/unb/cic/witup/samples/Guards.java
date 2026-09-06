@@ -97,6 +97,77 @@ public class Guards {
     return n + calleeDeref(name);
   }
 
+  // An array's length is never negative, so this cannot throw. Z3 only knows that if we say so:
+  // a length term is otherwise an unconstrained integer with no relation to the array.
+  public static int impossibleNegativeLength(int[] xs) {
+    if (xs.length < 0) {
+      throw new IllegalStateException("unreachable");
+    }
+    return xs.length;
+  }
+
+  // `copy` is allocated with exactly `src.length` elements, so an index already known to be inside
+  // `src` is inside `copy`. Provable only if the length of a freshly allocated array folds to the
+  // size it was allocated with — including when that size is not a literal.
+  public static byte[] copyOf(byte[] src) {
+    byte[] copy = new byte[src.length];
+    for (int i = 0; i < src.length; i++) {
+      copy[i] = src[i];
+    }
+    return copy;
+  }
+
+  // Reading a length dereferences the array: it can throw on a null array, and once it has
+  // returned the array is known non-null, so the access below cannot fail the same way.
+  public static int lengthThenIndex(int[] xs) {
+    int n = xs.length;
+    return xs[0] + n;
+  }
+
+  // Object.getClass() is final and returns the runtime class, never null. The dereference of the
+  // result cannot fail, though the dereference of `o` itself can.
+  public static int classNameLength(Object o) {
+    return o.getClass().toString().length();
+  }
+
+  // A reference cast does not change whether the reference is null, so the guard above the cast
+  // settles the dereference below it.
+  public static int castThenDeref(Object o) {
+    if (o == null) {
+      return 0;
+    }
+    String text = (String) o;
+    return text.length();
+  }
+
+  // A positive instanceof proves the value non-null, and the cast preserves that. Shape of
+  // ByteOrderMark.equals.
+  public static int instanceOfThenDeref(Object o) {
+    if (!(o instanceof String)) {
+      return 0;
+    }
+    return ((String) o).length();
+  }
+
+  // String is final, so String.toCharArray() cannot be overridden and never returns null: the
+  // dereference below cannot fail.
+  public static int charsOfString(String text) {
+    return text.toCharArray().length;
+  }
+
+  // A class of our own with a method of the same name, which really can return null. Matching a
+  // contract on the method name alone would wrongly rule this out; matching on the declaring type
+  // does not.
+  public static final class Impostor {
+    public char[] toCharArray() {
+      return null;
+    }
+  }
+
+  public static int charsOfImpostor(Impostor impostor) {
+    return impostor.toCharArray().length;
+  }
+
   // A loop, so the pass has a cycle to bound.
   public static int totalLength(String[] names) {
     int total = 0;

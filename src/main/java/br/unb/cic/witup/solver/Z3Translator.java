@@ -47,9 +47,11 @@ import com.microsoft.z3.IntNum;
 import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Sort;
 import com.microsoft.z3.UninterpretedSort;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -79,6 +81,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   public static final int MAX_DESCRIPTION_CHARS = 256;
 
   private Map<String, Expr<?>> exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+  private Map<String, Expr<?>> lengthTerms = new HashMap<>(PER_PATH_CACHE_CAPACITY);
   private Map<String, FuncDecl<?>> fieldFunctions = new HashMap<>(PER_PATH_CACHE_CAPACITY);
   private Map<SymExpr, Expr<?>> exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
   private Map<SymExpr, String> exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
@@ -111,6 +114,7 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
    */
   public void resetForNewPath() {
     exprMap = new HashMap<>(PER_PATH_CACHE_CAPACITY);
+    lengthTerms = new HashMap<>(PER_PATH_CACHE_CAPACITY);
     fieldFunctions = new HashMap<>(PER_PATH_CACHE_CAPACITY);
     exprIds = new HashMap<>(PER_PATH_CACHE_CAPACITY);
     exprCache = new HashMap<>(PER_PATH_CACHE_CAPACITY);
@@ -511,7 +515,23 @@ public final class Z3Translator implements SymExprVisitor<Expr<?>> {
   @Override
   public Expr<?> visitLength(final SymLength l) {
     // String is safe; it will not blow up recursively
-    return exprMap.computeIfAbsent(l.toString(), context::mkIntConst);
+    Expr<?> term = exprMap.computeIfAbsent(l.toString(), context::mkIntConst);
+    lengthTerms.putIfAbsent(l.toString(), term);
+    return term;
+  }
+
+  /**
+   * From JLS: an array's length is not negative.
+   * A length reaches Z3 as an constant with nothing tying it to the array it measures
+   */
+  public List<BoolExpr> lengthAxioms() {
+    List<BoolExpr> axioms = new ArrayList<>(lengthTerms.size());
+    for (Expr<?> term : lengthTerms.values()) {
+      if (term instanceof IntExpr length) {
+        axioms.add(context.mkGe(length, context.mkInt(0)));
+      }
+    }
+    return axioms;
   }
 
   @Override
