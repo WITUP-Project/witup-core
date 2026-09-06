@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.unb.cic.witup.analysis.AnalysisResult;
+import br.unb.cic.witup.analysis.ExceptionPath;
 import br.unb.cic.witup.testinfra.TestAnalysisContext;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class CatchesSolverTest {
@@ -76,5 +78,19 @@ public class CatchesSolverTest {
     assertFalse(
         sol0.getBool("caught_java_lang_Throwable_is_null"),
         "catch-fired path requires the caught throwable to be non-null");
+  }
+
+  @Test
+  public void tryWithResourcesDoesNotSwallowTheCalleesException() {
+    // The synthetic handler javac generates for try-with-resources catches Throwable, closes the
+    // resource and rethrows. Treating it as a catch that absorbs the flow loses the exception
+    // entirely — and every method in commons-io written this way loses it the same way.
+    String sig = "<br.unb.cic.witup.samples.Catches: void tryWithResources(int,java.io.Closeable)>";
+    List<ExceptionPath> paths = TestAnalysisContext.getImplicitWalker().observablePaths(sig);
+
+    assertTrue(
+        paths.stream()
+            .anyMatch(p -> "java.lang.IllegalStateException".equals(p.getExceptionQualifiedName())),
+        "mayThrow's exception must escape the try-with-resources: " + paths);
   }
 }

@@ -8,6 +8,7 @@ import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.solver.model.ArrayValue;
 import br.unb.cic.witup.solver.model.ModelValue;
 import com.microsoft.z3.ArrayExpr;
+import com.microsoft.z3.BoolExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.FuncDecl;
@@ -205,6 +206,12 @@ public final class SymbolicConstraintSolver {
         log.error("Stack trace: ", e);
         throw e;
       }
+    }
+
+    // Facts about Java that the encoding does not carry on its own, asserted over the terms this
+    // path actually mentions.
+    for (BoolExpr axiom : translator.lengthAxioms()) {
+      solver.add(axiom);
     }
 
     Status status = solver.check();

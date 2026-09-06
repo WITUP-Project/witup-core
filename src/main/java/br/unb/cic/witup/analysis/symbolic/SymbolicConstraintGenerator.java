@@ -223,23 +223,9 @@ public final class SymbolicConstraintGenerator {
     return c;
   }
 
-  // Recursively evaluates SymBinOps whose children are both SymIntConst, producing a new
-  // SymIntConst. Also applies short-circuit identities for AND/OR when one operand is a
-  // known constant — critical because partial folding can otherwise leave a SymBinOp with
-  // one int-typed child and one bool-typed child, which the Z3 translator can't handle
-  // cleanly (its OR/AND paths assume homogeneous operand types). Non-foldable cases fall
-  // through to a structurally-rebuilt SymBinOp if any child changed, or the original
-  // expr if not.
   public static SymExpr foldConstants(final SymExpr expr) {
-    // `new T[N].length` folds to `N` when N is a constant — Java guarantees the field
-    // equals the allocation size. Common in <clinit> initialisers like BOM byte arrays
-    // where the analysis would otherwise treat `newarray(int[])[3].length` as opaque and
-    // emit spurious AIOOBE paths.
     if (expr instanceof SymLength len && len.getOp() instanceof SymArray arr) {
-      SymExpr size = foldConstants(arr.getSize());
-      if (size instanceof SymIntConst) {
-        return size;
-      }
+      return foldConstants(arr.getSize());
     }
     if (!(expr instanceof SymBinOp b)) {
       return expr;
@@ -250,6 +236,14 @@ public final class SymbolicConstraintGenerator {
       Integer evaluated = evaluateBinOp(b.getOp(), lc.getValue(), rc.getValue());
       if (evaluated != null) {
         return SymIntConst.of(evaluated);
+      }
+    }
+    if (b.getOp() == BinOp.EQ || b.getOp() == BinOp.NE) {
+      if (lhs instanceof SymCast lc && rhs instanceof SymNull) {
+        return foldConstants(new SymBinOp(b.getOp(), lc.getOp(), rhs));
+      }
+      if (rhs instanceof SymCast rc && lhs instanceof SymNull) {
+        return foldConstants(new SymBinOp(b.getOp(), lhs, rc.getOp()));
       }
     }
     // `null == null` / `null != null` fall out of substitution when a `var == null`
@@ -319,6 +313,16 @@ public final class SymbolicConstraintGenerator {
           "<org.apache.commons.io.IOCase: org.apache.commons.io.IOCase INSENSITIVE>",
           "<org.apache.commons.io.IOCase: org.apache.commons.io.IOCase SYSTEM>");
 
+  /**
+   * Instance methods that cannot return null
+   * The general answer is the JDK knowledge catalog, which
+   * derives return nullability by analysing a JDK rather than restating it here by hand
+   */
+  private static final Set<String> NON_NULL_INSTANCE_METHODS =
+      Set.of(
+          "<java.lang.Object: java.lang.Class getClass()>",
+          "<java.lang.String: char[] toCharArray()>");
+
   // JDK static methods documented to always return a non-null value. Format matches
   // SymStaticInvoke.getInvokeName() (the full SootUp method signature).
   private static final Set<String> NON_NULL_STATIC_METHODS =
@@ -366,6 +370,10 @@ public final class SymbolicConstraintGenerator {
       return true;
     }
     if (e instanceof SymStaticInvoke si && NON_NULL_STATIC_METHODS.contains(si.getInvokeName())) {
+      return true;
+    }
+    if (e instanceof SymVirtualInvoke call
+        && NON_NULL_INSTANCE_METHODS.contains(call.getDeclaredSignature())) {
       return true;
     }
     // StringBuilder/StringBuffer.append(*) returns `this` (return-self contract). The

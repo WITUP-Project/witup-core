@@ -106,6 +106,87 @@ public class GuardsSolverTest {
   }
 
   @Test
+  public void anArrayLengthIsNeverNegative() {
+    // The JLS guarantees it, so the throw is unreachable. Nothing in the encoding says so on its
+    // own: a length is translated to a plain integer constant with no tie to the array it measures.
+    // Only the IllegalStateException is impossible. Reading `xs.length` is itself a dereference,
+    // so a null argument raises NPE here — a different, genuine flow.
+    AnalysisResult analysis =
+        TestAnalysisContext.getImplicitAnalyser()
+            .analyseMethod(PKG + "int impossibleNegativeLength(int[])>");
+    List<ExceptionPath> paths = analysis.summary().exceptionPaths();
+    List<SolverResult> solutions = analysis.solutions();
+    assertEquals(paths.size(), solutions.size(), "one verdict per path");
+
+    boolean anyStateExceptionSat = false;
+    for (int i = 0; i < paths.size(); i++) {
+      if ("java.lang.IllegalStateException".equals(paths.get(i).getExceptionQualifiedName())) {
+        anyStateExceptionSat |= solutions.get(i).isSat();
+      }
+    }
+    assertFalse(anyStateExceptionSat, "no array can have a negative length: " + solutions);
+  }
+
+  @Test
+  public void aLengthReadCanThrowButProtectsWhatFollows() {
+    List<SolverResult> solutions = solutionsOf(PKG + "int lengthThenIndex(int[])>");
+
+    assertTrue(
+        solutions.stream().anyMatch(SolverResult::isSat),
+        "reading the length of a null array is a real exception: " + solutions);
+    assertTrue(
+        solutions.stream().anyMatch(s -> !s.isSat()),
+        "and having read it, the access below cannot fail the same way: " + solutions);
+  }
+
+  private static void assertNoSatMentioning(final String signature, final String fragment) {
+    AnalysisResult analysis = TestAnalysisContext.getImplicitAnalyser().analyseMethod(signature);
+    List<ExceptionPath> paths = analysis.summary().exceptionPaths();
+    List<SolverResult> solutions = analysis.solutions();
+    assertEquals(paths.size(), solutions.size(), "one verdict per path");
+    for (int i = 0; i < paths.size(); i++) {
+      if (paths.get(i).getConstraints().toString().contains(fragment)) {
+        assertFalse(
+            solutions.get(i).isSat(),
+            "predicate mentioning " + fragment + " must be refuted: " + paths.get(i));
+      }
+    }
+  }
+
+  @Test
+  public void getClassNeverReturnsNull() {
+    assertNoSatMentioning(PKG + "int classNameLength(java.lang.Object)>", "getClass() == null");
+  }
+
+  @Test
+  public void aCastDoesNotChangeNullness() {
+    assertNoSatMentioning(PKG + "int castThenDeref(java.lang.Object)>", "== null");
+  }
+
+  @Test
+  public void aPositiveInstanceOfProvesNonNull() {
+    assertNoSatMentioning(PKG + "int instanceOfThenDeref(java.lang.Object)>", "== null");
+  }
+
+  @Test
+  public void aContractHoldsForTheTypeThatDeclaresIt() {
+    // String is final, so String.toCharArray() cannot be overridden and cannot return null.
+    assertNoSatMentioning(PKG + "int charsOfString(java.lang.String)>", "toCharArray() == null");
+  }
+
+  @Test
+  public void aContractDoesNotLeakToASameNamedMethodElsewhere() {
+    // The pair that matters. Impostor.toCharArray() genuinely returns null, and a contract keyed
+    // on the method name rather than the declaring type would refute a real exception here.
+    List<SolverResult> solutions =
+        solutionsOf(PKG + "int charsOfImpostor(br.unb.cic.witup.samples.Guards$Impostor)>");
+
+    assertTrue(
+        solutions.stream().anyMatch(SolverResult::isSat),
+        "a same-named method on another type keeps its own behaviour: " + solutions);
+  }
+
+  @Test
   public void aMergeDoesNotRefuteWhatItCannotRuleOut() {
     // Both branches rejoin before the dereference and neither says anything about `name`.
     List<SolverResult> solutions =

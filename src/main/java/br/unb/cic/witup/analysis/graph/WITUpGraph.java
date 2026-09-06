@@ -49,6 +49,7 @@ import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.expr.AbstractInstanceInvokeExpr;
 import sootup.core.jimple.common.expr.AbstractInvokeExpr;
 import sootup.core.jimple.common.expr.JDivExpr;
+import sootup.core.jimple.common.expr.JLengthExpr;
 import sootup.core.jimple.common.expr.JNewArrayExpr;
 import sootup.core.jimple.common.expr.JNewExpr;
 import sootup.core.jimple.common.expr.JRemExpr;
@@ -82,6 +83,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   // type behind a rethrow site without iterating the whole stmt graph per query.
   private Map<Stmt, String> cachedCatchTypeByHandler;
   private CfgSccIndex cachedSccIndex;
+  private Set<Stmt> cachedPassThroughHandlers;
   private static final String THROWABLE_FQN = "java.lang.Throwable";
 
   public String getMethodSignature() {
@@ -209,6 +211,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       if (arrayBase != null && !isThisLocal(arrayBase)) {
         sites.add(new ImplicitNpeReceiverSite(n, arrayBase));
       }
+      Local lengthBase = arrayLengthBase(stmt);
+      if (lengthBase != null && !isThisLocal(lengthBase)) {
+        sites.add(new ImplicitNpeReceiverSite(n, lengthBase));
+      }
     }
     return sites;
   }
@@ -240,6 +246,13 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
     if (assign.getLeftOp() instanceof JInstanceFieldRef lhs) {
       return lhs.getBase();
+    }
+    return null;
+  }
+
+  private static Local arrayLengthBase(final Stmt stmt) {
+    if (stmt instanceof JAssignStmt assign && assign.getRightOp() instanceof JLengthExpr length) {
+      return length.getOp() instanceof Local local ? local : null;
     }
     return null;
   }
@@ -292,8 +305,10 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       return Set.of();
     }
     Set<String> caughtTypes = new HashSet<>(handlers.size());
-    for (ClassType ct : handlers.keySet()) {
-      caughtTypes.add(ct.getFullyQualifiedName());
+    for (Map.Entry<ClassType, Stmt> handler : handlers.entrySet()) {
+      if (!passThroughHandlers().contains(handler.getValue())) {
+        caughtTypes.add(handler.getKey().getFullyQualifiedName());
+      }
     }
     return caughtTypes;
   }
@@ -769,24 +784,48 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   // the synthetic form once SootUp has collapsed `any`, so it is suppressed too. Callers gate
   // this behind the emitSyntheticRethrows knob to keep the suppression measurable.
   public boolean isSyntheticCatchAllRethrow(final ThrowStatementNode throwNode) {
+    return syntheticRethrowHandlerOf(throwNode) != null;
+  }
+
+  // The handler a synthetic close-and-rethrow throws on behalf of
+  private Stmt syntheticRethrowHandlerOf(final ThrowStatementNode throwNode) {
     WITUpNode current = throwNode;
     Set<WITUpNode> visited = new HashSet<>();
     while (visited.add(current)) {
       List<DataDependencyEdge> defs = getIncomingDDGEdges(current);
       if (defs.size() != 1) {
-        return false;
+        return null;
       }
       WITUpNode def = getEdgeSource(defs.getFirst());
       if (allocatesFreshException(def)) {
-        return false;
+        return null;
       }
       if (caughtExceptionRefOf(def) != null) {
-        return def.getNode() instanceof StmtGraphNode handler
-            && THROWABLE_FQN.equals(catchTypeByHandler().get(handler.getStmt()));
+        if (def.getNode() instanceof StmtGraphNode handler
+            && THROWABLE_FQN.equals(catchTypeByHandler().get(handler.getStmt()))) {
+          return handler.getStmt();
+        }
+        return null;
       }
       current = def;
     }
-    return false;
+    return null;
+  }
+
+  // Handlers that close a resource and rethrow what they caught, rather than absorbing it.
+  // eg try with resources
+  private Set<Stmt> passThroughHandlers() {
+    if (cachedPassThroughHandlers == null) {
+      Set<Stmt> handlers = new HashSet<>();
+      for (WITUpNode throwNode : getThrowNodes()) {
+        Stmt handler = syntheticRethrowHandlerOf((ThrowStatementNode) throwNode);
+        if (handler != null) {
+          handlers.add(handler);
+        }
+      }
+      cachedPassThroughHandlers = handlers;
+    }
+    return cachedPassThroughHandlers;
   }
 
   private static boolean allocatesFreshException(final WITUpNode node) {

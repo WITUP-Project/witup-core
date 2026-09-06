@@ -9,6 +9,15 @@ public class Catches {
     }
   }
 
+  // try-with-resources compiles to a synthetic catch-all handler that closes the resource and
+  // rethrows what it caught. It does not swallow anything, so mayThrow's exception must still
+  // escape this method. Shape of FileUtils.copyInputStreamToFile.
+  public static void tryWithResources(int x, java.io.Closeable resource) throws Exception {
+    try (java.io.Closeable open = resource) {
+      mayThrow(x);
+    }
+  }
+
   // Two CFG paths reach the throw at the bottom:
   //   (a) mayThrow returned → exception stays null → if-check false → fall through (NOT a throw
   // path).

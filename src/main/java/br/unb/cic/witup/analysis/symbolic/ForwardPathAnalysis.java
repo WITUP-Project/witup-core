@@ -11,6 +11,7 @@ import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
+import br.unb.cic.witup.analysis.symbolic.expr.SymInstanceOf;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNull;
 import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
@@ -236,7 +237,40 @@ public final class ForwardPathAnalysis {
       // The environment settled the condition, so one arm is unreachable from this fact
       return (constant.getValue() != 0) == branch.getCondition() ? carried : null;
     }
-    return carried.withConstraint(new SymbolicConstraint(condition, branch.getCondition()));
+    return provenByInstanceOf(
+        carried.withConstraint(new SymbolicConstraint(condition, branch.getCondition())),
+        condition,
+        branch.getCondition());
+  }
+
+  /**
+   * instanceof imlies non-null
+   */
+  private static PathFact provenByInstanceOf(
+      final PathFact fact, final SymExpr condition, final boolean edgeTaken) {
+    SymExpr subject = condition;
+    boolean holds = edgeTaken;
+    if (subject instanceof SymBinOp comparison
+        && comparison.getRhs() instanceof SymIntConst zero
+        && zero.getValue() == 0) {
+      if (comparison.getOp() == BinOp.EQ) {
+        holds = !holds;
+      } else if (comparison.getOp() != BinOp.NE) {
+        return fact;
+      }
+      subject = comparison.getLhs();
+    }
+    if (!holds || !(subject instanceof SymInstanceOf test)) {
+      return fact;
+    }
+    SymExpr value = SymbolicConstraintGenerator.foldConstants(test.getOp().resolveWith(fact.env()));
+    SymExpr assertion =
+        SymbolicConstraintGenerator.foldConstants(new SymBinOp(BinOp.NE, value, SymNull.INSTANCE));
+    if (assertion instanceof SymIntConst) {
+      return fact;
+    }
+    SymbolicConstraint constraint = new SymbolicConstraint(assertion, true);
+    return fact.pc().contains(constraint) ? fact : fact.withConstraint(constraint);
   }
 
   private List<SymExpr> dereferencedAt(final WITUpNode node, final PathFact fact) {
@@ -253,9 +287,7 @@ public final class ForwardPathAnalysis {
     return resolved;
   }
 
-  /**
-   * models the effect of a successfull dereference
-   */
+  /** models the effect of a successfull dereference */
   private static PathFact provenNonNull(
       final PathFact fact, final WITUpEdge edge, final List<SymExpr> dereferenced) {
     if (dereferenced.isEmpty() || edge instanceof ExceptionalCFGEdge) {
