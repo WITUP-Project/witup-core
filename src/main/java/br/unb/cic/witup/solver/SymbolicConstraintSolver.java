@@ -64,9 +64,7 @@ public final class SymbolicConstraintSolver {
     return solveMethodPaths(pathsBySignature, failures);
   }
 
-  /**
-   * Solves an set of paths per method signature. Composes callee's flows.
-   */
+  /** Solves an set of paths per method signature. Composes callee's flows. */
   public Map<String, List<SolverResult>> solveMethodPaths(
       final Map<String, List<ExceptionPath>> pathsBySignature, final Map<String, String> failures) {
     Map<String, List<SolverResult>> methodSolutions = new HashMap<>();

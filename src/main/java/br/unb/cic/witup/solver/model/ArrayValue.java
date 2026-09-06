@@ -11,8 +11,17 @@ import com.microsoft.z3.IntSort;
 import com.microsoft.z3.Model;
 import com.microsoft.z3.Sort;
 
-public record ArrayValue(ArrayExpr<IntSort, ?> arrayExpr, Model model, Context ctx)
+public record ArrayValue(ArrayExpr<IntSort, ?> arrayExpr, Model model, Context ctx, String rendered)
     implements ModelValue {
+
+  public ArrayValue(final ArrayExpr<IntSort, ?> arrayExpr, final Model model, final Context ctx) {
+    this(arrayExpr, model, ctx, model.eval(arrayExpr, true).toString());
+  }
+
+  @Override
+  public String toString() {
+    return rendered;
+  }
 
   public ModelValue get(final String indexName) {
     return get(ctx.mkIntConst(indexName));

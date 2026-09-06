@@ -24,13 +24,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.jgrapht.graph.DirectedPseudograph;
 import org.jgrapht.graph.EdgeReversedGraph;
 import org.jgrapht.traverse.DepthFirstIterator;
-import sootup.core.graph.StmtGraph;
 import sootup.codepropertygraph.propertygraph.PropertyGraph;
 import sootup.codepropertygraph.propertygraph.edges.CdgEdge;
 import sootup.codepropertygraph.propertygraph.edges.DdgEdge;
@@ -43,6 +43,7 @@ import sootup.codepropertygraph.propertygraph.edges.PropertyGraphEdge;
 import sootup.codepropertygraph.propertygraph.edges.SwitchCfgEdge;
 import sootup.codepropertygraph.propertygraph.nodes.PropertyGraphNode;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
+import sootup.core.graph.StmtGraph;
 import sootup.core.jimple.basic.Immediate;
 import sootup.core.jimple.basic.Local;
 import sootup.core.jimple.common.expr.AbstractInstanceInvokeExpr;
@@ -80,6 +81,7 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
   // StmtGraph exceptional successors so resolveRethrowCaughtType can look up the catch
   // type behind a rethrow site without iterating the whole stmt graph per query.
   private Map<Stmt, String> cachedCatchTypeByHandler;
+  private CfgSccIndex cachedSccIndex;
   private static final String THROWABLE_FQN = "java.lang.Throwable";
 
   public String getMethodSignature() {
@@ -515,23 +517,19 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     return witUpPaths;
   }
 
+  public CfgSccIndex sccIndex() {
+    if (cachedSccIndex == null) {
+      cachedSccIndex = CfgSccIndex.of(this);
+    }
+    return cachedSccIndex;
+  }
+
   public List<WITUpPath> getThrowPaths(final WITUpNode throwNode) {
     return cachedConstraintPaths.computeIfAbsent(throwNode, this::computeThrowPaths);
   }
 
   private List<WITUpPath> computeThrowPaths(final WITUpNode throwNode) {
-    WITUpNode entry = findEntryNode();
-    List<WITUpPath> throwPaths = backwardDFS(entry, throwNode);
-    List<WITUpPath> pathsWithConstraints = new ArrayList<>();
-    for (WITUpPath path : throwPaths) {
-      for (WITUpNode node : path.nodes()) {
-        if (node instanceof IfStatementNode || node instanceof CaughtExceptionNode) {
-          pathsWithConstraints.add(path);
-          break;
-        }
-      }
-    }
-    return pathsWithConstraints;
+    return backwardDFS(findEntryNode(), throwNode);
   }
 
   private void buildCFGAdjacencies() {
@@ -548,18 +546,18 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
   }
 
-  private List<WITUpEdge> incomingCfgEdges(final WITUpNode node) {
+  public List<WITUpEdge> incomingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgIncoming.getOrDefault(node, List.of());
   }
 
-  private List<WITUpEdge> outgoingCfgEdges(final WITUpNode node) {
+  public List<WITUpEdge> outgoingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgOutgoing.getOrDefault(node, List.of());
   }
 
   // usually the entry node is a JIdentityStmt, but its
-  private WITUpNode findEntryNode() {
+  public WITUpNode findEntryNode() {
     if (entryNode != null) {
       return entryNode;
     }
@@ -619,6 +617,17 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return result;
+  }
+
+  public Set<WITUpNode> getRootNodes() {
+    Set<WITUpNode> roots = new LinkedHashSet<>();
+    for (WITUpNode node : this.vertexSet()) {
+      if (this.incomingCfgEdges(node).isEmpty()) {
+        roots.add(node);
+      }
+    }
+    roots.add(this.findEntryNode());
+    return roots;
   }
 
   public List<WITUpPath> getAllPathsToReturn(final WITUpNode returnNode) {

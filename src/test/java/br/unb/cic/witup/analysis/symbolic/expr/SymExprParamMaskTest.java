@@ -39,10 +39,13 @@ public class SymExprParamMaskTest {
         args("SymITE", p -> new SymITE(SymIntConst.one(), p, SymIntConst.zero())),
         // The shape that actually shows up: a wrapped parameter compared against something, so
         // the outer comparison is what the walker calls substituteParam on.
-        args("SymBinOp(SymLength(param))", p -> new SymBinOp(BinOp.EQ, new SymLength(p), SymIntConst.zero())),
+        args(
+            "SymBinOp(SymLength(param))",
+            p -> new SymBinOp(BinOp.EQ, new SymLength(p), SymIntConst.zero())),
         args(
             "SymBinOp(SymArrayRef(param))",
-            p -> new SymBinOp(BinOp.LT, new SymArrayRef(p, SymIntConst.of(0)), SymIntConst.zero())));
+            p ->
+                new SymBinOp(BinOp.LT, new SymArrayRef(p, SymIntConst.of(0)), SymIntConst.zero())));
   }
 
   private static Arguments args(final String name, final UnaryOperator<SymExpr> wrap) {

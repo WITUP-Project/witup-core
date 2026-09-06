@@ -37,7 +37,6 @@ public class CallsGraphTest {
     MethodCallSite site = sites.get(0);
     // The call's catch handler is in scope; inScopeCatchTypes returns the caught type.
     assertEquals(
-        java.util.Set.of("java.lang.IllegalArgumentException"),
-        cpg.inScopeCatchTypes(site.node()));
+        java.util.Set.of("java.lang.IllegalArgumentException"), cpg.inScopeCatchTypes(site.node()));
   }
 }

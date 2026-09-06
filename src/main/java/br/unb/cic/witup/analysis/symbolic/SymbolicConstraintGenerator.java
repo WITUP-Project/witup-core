@@ -11,24 +11,24 @@ import br.unb.cic.witup.analysis.graph.node.ReturnStatementNode;
 import br.unb.cic.witup.analysis.graph.node.SimpleNode;
 import br.unb.cic.witup.analysis.graph.node.WITUpNode;
 import br.unb.cic.witup.analysis.symbolic.expr.BinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymArray;
 import br.unb.cic.witup.analysis.symbolic.expr.SymBinOp;
+import br.unb.cic.witup.analysis.symbolic.expr.SymCast;
 import br.unb.cic.witup.analysis.symbolic.expr.SymCaughtExceptionRef;
+import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymExpr;
 import br.unb.cic.witup.analysis.symbolic.expr.SymITE;
-import br.unb.cic.witup.analysis.symbolic.expr.SymArray;
-import br.unb.cic.witup.analysis.symbolic.expr.SymCast;
-import br.unb.cic.witup.analysis.symbolic.expr.SymClassConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymIntConst;
 import br.unb.cic.witup.analysis.symbolic.expr.SymLength;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNew;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNewMultiArray;
 import br.unb.cic.witup.analysis.symbolic.expr.SymNull;
+import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymStaticFieldRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymStaticInvoke;
 import br.unb.cic.witup.analysis.symbolic.expr.SymStringConst;
-import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
-import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import br.unb.cic.witup.analysis.symbolic.expr.SymVar;
+import br.unb.cic.witup.analysis.symbolic.expr.SymVirtualInvoke;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -139,9 +139,6 @@ public final class SymbolicConstraintGenerator {
     List<List<SymbolicConstraint>> symbolicConstraints = new ArrayList<>();
     for (WITUpPath p : throwConstraintPaths) {
       List<SymbolicConstraint> resolved = generateSymbolicConstraints(p);
-      if (resolved.isEmpty()) {
-        continue;
-      }
       if (hasDirectContradiction(resolved)) {
         continue;
       }
@@ -233,7 +230,7 @@ public final class SymbolicConstraintGenerator {
   // cleanly (its OR/AND paths assume homogeneous operand types). Non-foldable cases fall
   // through to a structurally-rebuilt SymBinOp if any child changed, or the original
   // expr if not.
-  private static SymExpr foldConstants(final SymExpr expr) {
+  public static SymExpr foldConstants(final SymExpr expr) {
     // `new T[N].length` folds to `N` when N is a constant — Java guarantees the field
     // equals the allocation size. Common in <clinit> initialisers like BOM byte arrays
     // where the analysis would otherwise treat `newarray(int[])[3].length` as opaque and
@@ -368,8 +365,7 @@ public final class SymbolicConstraintGenerator {
         && NON_NULL_STATIC_FIELDS.contains(sfr.getFieldSignature())) {
       return true;
     }
-    if (e instanceof SymStaticInvoke si
-        && NON_NULL_STATIC_METHODS.contains(si.getInvokeName())) {
+    if (e instanceof SymStaticInvoke si && NON_NULL_STATIC_METHODS.contains(si.getInvokeName())) {
       return true;
     }
     // StringBuilder/StringBuffer.append(*) returns `this` (return-self contract). The

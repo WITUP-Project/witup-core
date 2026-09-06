@@ -2,7 +2,6 @@ package br.unb.cic.witup.analysis.symbolic.expr;
 
 import br.unb.cic.witup.analysis.symbolic.SymExprVisitor;
 import br.unb.cic.witup.analysis.symbolic.types.SymKind;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

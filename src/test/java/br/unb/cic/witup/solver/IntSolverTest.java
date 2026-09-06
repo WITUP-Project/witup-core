@@ -161,4 +161,13 @@ public class IntSolverTest {
     assertTrue(sol0.getInt("a") + sol0.getInt("b") > 256, "Expected a + b > 256 to get here");
     assertTrue(sol0.getInt("a") + sol0.getInt("b") > 512, "Expected a + b <= 512 to throw");
   }
+
+  @Test
+  public void alwaysThrowsSolution() {
+    String methodSignature = "<br.unb.cic.witup.samples.Int: int alwaysThrows()>";
+    AnalysisResult analysis = TestAnalysisContext.getAnalyser().analyseMethod(methodSignature);
+    assertEquals(1, analysis.solutions().size());
+    assertTrue(
+        analysis.solutions().getFirst().isSat(), "an empty predicate is trivially reachable");
+  }
 }
