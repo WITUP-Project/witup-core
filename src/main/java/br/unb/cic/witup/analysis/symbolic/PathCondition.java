@@ -49,7 +49,6 @@ public final class PathCondition {
     return false;
   }
 
-  /** Constraints in entry-to-site order. */
   public List<SymbolicConstraint> toList() {
     if (length == 0) {
       return List.of();
@@ -63,8 +62,8 @@ public final class PathCondition {
   }
 
   /**
-   * The constraints every input agrees on Any tail the inputs already share is reused by identity,
-   * so merging deep inside a method costs only the constraints above the fork.
+   * The constraints every input agrees o. merging deep inside a method costs only the extra
+   * constraints.
    */
   public static PathCondition intersect(final Collection<PathCondition> conditions) {
     if (conditions.isEmpty()) {
@@ -106,7 +105,7 @@ public final class PathCondition {
   }
 
   // Walk both chains down to the deepest cell they are the same object. EMPTY is a singleton and
-  // terminates every chain, so this always lands somewhere.
+  // terminates every chain, so this terminates.
   private static PathCondition deepestSharedCell(final PathCondition a, final PathCondition b) {
     PathCondition left = a;
     PathCondition right = b;
@@ -123,7 +122,6 @@ public final class PathCondition {
     return left;
   }
 
-  // Constraints of this condition that sit above `bound`, entry-first.
   private List<SymbolicConstraint> above(final PathCondition bound) {
     if (this == bound) {
       return List.of();
