@@ -230,7 +230,7 @@ public final class SymbolicConstraintGenerator {
   // cleanly (its OR/AND paths assume homogeneous operand types). Non-foldable cases fall
   // through to a structurally-rebuilt SymBinOp if any child changed, or the original
   // expr if not.
-  private static SymExpr foldConstants(final SymExpr expr) {
+  public static SymExpr foldConstants(final SymExpr expr) {
     // `new T[N].length` folds to `N` when N is a constant — Java guarantees the field
     // equals the allocation size. Common in <clinit> initialisers like BOM byte arrays
     // where the analysis would otherwise treat `newarray(int[])[3].length` as opaque and

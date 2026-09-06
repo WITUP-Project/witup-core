@@ -39,11 +39,15 @@ public class Calls {
     return derefLength(s) + derefIndirect(s);
   }
 
-  // same `s == null` NPE arises two ways: this method's own dereference (IMPLICIT) and
-  // the callee's (CALLEE_PROPAGATED)
+  // Same `s == null` NPE two ways: the callee's dereference (CALLEE_PROPAGATED) and this method's
+  // own (IMPLICIT). The call comes first deliberately. With the dereference first, reaching the
+  // call would prove `s` non-null and refute the propagated flow, leaving nothing for the two
+  // kinds to collide over — correct, but no longer a test of whether kind separates them.
+  // In this order nothing local is proven: that the callee dereferenced `s` is the callee's
+  // knowledge, and we do not carry it back to its caller.
   public static int ownAndCalleeNpe(String s) {
-    int own = s.length();
-    return own + derefLength(s);
+    int fromCallee = derefLength(s);
+    return fromCallee + s.length();
   }
 
   // The walker emits a method's own throws before its callee-propagated ones, so the two

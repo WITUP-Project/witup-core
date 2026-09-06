@@ -17,17 +17,18 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import sootup.codepropertygraph.propertygraph.nodes.StmtGraphNode;
 import sootup.core.jimple.common.stmt.Stmt;
 
-/**
- * Strongly-connected components of a method's CFG, in topological order. id's are sorted
- *
- */
+/** Strongly-connected components of a method's CFG, in topological order. id's are sorted */
 public final class CfgSccIndex {
   private final Map<WITUpNode, Integer> idByNode;
+  private final Map<WITUpNode, Integer> positionByNode;
   private final List<List<WITUpNode>> componentsInOrder;
 
   private CfgSccIndex(
-      final Map<WITUpNode, Integer> idByNode, final List<List<WITUpNode>> componentsInOrder) {
+      final Map<WITUpNode, Integer> idByNode,
+      final Map<WITUpNode, Integer> positionByNode,
+      final List<List<WITUpNode>> componentsInOrder) {
     this.idByNode = idByNode;
+    this.positionByNode = positionByNode;
     this.componentsInOrder = componentsInOrder;
   }
 
@@ -63,11 +64,15 @@ public final class CfgSccIndex {
       }
       componentsInOrder.add(List.copyOf(members));
     }
-    return new CfgSccIndex(idByNode, List.copyOf(componentsInOrder));
+    return new CfgSccIndex(idByNode, position, List.copyOf(componentsInOrder));
   }
 
   public int sccIdOf(final WITUpNode node) {
     return idByNode.getOrDefault(node, -1);
+  }
+
+  public int positionOf(final WITUpNode node) {
+    return positionByNode.getOrDefault(node, -1);
   }
 
   public List<List<WITUpNode>> topologicalSccs() {

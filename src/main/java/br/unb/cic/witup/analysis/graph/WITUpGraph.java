@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -545,18 +546,18 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
     }
   }
 
-  private List<WITUpEdge> incomingCfgEdges(final WITUpNode node) {
+  public List<WITUpEdge> incomingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgIncoming.getOrDefault(node, List.of());
   }
 
-  private List<WITUpEdge> outgoingCfgEdges(final WITUpNode node) {
+  public List<WITUpEdge> outgoingCfgEdges(final WITUpNode node) {
     buildCFGAdjacencies();
     return cfgOutgoing.getOrDefault(node, List.of());
   }
 
   // usually the entry node is a JIdentityStmt, but its
-  private WITUpNode findEntryNode() {
+  public WITUpNode findEntryNode() {
     if (entryNode != null) {
       return entryNode;
     }
@@ -616,6 +617,17 @@ public final class WITUpGraph extends DirectedPseudograph<WITUpNode, WITUpEdge> 
       }
     }
     return result;
+  }
+
+  public Set<WITUpNode> getRootNodes() {
+    Set<WITUpNode> roots = new LinkedHashSet<>();
+    for (WITUpNode node : this.vertexSet()) {
+      if (this.incomingCfgEdges(node).isEmpty()) {
+        roots.add(node);
+      }
+    }
+    roots.add(this.findEntryNode());
+    return roots;
   }
 
   public List<WITUpPath> getAllPathsToReturn(final WITUpNode returnNode) {

@@ -3,6 +3,10 @@ package br.unb.cic.witup.analysis;
 import br.unb.cic.witup.analysis.graph.GraphRepository;
 import br.unb.cic.witup.analysis.graph.MethodCallSite;
 import br.unb.cic.witup.analysis.graph.WITUpGraph;
+import br.unb.cic.witup.analysis.graph.node.WITUpNode;
+import br.unb.cic.witup.analysis.symbolic.ForwardPathAnalysis;
+import br.unb.cic.witup.analysis.symbolic.PathConditionIndex;
+import br.unb.cic.witup.analysis.symbolic.PathFact;
 import br.unb.cic.witup.analysis.symbolic.SymExprResolver;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraint;
 import br.unb.cic.witup.analysis.symbolic.SymbolicConstraintGenerator;
@@ -11,6 +15,7 @@ import br.unb.cic.witup.analysis.symbolic.expr.SymParamRef;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,6 +78,13 @@ public final class ExceptionFlowWalker {
     }
     WITUpGraph cpg = graphOpt.get();
 
+    Set<WITUpNode> callSiteNodes = new LinkedHashSet<>();
+    for (MethodCallSite site : cpg.getCallSites()) {
+      callSiteNodes.add(site.node());
+    }
+
+    PathConditionIndex conditions = ForwardPathAnalysis.analyseMethodPaths(cpg, callSiteNodes);
+
     for (MethodCallSite site : cpg.getCallSites()) {
       MethodSummary calleeSummary = summaries.get(site.calleeSignature());
       if (calleeSummary == null) {
@@ -82,45 +94,67 @@ public final class ExceptionFlowWalker {
       if (formals == null || formals.size() != site.actuals().size()) {
         continue;
       }
-      List<SymExpr> actuals = new ArrayList<>(site.actuals().size());
-      for (Immediate imm : site.actuals()) {
-        actuals.add(SymExprResolver.resolveLocalAt(SymExpr.fromJimple(imm), site.node(), cpg));
-      }
       Set<String> caughtTypes = cpg.inScopeCatchTypes(site.node());
       List<ExceptionPath> calleeFlows = observablePaths(site.calleeSignature());
 
-      for (ExceptionPath calleeFlow : calleeFlows) {
-        if (isCaughtByAny(calleeFlow.getExceptionQualifiedName(), caughtTypes)) {
-          continue;
-        }
-        List<SymbolicConstraint> substituted = new ArrayList<>(calleeFlow.getConstraints().size());
-        for (SymbolicConstraint c : calleeFlow.getConstraints()) {
-          SymExpr expr = c.symExpr();
-          for (int i = 0; i < formals.size(); i++) {
-            expr = expr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+      for (Optional<PathFact> fact : factsAt(conditions, site.node())) {
+        List<SymExpr> actuals = resolveActuals(site, fact, cpg);
+
+        for (ExceptionPath calleeFlow : calleeFlows) {
+          if (isCaughtByAny(calleeFlow.getExceptionQualifiedName(), caughtTypes)) {
+            continue;
           }
-          substituted.add(new SymbolicConstraint(expr, c.truthValue()));
+          // Combine callee's throws from caller perspective with caller's conditions
+          List<SymbolicConstraint> predicate = new ArrayList<>();
+          fact.ifPresent(f -> predicate.addAll(f.pc().toList()));
+          for (SymbolicConstraint c : calleeFlow.getConstraints()) {
+            SymExpr expr = c.symExpr();
+            for (int i = 0; i < formals.size(); i++) {
+              expr = expr.substituteParam(formals.get(i).getIndex(), actuals.get(i));
+            }
+            predicate.add(new SymbolicConstraint(expr, c.truthValue()));
+          }
+          List<SymbolicConstraint> filtered =
+              SymbolicConstraintGenerator.foldAndFilterConstraints(predicate);
+          if (filtered == null) {
+            continue;
+          }
+          List<String> provenance = new ArrayList<>(calleeFlow.getProvenance().size() + 1);
+          provenance.add(site.calleeSignature());
+          provenance.addAll(calleeFlow.getProvenance());
+          result.add(
+              new ExceptionPath(
+                  filtered,
+                  site.node(),
+                  calleeFlow.getExceptionQualifiedName(),
+                  ThrowSiteKind.CALLEE_PROPAGATED,
+                  provenance));
         }
-        // Substitution can collapse constraints to constants. Filter before emission
-        // so we don't propagate impossible paths up the call graph.
-        List<SymbolicConstraint> filtered =
-            SymbolicConstraintGenerator.foldAndFilterConstraints(substituted);
-        if (filtered == null) {
-          continue;
-        }
-        List<String> provenance = new ArrayList<>(calleeFlow.getProvenance().size() + 1);
-        provenance.add(site.calleeSignature());
-        provenance.addAll(calleeFlow.getProvenance());
-        result.add(
-            new ExceptionPath(
-                filtered,
-                site.node(),
-                calleeFlow.getExceptionQualifiedName(),
-                ThrowSiteKind.CALLEE_PROPAGATED,
-                provenance));
       }
     }
     return result;
+  }
+
+  private static List<SymExpr> resolveActuals(
+      final MethodCallSite site, final Optional<PathFact> fact, final WITUpGraph cpg) {
+    List<SymExpr> actuals = new ArrayList<>(site.actuals().size());
+    for (Immediate imm : site.actuals()) {
+      SymExpr operand = SymExpr.fromJimple(imm);
+      actuals.add(
+          fact.map(f -> SymbolicConstraintGenerator.foldConstants(operand.resolveWith(f.env())))
+              .orElseGet(() -> SymExprResolver.resolveLocalAt(operand, site.node(), cpg)));
+    }
+    return actuals;
+  }
+
+  // One entry per way of reaching the call
+  private static List<Optional<PathFact>> factsAt(
+      final PathConditionIndex conditions, final WITUpNode node) {
+    List<PathFact> facts = conditions.factsAt(node);
+    if (facts.isEmpty()) {
+      return List.of(Optional.empty());
+    }
+    return facts.stream().map(Optional::of).toList();
   }
 
   // Pragmatic catch-type matcher: exact match + recognise the three catch-all aliases

@@ -40,6 +40,15 @@ public final class PathCondition {
     return length;
   }
 
+  public boolean contains(final SymbolicConstraint constraint) {
+    for (PathCondition cell = this; cell.length > 0; cell = cell.tail) {
+      if (cell.head.equals(constraint)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** Constraints in entry-to-site order. */
   public List<SymbolicConstraint> toList() {
     if (length == 0) {

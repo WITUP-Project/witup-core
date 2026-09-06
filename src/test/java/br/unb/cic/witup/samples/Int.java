@@ -141,7 +141,7 @@ public class Int {
     }
     return result;
   }
-  
+
   public int alwaysThrows() {
     throw new IllegalStateException("unsupported");
   }
